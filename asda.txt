@@ -1,1 +1,6 @@
+<<<<<<< HEAD
 halo how are you
+=======
+halo my name is ix
+>>>>>>> 46a0154c0fa7b3a73eec8734568d34f2c6922b98
+im good 
