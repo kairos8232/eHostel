@@ -5,25 +5,54 @@
 
 .header{
     align-items: center;
-    justify-content: center;
     display: flex;
-    flex-direction: column;
     min-height: 100vh;
     width: 100%;
     background-image: linear-gradient(rgba(4,9,30,0.7),rgba(4,9,30,0.7)),url(images/inst-profile-header-mmu.jpg);
     background-position: center;
     background-size: cover;
-    font-family: 'monserrat', sans-serif;
 }
 
-.sign-container{
-    width: 768px;
-    max-width: 100%;
-    min-height: 480px;
-    background: #fff;
-    border-radius: 10px;
-    overflow: hidden;
-    box-shadow: 0 14px 28px rgba(0,0,0,0.25),
-                0 10px 10px rgba(0,0,0,0.25)
+.container {
+	width: 700px; /* adjust the width as needed */
+	margin: 20px auto; /* adjust the margin as needed */
+}
 
+.glass-blur {
+	background-color: rgba(255, 255, 255, 0.15);
+	backdrop-filter: blur(5px);
+	padding: 20px;
+	border-radius: 10px;
+	box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.logo {
+	width: 25%; /* adjust the logo size as needed */
+	margin: 20px;
+}
+
+.button-container {
+	display: flex; /* add this to make the buttons align vertically */
+	flex-direction: column; /* add this to make the buttons align vertically */
+	align-items: center; /* add this to center the buttons horizontally */
+}
+
+.button-container button {
+	background-color: #4CAF50;
+	color: #fff;
+    font-size: 18px;
+	padding: 15px 25px;
+    width: 180px;
+	border: none;
+	border-radius: 5px;
+	cursor: pointer;
+    margin: 10px;
+}
+
+
+.button-container button:hover {
+	background-color: #3e8e41;
 }
