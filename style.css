@@ -1,6 +1,7 @@
 *{
     margin:0;
     padding:0;
+
 }
 
 .header{
@@ -13,31 +14,24 @@
     background-size: cover;
 }
 
-.container {
-	width: 700px; /* adjust the width as needed */
-	margin: 20px auto; /* adjust the margin as needed */
-}
-
-.glass-blur {
+.glass-blur-container {
 	background-color: rgba(255, 255, 255, 0.15);
 	backdrop-filter: blur(5px);
-	padding: 20px;
+	padding: 10px;
 	border-radius: 10px;
-	box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    width: fit-content;
+    margin: 40px auto;
 }
 
 .logo {
-	width: 25%; /* adjust the logo size as needed */
+	width: 400px; /* adjust the logo size as needed */
 	margin: 20px;
 }
 
 .button-container {
-	display: flex; /* add this to make the buttons align vertically */
-	flex-direction: column; /* add this to make the buttons align vertically */
-	align-items: center; /* add this to center the buttons horizontally */
+	display: flex;
+	flex-direction: column;
+	align-items: center;
 }
 
 .button-container button {
@@ -51,7 +45,6 @@
 	cursor: pointer;
     margin: 10px;
 }
-
 
 .button-container button:hover {
 	background-color: #3e8e41;
