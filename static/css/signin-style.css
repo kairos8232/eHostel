@@ -10,14 +10,15 @@
     display: flex;
     min-height: 100vh;
     width: 100%;
-    background-image: linear-gradient(rgba(4,9,30,0.7),rgba(4,9,30,0.7)),url(images/inst-profile-header-mmu.jpg);
+    background-image: linear-gradient(rgba(4, 9, 30, 0.7), rgba(4, 9, 30, 0.7)), 
+    url('/static/images/inst-profile-header-mmu.jpg');
     background-position: center;
     background-size: cover;
     justify-content: center; /* center the sign-in container */
     align-items: center; /* center the sign-in container */
   }
   
-  .sign-up-container {
+  .sign-in-container {
     width: 400px;
     padding: 20px;
     background-color: #fff;
@@ -25,13 +26,13 @@
     text-align: center;
   }
   
-  .sign-up-container h1 {
+  .sign-in-container h1 {
     font-size: 40px;
     font-weight: bold;
     margin-bottom: 10px;
   }
   
-  .sign-up-container input {
+  .sign-in-container input {
     width: 94%;
     font-size: 14px;
     padding: 10px;
@@ -42,21 +43,21 @@
     display: block;
   }
   
-  .sign-up-container input:focus {
+  .sign-in-container input:focus {
     border-color: #aaa;
   }
   
-  .sign-up-container a {
+  .sign-in-container a {
     font-size: 14px;
     color: #337ab7;
     text-decoration: none;
   }
   
-  .sign-up-container a:hover {
+  .sign-in-container a:hover {
     color: #23527c;
   }
   
-  .sign-up-container button {
+  .sign-in-container button {
     width: 100%;
     padding: 10px;
     margin-top: 10px;
@@ -68,6 +69,6 @@
     cursor: pointer;
   }
   
-  .sign-up-container button:hover {
+  .sign-in-container button:hover {
     background-color: #23527c;
   }
