@@ -55,6 +55,12 @@ header {
     color: black;
 }
 
+.fa-regular {
+    font-size: 25px;
+    color: white;
+    cursor: pointer;
+}
+
 .nav .logo{
     background-color: white;
     display: none;
@@ -101,13 +107,13 @@ header {
     .signup {
         margin-right: 16px;
     }
-
-    .menu {
-        font-size: 45px;
+      
+    .fa-regular {
+        font-size: 25px;
         color: white;
         cursor: pointer;
     }
-    #check:checked~.user-form-group .menu {
+    #check:checked~.user-form-group .fa-regular {
         display: none;
     }
 
@@ -119,11 +125,10 @@ header {
     .user-form-group .close-menu {
         display: none;
     }
-    #check:checked~.user-form-group .clsoe-menu {
+    #check:checked~.user-form-group .close-menu {
         display: block;
     }
     #check:checked~.nav {
         left: 0%;
-
     }
 }
