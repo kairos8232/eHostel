@@ -40,7 +40,7 @@ def SignUp():
         cur.execute("INSERT INTO users(name, email, password) VALUES(%s, %s, %s)", (name, email, password))
         mysql.connection.commit()
         cur.close()
-        return redirect(url_for("Index"))
+        return redirect(url_for("home"))
     return render_template('signup.html')
 
 @main.route('/login' , methods = ['POST' , 'GET'])

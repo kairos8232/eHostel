@@ -3,14 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>MMU Hostel Management</title>
+    <link rel="stylesheet" href="main-style.css">
+    <!--import fonts poppins-->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static' , filename = 'css/home-style.css' ) }}">
+    <!--import box icons-->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 </head>
+
 <body>
     {% if session.loggedin %}
-       <h1>Hello {{session['name']}}</h1>
+    <header>
+
+        <h1><img src="static/images/Multimedia_University_logo.png" alt="Multimedia University" style="width: 150px; height: 50px;" class="logo" ></h1>
+
+        <nav class="nav">
+            <h1><img src="static/images/Multimedia_University_logo.png" alt="Multimedia University" style="width: 150px; height: 50px;" class="logo" ></h1>
+            <div class="divider"></div>
+            <a href="#">Home</a>
+            <a href="#">About</a>   
+            <a href="#">Services</a>
+            <a href="#">Contact</a>
+        </nav>
+
+       <div class="user-form-group">
+            <a class="login" href="#">Login</a>
+            <a class="signup" href="#">Sign up</a>
+            <i class="fa-regular fa-user"></i>
+        </div>
+    </header>
 
     {% else %}
-       <h1>Hello user</h1>
-    {% endif %}
+    <h1>Hello user</h1>
+ {% endif %}
+ 
 </body>
 </html>
