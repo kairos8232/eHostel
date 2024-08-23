@@ -64,6 +64,9 @@ def Login():
 
     return render_template('signin.html')
 
+@main.route('/register-hostel', methods = ['POST', 'GET'])
+def Register():
+    return render_template
 
 if __name__ == "__main__":
     main.run(debug=True) 
