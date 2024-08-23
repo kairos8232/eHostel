@@ -41,6 +41,11 @@ def SignUp():
         return ''
     return render_template('signup.html')
 
+
+@main.route('/home')
+def home():
+    return render_template('home.html')
+
 @main.route('/login' ,methods = ['POST' , 'GET'])
 def Login():
     if request.method == 'POST':
@@ -57,7 +62,9 @@ def Login():
             return redirect(url_for('home'))
         else:
             msg='Incorrect username/password. Try again!'
-            return render_template('main.html', msg = msg)
+            return render_template('index.html', msg = msg)
+        
+        
     return render_template('signin.html')
 
 if __name__ == "__main__":
