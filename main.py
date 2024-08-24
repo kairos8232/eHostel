@@ -67,5 +67,9 @@ def Login():
         
     return render_template('signin.html')
 
+@main.route('/home')
+def home():
+    return render_template('home.html')
+
 if __name__ == "__main__":
     main.run(debug=True) 
