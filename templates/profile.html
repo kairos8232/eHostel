@@ -3,16 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Profile</title>
-       <!--import fonts poppins-->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static' , filename = 'css/home-style.css' ) }}">
-    
-
+    <title>Editable Profile Card</title>
+    <link rel="stylesheet" href="/static/css/profile-style.css">
 </head>
 <body>
-    
+    <div class="container">
+        <div class="card">
+            <img src="{{ image_url }}" alt="Profile Picture" class="card-image" id="profile-image">
+            <div class="card-content">
+                <h2 class="name" id="name" >{{ name }}</h2>
+                <h3 id="title">{{ title }}</h3>
+                <p id="description">{{ description }}</p>
+            </div>
+        </div>
+        <button id="edit-button">Edit Profile</button>
+        <form id="edit-form" method="post" enctype="multipart/form-data" style="display: none;">
+            <input type="text" name="name" placeholder="Name" value="{{ name }}">
+            <input type="text" name="title" placeholder="Title" value="{{ title }}">
+            <textarea name="description" placeholder="Description">{{ description }}</textarea>
+            <input type="file" name="image" accept="image/*">
+            <input type="submit" value="Update Profile">
+            <button type="button" id="cancel-button">Cancel</button>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById('edit-button').addEventListener('click', function() {
+            document.getElementById('edit-form').style.display = 'block';
+            this.style.display = 'none';
+        });
+
+        document.getElementById('cancel-button').addEventListener('click', function() {
+            document.getElementById('edit-form').style.display = 'none';
+            document.getElementById('edit-button').style.display = 'block';
+        });
+    </script>
 </body>
 </html>
