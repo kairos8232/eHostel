@@ -8,7 +8,12 @@
 body {
     background-color: #f0f0f0;
     padding: 20px;
+    background: url('/static/images/inst-profile-header-mmu.jpg');
+    background-size: cover;
+    width: 100%;
+    height: 100vh;
 }
+
 
 .container {
     background-color: white;
@@ -17,6 +22,7 @@ body {
     padding: 20px;
     max-width: 800px;
     margin: 0 auto;
+    margin-top: 13%;
 }
 
 .profile-header {
@@ -41,9 +47,10 @@ body {
 }
 
 .name {
-    font-size: 24px;
+    font-size: 34px;
     font-weight: 600;
     color: #333;
+    font-weight: bold;
 }
 
 .edit-button {
@@ -64,11 +71,11 @@ body {
 }
 
 .profile-content h2 {
-    font-size: 18px;
+    font-size: 25px;
     font-weight: 600;
     color: #333;
-    margin-top: 20px;
-    margin-bottom: 10px;
+    margin-top: 10px;
+    margin-bottom: 5px;
 }
 
 .profile-content p {
