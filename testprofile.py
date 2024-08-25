@@ -1,44 +1,37 @@
-from flask import Flask, request, render_template, send_from_directory, session
+from flask import Flask, render_template, request, redirect, url_for
+from werkzeug.utils import secure_filename
 import os
 
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = 'uploads'
-app.secret_key = 'your_secret_key_here'  # Required for session
+app.config['UPLOAD_FOLDER'] = 'static/uploads'
 
-if not os.path.exists(app.config['UPLOAD_FOLDER']):
-    os.makedirs(app.config['UPLOAD_FOLDER'])
-
-# Default profile information
-default_profile = {
-    'name': 'John Doe',
-    'title': 'Software Developer',
-    'description': 'Passionate about creating elegant solutions to complex problems.',
-    'image_url': '/static/default_profile.jpg'
+# This would typically come from a database
+profile_data = {
+    'name': 'Username',
+    'image_url': '/static/images/anime-default-pfp-5.jpg',
+    'contact': 'Contact Number',
+    'email': 'Email Address',
+    'biography': 'Anythings u can write...'
 }
 
 @app.route('/', methods=['GET', 'POST'])
-def profile_card():
-    if 'profile' not in session:
-        session['profile'] = default_profile.copy()
-
+def profile():
     if request.method == 'POST':
-        session['profile']['name'] = request.form['name']
-        session['profile']['title'] = request.form['title']
-        session['profile']['description'] = request.form['description']
-        
-        image = request.files['image']
-        if image and image.filename:  # Check if a new image was uploaded
-            filename = os.path.join(app.config['UPLOAD_FOLDER'], image.filename)
-            image.save(filename)
-            session['profile']['image_url'] = f'/uploads/{image.filename}'
+        profile_data['name'] = request.form['name']
+        profile_data['contact'] = request.form['contact']
+        profile_data['email'] = request.form['email']
+        profile_data['biography'] = request.form['biography']
 
-        session.modified = True  # Ensure session is saved
+        if 'image' in request.files:
+            file = request.files['image']
+            if file.filename != '':
+                filename = secure_filename(file.filename)
+                file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                profile_data['image_url'] = f'/static/uploads/{filename}'
 
-    return render_template('profile.html', **session['profile'])
+        return redirect(url_for('profile'))
 
-@app.route('/uploads/<filename>')
-def uploaded_file(filename):
-    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+    return render_template('profile.html', **profile_data)
 
 if __name__ == '__main__':
     app.run(debug=True)

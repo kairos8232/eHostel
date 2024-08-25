@@ -3,38 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Editable Profile Card</title>
+    <title>Profile</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/profile-style.css">
 </head>
 <body>
     <div class="container">
-        <div class="card">
-            <img src="{{ image_url }}" alt="Profile Picture" class="card-image" id="profile-image">
-            <div class="card-content">
-                <h2 class="name" id="name" >{{ name }}</h2>
-                <h3 id="title">{{ title }}</h3>
-                <p id="description">{{ description }}</p>
+        <div class="profile-header">
+            <img src="{{ image_url }}" alt="Profile Picture" class="profile-image">
+            <div class="profile-info">
+                <h1 class="name">{{ name }}</h1>
+                <button id="edit-button" class="edit-button">Edit</button>
             </div>
         </div>
-        <button id="edit-button">Edit Profile</button>
+        <div class="profile-content" id="profile-display">
+            <h2>Contact</h2>
+            <p id="contact-display">{{ contact }}</p>
+            
+            <h2>Email</h2>
+            <p id="email-display">{{ email }}</p>
+            
+            <h2>Biography</h2>
+            <p id="biography">{{ biography }}</p>
+        </div>
         <form id="edit-form" method="post" enctype="multipart/form-data" style="display: none;">
             <input type="text" name="name" placeholder="Name" value="{{ name }}">
-            <input type="text" name="title" placeholder="Title" value="{{ title }}">
-            <textarea name="description" placeholder="Description">{{ description }}</textarea>
+            <textarea name="contact" placeholder="Contact Number">{{ contact }}</textarea>
+            <textarea name="email" placeholder="Email">{{ email }}</textarea>
+            <textarea name="biography" placeholder="Biography">{{ biography }}</textarea>
             <input type="file" name="image" accept="image/*">
-            <input type="submit" value="Update Profile">
-            <button type="button" id="cancel-button">Cancel</button>
+            <div class="form-buttons">
+                <input type="submit" value="Update Profile">
+                <button type="button" id="cancel-button">Cancel</button>
+            </div>
         </form>
     </div>
-
+    
     <script>
         document.getElementById('edit-button').addEventListener('click', function() {
             document.getElementById('edit-form').style.display = 'block';
+            document.getElementById('profile-display').style.display = 'none';
             this.style.display = 'none';
         });
 
         document.getElementById('cancel-button').addEventListener('click', function() {
             document.getElementById('edit-form').style.display = 'none';
+            document.getElementById('profile-display').style.display = 'block';
             document.getElementById('edit-button').style.display = 'block';
         });
     </script>

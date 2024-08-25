@@ -108,6 +108,28 @@ header {
         margin-right: 16px;
     }
       
+      
+    .fa-regular {
+        font-size: 25px;
+        color: white;
+        cursor: pointer;
+    }
+    #check:checked~.user-form-group .fa-regular {
+        display: none;
+    }
+
+    .close-menu {
+        font-size: 45px;
+        color: white;
+        cursor: pointer;
+    }
+    .user-form-group .close-menu {
+        display: none;
+    }
+    #check:checked~.user-form-group .close-menu {
+        display: block;
+    }
+    
     .fa-regular {
         font-size: 25px;
         color: white;
