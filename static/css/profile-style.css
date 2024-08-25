@@ -50,17 +50,50 @@ body {
     font-size: 34px;
     font-weight: 600;
     color: #333;
-    font-weight: bold;
+    word-wrap: break-word;
+    word-break: break-word;
+    white-space: normal;
+    overflow-wrap: break-word;
 }
 
-.edit-button {
+/*.edit-button {
     background-color: #f1f1f1;
     border: 1px solid #ddd;
     padding: 5px 10px;
     border-radius: 4px;
     cursor: pointer;
     font-size: 14px;
+    border: rgba(255,255,255,0.5) 2px solid;
+    padding: 8px 16px;
+    margin-left: 16px;
+    border-radius: 99px;
+    transition: 300ms;
 }
+.edit-button:hover {
+    background: rgb(145, 103, 103);
+    color: black;
+}*/
+.edit-button {
+    display: inline-block;
+    padding: 10px 20px;
+    font-size: 20px;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    outline: none;
+    color: #fff;
+    background-color: #04AA6D;
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 9px #999;
+  }
+  .edit-button:hover {background-color: #3e8e41}
+  
+  .edit-button:active {
+    background-color: #3e8e41;
+    box-shadow: 0 5px #666;
+    transform: translateY(4px);
+  }
 
 .profile-content {
     word-wrap: break-word;
