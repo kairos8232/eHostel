@@ -27,19 +27,19 @@ def Index():
 
 @main.route("/home")
 def home():
-    return render_template('home.html', name = session['sid'])
+    return render_template('home.html', name = session['id'])
 
 @main.route('/signup', methods = ['POST', 'GET'])
 def SignUp():
     if request.method == 'POST':
         userDetails = request.form
-        sid = userDetails['sid']
+        id = userDetails['id']
         email = userDetails['email']
         gender = userDetails['gender']
         password = userDetails['password']
         
         cur = mysql.connection.cursor()
-        cur.execute("INSERT INTO users(sid, email, gender, password) VALUES(%s, %s, %s, %s)", (sid, email, gender, password))
+        cur.execute("INSERT INTO users(id, email, gender, password) VALUES(%s, %s, %s, %s)", (id, email, gender, password))
         mysql.connection.commit()
         cur.close()
         return redirect(url_for("home"))
@@ -49,15 +49,15 @@ def SignUp():
 def Login():
     if request.method == 'POST':
         userDetails = request.form
-        sid = userDetails['sid']
+        id = userDetails['id']
         password = userDetails['password']
         cur = mysql.connection.cursor()
-        cur.execute('SELECT * FROM users WHERE sid=%s AND password=%s', (sid, password))
+        cur.execute('SELECT * FROM users WHERE id=%s AND password=%s', (id, password))
         record = cur.fetchone()
         if record:
             session['loggedin']= True
-            session['sid']= record[1]
-            session['name'] = record[0]
+            session['id']= record[0]
+            session['name'] = record[1]
             return redirect(url_for('home'))
         else:
             msg='Incorrect username/password. Try again!'
@@ -82,32 +82,42 @@ def room_list():
 
 @main.route('/choose-room', methods=['POST'])
 def choose_room():
-    if 'email' not in session:
-        return redirect(url_for('login'))
+    print("Session data before choosing room:", session)  # Debugging: Check session before proceeding
+    user_id = session.get('id')
+
+    if not user_id:
+        return redirect(url_for('Login'))  # Redirect to login if the user ID is not in session
 
     room_number = request.form['room_number']
-    user_email = session['sid']
 
     cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
+    # Verify that the user_id exists in the users table
+    cursor.execute("SELECT id FROM users WHERE id = %s", (user_id,))
+    user = cursor.fetchone()
+
+    if not user:
+        return redirect(url_for('Login'))  # Redirect to login if user is invalid
+
+    # Check if the room exists and is not already chosen
     cursor.execute("SELECT chosen_by FROM rooms WHERE number = %s", (room_number,))
     room = cursor.fetchone()
 
     if room and room['chosen_by'] is None:
-        cursor.execute("UPDATE rooms SET chosen_by = %s WHERE number = %s", (user_email, room_number))
+        cursor.execute("UPDATE rooms SET chosen_by = %s WHERE number = %s", (user_id, room_number))
         mysql.connection.commit()
+        cursor.close()
+        return redirect(url_for('room_list', success='Room chosen successfully'))
+    elif room:
+        cursor.close()
+        return redirect(url_for('room_list', error='Room is already chosen'))
+    else:
+        cursor.close()
+        return redirect(url_for('room_list', error='Room not found'))
+
+    # Fallback in case of unexpected behavior
     cursor.close()
-
-    print("Room chosen:", room_number)
-
     return redirect(url_for('room_list'))
-
-@main.route('/test-submit', methods=['POST'])
-def test_submit():
-    # This is just for testing purposes
-    room_number = request.form.get('room_number')
-    return f"Room number {room_number} received!"
-
-
 
 
 if __name__ == "__main__":
