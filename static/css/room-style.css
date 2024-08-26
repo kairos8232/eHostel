@@ -1,0 +1,74 @@
+/* styles.css */
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 20px;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 600px;
+    margin: auto;
+}
+
+.room {
+    background-color: #fff;
+    padding: 15px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+}
+
+.room-info {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.room-no {
+    font-weight: bold;
+    color: #333;
+    font-size: 1.2em;
+}
+
+.room-type, .capacity, .status, .cost {
+    color: #666;
+    font-size: 0.9em;
+}
+
+.availability {
+    color: #888;
+    font-style: italic;
+}
+
+.cost {
+    font-weight: bold;
+    color: #2d2d2d;
+    font-size: 1em;
+}
+
+.choose-btn {
+    background-color: #4CAF50;
+    color: white;
+    cursor: pointer; /* 确保鼠标指针为手型 */
+    font-size: 0.9em;
+    pointer-events: auto; /* Add this line to ensure the button is clickable */
+}
+
+.choose-btn:hover {
+    background-color: #45a049;
+}
+
+
+.chosen {
+    color: #4CAF50;
+    font-weight: bold;
+    font-size: 0.9em;
+}
