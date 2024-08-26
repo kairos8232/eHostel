@@ -3,6 +3,7 @@ from flask_mysqldb import MySQL
 import MySQLdb.cursors
 import re
 import yaml
+import bcrypt
 
 main = Flask(__name__)
 
@@ -36,6 +37,7 @@ def SignUp():
         name = userDetails['name']
         email = userDetails['email']
         password = userDetails['password']
+        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
         cur = mysql.connection.cursor()
         cur.execute("INSERT INTO users(name, email, password) VALUES(%s, %s, %s)", (name, email, password))
         mysql.connection.commit()
@@ -52,7 +54,7 @@ def Login():
         cur = mysql.connection.cursor()
         cur.execute('SELECT * FROM users WHERE email=%s AND password=%s', (email, password))
         record = cur.fetchone()
-        if record:
+        if record and bcrypt.checkpw(password.encode('utf-8'), record[2].encode('utf-8')):
             session['loggedin']= True
             session['email']= record[1]
             session['name'] = record[0]
