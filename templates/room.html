@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Room List</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/room-style.css') }}">
+</head>
+<body>
+    <div class="container">
+        {% for room in rooms %}
+        <div class="room">
+            <div class="room-info">
+                <div class="room-no">Room Number: {{ room.number }}</div>
+                <div class="room-type">Type: {{ room.type }}</div>
+                <div class="capacity">Capacity: {{ room.capacity }} persons</div>
+                <div class="status">Status: {{ room.status }}</div>
+                <div class="cost">Cost: ${{ room.cost }} per night</div>
+            </div>
+            {% if room.chosen_by is none %}
+            <div class="chosen">Chosen</div>
+            {% else %}
+            <form action="{{ url_for('choose_room') }}" method="POST">
+                <input type="hidden" name="room_number" value="{{ room.number }}">
+                <button type="submit" class="choose-btn">Choose</button>
+            </form>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</body>
+</html>
