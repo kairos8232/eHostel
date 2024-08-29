@@ -54,7 +54,7 @@ header {
 .sub-menu-wrap{
     position: absolute;
     top: 100%;
-    right: 10%;
+    right: 4%;
     width: 200px;
     max-height: 0;
     overflow: hidden;
@@ -64,7 +64,8 @@ header {
     max-height: 400px;
 }
 .sub-menu{
-    background: #b2b2b2;
+    background: grey;
+    border: 1px solid white;
     border-radius: 20px;
     padding: 10px;
     margin: 5px;
@@ -115,23 +116,6 @@ header {
 }
 .sub-menu-link:hover p{
     font-weight: 600;
-}
-.signup {
-    border: rgba(255,255,255,0.5) 2px solid;
-    padding: 8px 16px;
-    margin-left: 16px;
-    border-radius: 99px;
-    transition: 300ms;
-}
-.signup:hover {
-    background: white;
-    color: black;
-}
-
-.fa-regular {
-    font-size: 25px;
-    color: white;
-    cursor: pointer;
 }
 
 .nav .logo{
