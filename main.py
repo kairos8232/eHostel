@@ -124,13 +124,9 @@ def room_change_request():
     else:
         room_number = None
 
-    # Fetch all rooms for display
-    cur.execute("SELECT * FROM rooms")
-    rooms = cur.fetchall()
-
     cur.close()
 
-    return render_template('room_change.html', rooms=rooms, room_number=room_number)
+    return render_template('room_change.html', room_number=room_number)
 
 
 @main.route('/choose-room', methods=['POST'])
