@@ -1,0 +1,97 @@
+.page-container {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 90vh; /* Full viewport height */
+}
+
+.room-container {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    max-width: 500px;
+    width: 100%; /* Ensures the content doesn’t stretch too wide on large screens */
+}
+
+
+.room-container h1 {
+    margin-bottom: 20px;
+}
+
+.room-container p {
+    font-size: 18px;
+    margin-bottom: 20px;
+}
+
+.buttons {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 20px;
+}
+
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    text-decoration: none;
+    color: white;
+    font-size: 16px;
+    transition: background-color 0.3s;
+}
+
+.feedback-btn {
+    background-color: #28a745;
+}
+
+.feedback-btn:hover {
+    background-color: #218838;
+}
+
+.change-room-btn {
+    background-color: #dc3545;
+}
+
+.change-room-btn:hover {
+    background-color: #c82333;
+}
+
+.form-container {
+    margin-top: 20px;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+    text-align: left;
+}
+
+.form-container h3 {
+    margin-bottom: 15px;
+}
+
+.form-container label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.form-container input[type="text"],
+.form-container textarea {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.form-container .submit-btn {
+    background-color: #007bff;
+}
+
+.form-container .submit-btn:hover {
+    background-color: #0069d9;
+}

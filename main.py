@@ -27,7 +27,11 @@ def Index():
 
 @main.route("/home")
 def home():
-    return render_template('home.html', name = session['id'])
+    print("Session data:", session) #DEBUG USE
+    if 'loggedin' not in session:
+        return redirect(url_for('Login'))
+    return render_template('home.html', name=session['id'])
+
 
 @main.route('/signup', methods = ['POST', 'GET'])
 def SignUp():
@@ -66,23 +70,71 @@ def Login():
     return render_template('signin.html')
 
 @main.route('/room')
-def room_list():
-    # Use the MySQL connection from flask_mysqldb
+def room_status():
+    user_id = session.get('id')
+
+    if not user_id:
+        return redirect(url_for('Login'))  # Redirect to login if user is not logged in
+
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
 
-    # Fetch room data from the database
-    cur.execute("SELECT number, category, capacity, status, cost FROM rooms")
+    # Check if the user has chosen a room
+    cur.execute("SELECT number FROM rooms WHERE chosen_by = %s", (user_id,))
+    chosen_room = cur.fetchone()
+
+    if chosen_room:
+        # Redirect to room_change if a room is already chosen
+        return redirect(url_for('room_change_request'))
+    else:
+        # Redirect to room_list if no room is chosen
+        return redirect(url_for('room_list'))
+
+@main.route('/room-list')
+def room_list():
+    user_id = session.get('id')
+
+    if not user_id:
+        return redirect(url_for('Login'))  # Redirect to login if user is not logged in
+
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    cur.execute("SELECT * FROM rooms")
+    rooms = cur.fetchall()
+    return render_template('room_list.html', rooms=rooms)
+
+@main.route('/feedback')
+def feedback():
+    # Implement the logic for feedback or redirect to a feedback page
+    return "Feedback page (To be implemented)"
+
+@main.route('/room_change_request')
+def room_change_request():
+    user_id = session.get('id')
+
+    if not user_id:
+        return redirect(url_for('Login'))  # Redirect to login if user is not logged in
+
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
+    # Retrieve the room number the user has chosen
+    cur.execute("SELECT number FROM rooms WHERE chosen_by = %s", (user_id,))
+    chosen_room = cur.fetchone()
+
+    if chosen_room:
+        room_number = chosen_room['number']
+    else:
+        room_number = None
+
+    # Fetch all rooms for display
+    cur.execute("SELECT * FROM rooms")
     rooms = cur.fetchall()
 
-    # Close database connection
     cur.close()
 
-    # Render the HTML template with the room data
-    return render_template('room.html', rooms=rooms)
+    return render_template('room_change.html', rooms=rooms, room_number=room_number)
+
 
 @main.route('/choose-room', methods=['POST'])
 def choose_room():
-    print("Session data before choosing room:", session)  # Debugging: Check session before proceeding
     user_id = session.get('id')
 
     if not user_id:
@@ -107,18 +159,13 @@ def choose_room():
         cursor.execute("UPDATE rooms SET chosen_by = %s WHERE number = %s", (user_id, room_number))
         mysql.connection.commit()
         cursor.close()
-        return redirect(url_for('room_list', success='Room chosen successfully'))
+        return redirect(url_for('room_change_request'))
     elif room:
         cursor.close()
         return redirect(url_for('room_list', error='Room is already chosen'))
     else:
         cursor.close()
         return redirect(url_for('room_list', error='Room not found'))
-
-    # Fallback in case of unexpected behavior
-    cursor.close()
-    return redirect(url_for('room_list'))
-
 
 if __name__ == "__main__":
     main.run(debug=True) 
