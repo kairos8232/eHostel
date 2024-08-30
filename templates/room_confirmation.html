@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Room Confirmation</title>
+</head>
+<body>
+    <h1>Room Confirmation</h1>
+
+    <!-- Check if the booking is already confirmed -->
+    {% if date_in and date_out and cost %}
+        <h2>Booking Details</h2>
+        <p><strong>Room Number:</strong> {{ room_number }}</p>
+        <p><strong>Date In:</strong> {{ date_in }}</p>
+        <p><strong>Date Out:</strong> {{ date_out }}</p>
+        <p><strong>Total Cost:</strong> ${{ cost }}</p>
+
+        <!-- Finalize booking within the same room_confirmation route -->
+        <form action="{{ url_for('room_confirmation') }}" method="POST">
+            <input type="hidden" name="action" value="finalize">
+            <input type="submit" value="Finalize Booking">
+        </form>
+
+        <!-- Feedback Form -->
+        <form action="{{ url_for('room_confirmation') }}" method="POST">
+            <textarea name="feedback" placeholder="Enter your feedback" rows="4" cols="50"></textarea>
+            <input type="hidden" name="action" value="feedback">
+            <input type="submit" value="Submit Feedback">
+        </form>
+
+        <!-- Room Change Request Form -->
+        <form action="{{ url_for('room_confirmation') }}" method="POST">
+            <input type="hidden" name="action" value="request_room_change">
+            <input type="submit" value="Request Room Change">
+        </form>
+
+    {% else %}
+        <!-- Room Confirmation Form -->
+        <form action="{{ url_for('room_confirmation') }}" method="POST">
+            <div>
+                <label for="room_number">Room Number:</label>
+                <input type="text" id="room_number" name="room_number" value="{{ room_number }}" readonly>
+            </div>
+
+            <div>
+                <label for="date_in">Date In:</label>
+                <input type="date" id="date_in" name="date_in" required>
+            </div>
+
+            <div>
+                <label for="date_out">Date Out:</label>
+                <input type="date" id="date_out" name="date_out" required>
+            </div>
+
+            <div>
+                <input type="submit" value="Confirm Booking">
+            </div>
+
+            <!-- Error Message -->
+            {% if error %}
+                <p style="color:red;">{{ error }}</p>
+            {% endif %}
+        </form>
+    {% endif %}
+</body>
+</html>

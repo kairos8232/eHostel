@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking Successful</title>
+</head>
+<body>
+    <h1>Booking Successful</h1>
+    <p>Your booking has been confirmed successfully!</p>
+    <p><strong>Room Number:</strong> {{ room_number }}</p>
+    <p><strong>Date In:</strong> {{ date_in }}</p>
+    <p><strong>Date Out:</strong> {{ date_out }}</p>
+    <p><strong>Total Cost:</strong> ${{ cost }}</p>
+    <p><a href="{{ url_for('room_status') }}">Back to Room Status</a></p>
+</body>
+</html>

@@ -16,12 +16,10 @@
 
 
 -- Dumping database structure for flaskapp
-DROP DATABASE IF EXISTS `flaskapp`;
 CREATE DATABASE IF NOT EXISTS `flaskapp` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
 USE `flaskapp`;
 
 -- Dumping structure for table flaskapp.admin
-DROP TABLE IF EXISTS `admin`;
 CREATE TABLE IF NOT EXISTS `admin` (
   `id` int NOT NULL DEFAULT (0),
   `name` varchar(50) COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
@@ -34,8 +32,24 @@ INSERT INTO `admin` (`id`, `name`, `password`) VALUES
 	(1001, 'Admin1', '123'),
 	(9900, 'Admin', '12345');
 
+-- Dumping structure for table flaskapp.booking
+CREATE TABLE IF NOT EXISTS `booking` (
+  `orderno` int DEFAULT NULL,
+  `usersid` int DEFAULT NULL,
+  `roomno` int DEFAULT NULL,
+  `datein` date DEFAULT NULL,
+  `dateout` date DEFAULT NULL,
+  `cost` int DEFAULT NULL,
+  `status` varchar(50) COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
+  KEY `FK_booking_users` (`usersid`),
+  KEY `FK_booking_rooms` (`roomno`),
+  CONSTRAINT `FK_booking_rooms` FOREIGN KEY (`roomno`) REFERENCES `rooms` (`number`),
+  CONSTRAINT `FK_booking_users` FOREIGN KEY (`usersid`) REFERENCES `users` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+
+-- Dumping data for table flaskapp.booking: ~0 rows (approximately)
+
 -- Dumping structure for table flaskapp.hostel
-DROP TABLE IF EXISTS `hostel`;
 CREATE TABLE IF NOT EXISTS `hostel` (
   `id` int DEFAULT NULL,
   `name` varchar(50) COLLATE utf8mb4_unicode_520_ci DEFAULT NULL
@@ -47,13 +61,12 @@ INSERT INTO `hostel` (`id`, `name`) VALUES
 	(102, 'HB2');
 
 -- Dumping structure for table flaskapp.rooms
-DROP TABLE IF EXISTS `rooms`;
 CREATE TABLE IF NOT EXISTS `rooms` (
   `number` int NOT NULL DEFAULT (0),
   `category` varchar(50) COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
   `capacity` int DEFAULT NULL,
   `status` varchar(50) COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
-  `cost` int DEFAULT NULL,
+  `price` int DEFAULT NULL,
   `chosen_by` int DEFAULT NULL,
   PRIMARY KEY (`number`),
   KEY `FK_rooms_users` (`chosen_by`),
@@ -61,12 +74,11 @@ CREATE TABLE IF NOT EXISTS `rooms` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
 -- Dumping data for table flaskapp.rooms: ~2 rows (approximately)
-INSERT INTO `rooms` (`number`, `category`, `capacity`, `status`, `cost`, `chosen_by`) VALUES
-	(100, 'Single', 1, 'Available', 400, NULL),
+INSERT INTO `rooms` (`number`, `category`, `capacity`, `status`, `price`, `chosen_by`) VALUES
+	(100, 'Single', 1, 'Available', 400, 1231102119),
 	(102, 'Single', 1, 'Available', 400, NULL);
 
 -- Dumping structure for table flaskapp.users
-DROP TABLE IF EXISTS `users`;
 CREATE TABLE IF NOT EXISTS `users` (
   `id` int NOT NULL DEFAULT (0),
   `email` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
