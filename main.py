@@ -4,7 +4,6 @@ import MySQLdb.cursors
 import yaml
 from datetime import datetime
 
-# Initialize Flask app
 app = Flask(__name__)
 
 # Load database configuration
@@ -23,13 +22,6 @@ mysql = MySQL(app)
 def Index():
     return render_template('index.html')
 
-# Home route
-@app.route("/home")
-def home():
-    if 'loggedin' not in session:
-        return redirect(url_for('Login'))
-    return render_template('home.html', name=session['id'])
-
 # Sign-up route
 @app.route('/signup', methods=['POST', 'GET'])
 def SignUp():
@@ -44,7 +36,7 @@ def SignUp():
         cur.execute("INSERT INTO users(id, email, gender, password) VALUES(%s, %s, %s, %s)", (id, email, gender, password))
         mysql.connection.commit()
         cur.close()
-        return redirect(url_for("home"))
+        return redirect(url_for("Login"))
     return render_template('signup.html')
 
 # Login route
@@ -60,234 +52,212 @@ def Login():
         if record:
             session['loggedin'] = True
             session['id'] = record[0]
-            session['name'] = record[1]
-            return redirect(url_for('home'))
+            return redirect(url_for('choose_mode'))
         else:
             msg = 'Incorrect username/password. Try again!'
             return render_template('index.html', msg=msg)
     
     return render_template('signin.html')
 
-# Room status route
-@app.route('/room')
-def room_status():
+# Mode selection route (Individual or Group)
+@app.route('/choose-mode', methods=['GET', 'POST'])
+def choose_mode():
+    if 'loggedin' not in session:
+        return redirect(url_for('Login'))
+    if request.method == 'POST':
+        mode = request.form['mode']
+        if mode == 'individual':
+            return redirect(url_for('select_hostel', mode='individual'))
+        elif mode == 'group':
+            return redirect(url_for('group_page'))
+    return render_template('choose_mode.html')
+
+# Group page route (Create or Join Group)
+# Group page route (Create or Join Group)
+@app.route('/group', methods=['GET', 'POST'])
+def group_page():
     user_id = session.get('id')
     if not user_id:
         return redirect(url_for('Login'))
 
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    cur.execute("SELECT number FROM rooms WHERE chosen_by = %s", (user_id,))
-    chosen_room = cur.fetchone()
-
-    if chosen_room:
-        return redirect(url_for('room_confirmation', room_number=chosen_room['number']))
-    else:
-        return redirect(url_for('room_list'))
-
-# Room list route
-@app.route('/room-list')
-def room_list():
-    user_id = session.get('id')
-    if not user_id:
-        return redirect(url_for('Login'))
-
-    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    cur.execute("SELECT * FROM rooms")
-    rooms = cur.fetchall()
-    return render_template('room_list.html', rooms=rooms)
-
-# Room change request route
-@app.route('/room_change_request')
-def room_change_request():
-    user_id = session.get('id')
-    if not user_id:
-        return redirect(url_for('Login'))
-
-    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    cur.execute("SELECT number FROM rooms WHERE chosen_by = %s", (user_id,))
-    chosen_room = cur.fetchone()
-
+    # Wrap 'groups' in backticks to avoid SQL syntax errors
+    cur.execute("SELECT * FROM `groups` WHERE leader_id = %s", (user_id,))
+    group = cur.fetchone()
     cur.close()
-    return render_template('room_change.html', room_number=chosen_room['number'] if chosen_room else None)
 
-# Choose room route
-@app.route('/choose-room', methods=['POST'])
-def choose_room():
+    if group:
+        # Redirect to group management if already in a group
+        return redirect(url_for('manage_group', group_id=group['group_id']))
+    
+    if request.method == 'POST':
+        group_action = request.form['group_action']
+        if group_action == 'create':
+            # Create a new group and set current user as leader
+            cur = mysql.connection.cursor()
+            cur.execute("INSERT INTO `groups`(leader_id) VALUES(%s)", (user_id,))
+            mysql.connection.commit()
+            group_id = cur.lastrowid
+            cur.execute("INSERT INTO group_members(group_id, user_id) VALUES(%s, %s)", (group_id, user_id))
+            mysql.connection.commit()
+            cur.close()
+            return redirect(url_for('manage_group', group_id=group_id))
+
+    return render_template('group_page.html')
+
+
+# Manage Group route
+@app.route('/manage_group/<int:group_id>', methods=['GET', 'POST'])
+def manage_group(group_id):
     user_id = session.get('id')
     if not user_id:
         return redirect(url_for('Login'))
 
-    room_number = request.form['room_number']
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    cur.execute("SELECT * FROM `groups` WHERE group_id = %s AND leader_id = %s", (group_id, user_id))
+    group = cur.fetchone()
+    if not group:
+        return redirect(url_for('group_page'))
 
-    cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    cursor.execute("SELECT chosen_by FROM rooms WHERE number = %s", (room_number,))
-    room = cursor.fetchone()
+    # Set group_id in session
+    session['group_id'] = group_id
 
-    if room and room['chosen_by'] is None:
-        # Check if the user has already chosen a room
-        cursor.execute("SELECT number FROM rooms WHERE chosen_by = %s", (user_id,))
-        existing_room = cursor.fetchone()
+    cur.execute("SELECT users.id, users.email FROM users JOIN group_members ON users.id = group_members.user_id WHERE group_members.group_id = %s", (group_id,))
+    members = cur.fetchall()
+    cur.close()
 
-        if existing_room:
-            # Update existing room
-            cursor.execute("UPDATE rooms SET chosen_by = NULL WHERE number = %s", (existing_room['number'],))
-
-        # Set the new room as chosen by the user
-        cursor.execute("UPDATE rooms SET chosen_by = %s WHERE number = %s", (user_id, room_number))
-        mysql.connection.commit()
-        cursor.close()
-
-        # Set room number in session
-        session['room_number'] = room_number
-
-        return redirect(url_for('room_status'))
-    elif room:
-        cursor.close()
-        return redirect(url_for('room_list', error='Room is already chosen'))
-    else:
-        cursor.close()
-        return redirect(url_for('room_list', error='Room not found'))
+    return render_template('manage_group.html', members=members, group_id=group_id)
 
 
 
-@app.route('/room_confirmation', methods=['GET', 'POST'])
-def room_confirmation():
+# Select Hostel Route
+@app.route('/select_hostel/<mode>', methods=['GET', 'POST'])
+def select_hostel(mode):
+    print(f"Mode received: {mode}")  # Debugging line
     user_id = session.get('id')
     if not user_id:
         return redirect(url_for('Login'))
-
-    room_number = session.get('room_number')
 
     if request.method == 'POST':
-        action = request.form.get('action')
+        hostel_id = request.form['hostel']
+        return redirect(url_for('select_room_type', mode=mode, hostel_id=hostel_id))
 
-        if action == 'finalize':
-            # Handle finalization
-            date_in = session.get('date_in')
-            date_out = session.get('date_out')
-            cost = session.get('cost')
+    return render_template('select_hostel.html', mode=mode)
 
-            cursor = mysql.connection.cursor()
-            cursor.execute("INSERT INTO booking (usersid, roomno, datein, dateout, cost, status) VALUES (%s, %s, %s, %s, %s, %s)",
-                           (user_id, room_number, date_in, date_out, cost, 'Confirmed'))
-            mysql.connection.commit()
-            cursor.close()
-
-            return render_template('booking_success.html', room_number=room_number, date_in=date_in, date_out=date_out, cost=cost)
-
-        elif action == 'feedback':
-            feedback_text = request.form.get('feedback')
-            cursor = mysql.connection.cursor()
-            cursor.execute("INSERT INTO feedback (user_id, feedback) VALUES (%s, %s)", (user_id, feedback_text))
-            mysql.connection.commit()
-            cursor.close()
-
-            return redirect(url_for('room_status'))
-
-        elif action == 'request_room_change':
-            cursor = mysql.connection.cursor()
-            cursor.execute("UPDATE booking SET status = 'Room Change Requested' WHERE usersid = %s AND roomno = %s", (user_id, room_number))
-            mysql.connection.commit()
-            cursor.close()
-
-            return redirect(url_for('room_status'))
-
-    # If GET request
-    return render_template('room_confirmation.html', room_number=room_number,
-                           date_in=session.get('date_in'),
-                           date_out=session.get('date_out'),
-                           cost=session.get('cost'))
-
-
-
-# Confirm room route
-@app.route('/confirm_room', methods=['POST'])
-def confirm_room():
-    user_id = session.get('id')
-    room_number = session.get('room_number')
-
-    if not user_id or not room_number:
-        return redirect(url_for('Login'))
-
-    date_in = session.get('date_in')
-    date_out = session.get('date_out')
-    cost = session.get('cost')
-
-    cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    cursor.execute("INSERT INTO booking (usersid, roomno, datein, dateout, cost, status) VALUES (%s, %s, %s, %s, %s, %s)",
-                   (user_id, room_number, date_in, date_out, cost, 'Pending'))
-    mysql.connection.commit()
-    cursor.close()
-
-    return redirect(url_for('confirmation_success'))
-
-# Confirmation success route
-@app.route('/confirmation_success')
-def confirmation_success():
-    return "Your room choice has been confirmed. Awaiting admin approval."
-
-# Admin approval route
-@app.route('/admin/approve_room/<int:order_no>', methods=['POST'])
-def approve_room(order_no):
-    cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    cursor.execute("UPDATE booking SET status = 'Approved' WHERE orderno = %s", (order_no,))
-    mysql.connection.commit()
-    cursor.close()
-    return redirect(url_for('admin_dashboard'))
-
-# Admin dashboard route
-@app.route('/admin/dashboard')
-def admin_dashboard():
-    cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    cursor.execute("SELECT * FROM booking WHERE status = 'Pending'")
-    bookings = cursor.fetchall()
-    cursor.close()
-    return render_template('admin_dashboard.html', bookings=bookings)
-
-# Feedback route
-@app.route('/feedback', methods=['POST'])
-def feedback():
+# Select Room Type Route
+@app.route('/select_room_type/<mode>/<int:hostel_id>', methods=['GET', 'POST'])
+def select_room_type(mode, hostel_id):
     user_id = session.get('id')
     if not user_id:
         return redirect(url_for('Login'))
 
-    feedback_text = request.form['feedback']
-    # Save feedback to the database
-    cursor = mysql.connection.cursor()
-    cursor.execute("INSERT INTO feedback (user_id, feedback) VALUES (%s, %s)", (user_id, feedback_text))
-    mysql.connection.commit()
-    cursor.close()
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
 
-    return redirect(url_for('room_status'))
+    if mode == 'individual':
+        cur.execute("SELECT DISTINCT category FROM rooms WHERE hostel_id = %s", (hostel_id,))
+    elif mode == 'group':
+        group_id = session.get('group_id')
+        cur.execute("SELECT COUNT(*) as count FROM group_members WHERE group_id = %s", (group_id,))
+        group_size = cur.fetchone()['count']
+        
+        # Add a debug print to help understand the flow
+        print(f"Group size: {group_size}")
+        
+        if group_size == 2:
+            cur.execute("SELECT DISTINCT category FROM rooms WHERE hostel_id = %s AND capacity >= 2", (hostel_id,))
+        elif group_size == 3:
+            cur.execute("SELECT DISTINCT category FROM rooms WHERE hostel_id = %s AND capacity >= 3", (hostel_id,))
+        else:
+            return render_template('error.html', message="No suitable room types available for your group size.")
+    
+    room_types = cur.fetchall()
+    cur.close()
 
-# Room change request route
-@app.route('/request_room_change', methods=['POST'])
-def request_room_change():
+    if not room_types:
+        return render_template('error.html', message="No suitable room types available for your group size.")
+    
+    if request.method == 'POST':
+        room_type = request.form['room_type']
+        return redirect(url_for('select_bed', mode=mode, hostel_id=hostel_id, room_type=room_type))
+
+    return render_template('select_room_type.html', mode=mode, hostel_id=hostel_id, room_types=room_types)
+
+
+# Select Bed Route
+@app.route('/select_bed/<mode>/<int:hostel_id>/<room_type>', methods=['GET', 'POST'])
+def select_bed(mode, hostel_id, room_type):
     user_id = session.get('id')
     if not user_id:
         return redirect(url_for('Login'))
 
-    room_number = session.get('room_number')
-    # Process room change request
-    cursor = mysql.connection.cursor()
-    cursor.execute("UPDATE booking SET status = 'Room Change Requested' WHERE usersid = %s AND roomno = %s", (user_id, room_number))
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    cur.execute("SELECT * FROM rooms WHERE category = %s AND hostel_id = %s", (room_type, hostel_id))
+    rooms = cur.fetchall()
+    cur.close()
+
+    if request.method == 'POST':
+        selected_room = request.form['selected_room']  # Make sure this matches the form field name
+        datein = request.form['datein']
+        dateout = request.form['dateout']
+        cost = request.form['cost']
+
+        if mode == 'individual':
+            cur = mysql.connection.cursor()
+            cur.execute("INSERT INTO booking(usersid, roomno, datein, dateout, cost) VALUES(%s, %s, %s, %s, %s)", (user_id, selected_room, datein, dateout, cost))
+            mysql.connection.commit()
+            cur.close()
+            return redirect(url_for('booking_confirmation'))
+        elif mode == 'group':
+            group_id = session.get('group_id')
+            cur = mysql.connection.cursor()
+            cur.execute("INSERT INTO booking(usersid, roomno, datein, dateout, cost, group_id) VALUES(%s, %s, %s, %s, %s, %s)", (user_id, selected_room, datein, dateout, cost, group_id))
+            mysql.connection.commit()
+            cur.close()
+            return redirect(url_for('booking_confirmation'))
+     
+    return render_template('select_bed.html', rooms=rooms, mode=mode, hostel_id=hostel_id, room_type=room_type)
+
+# Invite Member Route
+@app.route('/invite_member/<int:group_id>', methods=['POST'])
+def invite_member(group_id):
+    user_id = session.get('id')
+    if not user_id:
+        return redirect(url_for('Login'))
+
+    email = request.form['email']
+
+    # Check if the user exists
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    cur.execute("SELECT * FROM users WHERE email = %s", (email,))
+    new_member = cur.fetchone()
+
+    if not new_member:
+        return render_template('error.html', message="User with this email does not exist.")
+
+    # Check if the user is already in the group
+    cur.execute("SELECT * FROM group_members WHERE group_id = %s AND user_id = %s", (group_id, new_member['id']))
+    if cur.fetchone():
+        return render_template('error.html', message="This user is already a member of your group.")
+
+    # Add the user to the group
+    cur.execute("INSERT INTO group_members(group_id, user_id) VALUES(%s, %s)", (group_id, new_member['id']))
     mysql.connection.commit()
-    cursor.close()
+    cur.close()
 
-    return redirect(url_for('room_status'))
+    return redirect(url_for('manage_group', group_id=group_id))
 
-# Cost calculation function
-def calculate_cost(date_in, date_out):
-    date_format = "%Y-%m-%d"
-    d1 = datetime.strptime(date_in, date_format)
-    d2 = datetime.strptime(date_out, date_format)
-    delta = d2 - d1
-    days = delta.days
 
-    cost_per_day = 50
-    total_cost = days * cost_per_day
-    return total_cost
+# Booking Confirmation Route
+@app.route('/booking_confirmation')
+def booking_confirmation():
+    return render_template('booking_confirmation.html')
 
-# Run the app
+# Logout Route
+@app.route('/logout')
+def logout():
+    session.pop('loggedin', None)
+    session.pop('id', None)
+    return redirect(url_for('Index'))
+
 if __name__ == "__main__":
     app.run(debug=True)
