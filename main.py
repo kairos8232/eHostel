@@ -39,7 +39,7 @@ def SignUp():
         password = userDetails['password']
         hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
         cur = mysql.connection.cursor()
-        cur.execute("INSERT INTO users(name, email, password) VALUES(%s, %s, %s)", (name, email, password))
+        cur.execute("INSERT INTO users(name, email, password) VALUES(%s, %s, %s)", (name, email, hashed_password))
         mysql.connection.commit()
         cur.close()
         return redirect(url_for("home"))

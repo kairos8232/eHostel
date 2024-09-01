@@ -26,7 +26,8 @@ CREATE TABLE IF NOT EXISTS `users` (
   `password` varchar(60) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table flaskapp.users: ~5 rows (approximately)
+-- Dumping data for table flaskapp.users: ~6 rows (approximately)
+DELETE FROM `users`;
 INSERT INTO `users` (`name`, `email`, `password`) VALUES
 	('Covid-19', 'terrychinyy@gmail.com', '1212112'),
 	('Covid-19/slide', 'hoha4102@gmail.com', '121212'),
