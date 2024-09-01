@@ -17,11 +17,42 @@
     </ul>
 
     <h2>Invite New Members</h2>
-    <form action="{{ url_for('invite_member', group_id=group_id) }}" method="POST">
-        <label for="email">Enter User Email:</label>
-        <input type="email" name="email" id="email" required>
-        <button type="submit">Invite</button>
+    <form action="{{ url_for('manage_group', group_id=group_id) }}" method="POST">
+        <label for="filter_student_id">Filter by Student ID:</label>
+        <input type="number" name="filter_student_id" id="filter_student_id" min="1">
+        <button type="submit">Filter</button>
     </form>
+
+    {% if request.method == 'POST' and students is not none %}
+        {% if students %}
+            <h2>Available Students</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Student ID</th>
+                        <th>Student Name</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for student in students %}
+                        <tr>
+                            <td>{{ student['id'] }}</td>
+                            <td>{{ student['email'] }}</td>
+                            <td>
+                                <form action="{{ url_for('invite_member', group_id=group_id) }}" method="POST">
+                                    <input type="hidden" name="email" value="{{ student['email'] }}">
+                                    <button type="submit">Invite</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No students found with the given ID.</p>
+        {% endif %}
+    {% endif %}
 
     <a href="{{ url_for('select_hostel', mode='group') }}">Continue to Hostel Selection</a>
 </body>

@@ -105,8 +105,7 @@ def group_page():
 
     return render_template('group_page.html')
 
-
-# Manage Group route
+# Manage Group route with student filtering
 @app.route('/manage_group/<int:group_id>', methods=['GET', 'POST'])
 def manage_group(group_id):
     user_id = session.get('id')
@@ -119,16 +118,23 @@ def manage_group(group_id):
     if not group:
         return redirect(url_for('group_page'))
 
-    # Set group_id in session
     session['group_id'] = group_id
 
     cur.execute("SELECT users.id, users.email FROM users JOIN group_members ON users.id = group_members.user_id WHERE group_members.group_id = %s", (group_id,))
     members = cur.fetchall()
+
+    students = None
+    if request.method == 'POST':
+        filter_student_id = request.form.get('filter_student_id')
+        if filter_student_id:
+            cur.execute("SELECT id, email FROM users WHERE id = %s AND id NOT IN (SELECT user_id FROM group_members WHERE group_id = %s)", (filter_student_id, group_id))
+            students = cur.fetchall()
+        else:
+            students = []
+
     cur.close()
 
-    return render_template('manage_group.html', members=members, group_id=group_id)
-
-
+    return render_template('manage_group.html', members=members, group_id=group_id, students=students)
 
 # Select Hostel Route
 @app.route('/select_hostel/<mode>', methods=['GET', 'POST'])
