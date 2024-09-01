@@ -73,7 +73,6 @@ def choose_mode():
     return render_template('choose_mode.html')
 
 # Group page route (Create or Join Group)
-# Group page route (Create or Join Group)
 @app.route('/group', methods=['GET', 'POST'])
 def group_page():
     user_id = session.get('id')
@@ -191,8 +190,6 @@ def select_room_type(mode, hostel_id):
     
     return render_template('select_room_type.html', mode=mode, hostel_id=hostel_id, room_types=room_types, selected_room_type=selected_room_type, rooms=rooms)
 
-
-
 # Select Bed Route
 @app.route('/select_bed/<mode>/<int:hostel_id>/<room_type>', methods=['GET', 'POST'])
 def select_bed(mode, hostel_id, room_type):
@@ -234,7 +231,6 @@ def select_bed(mode, hostel_id, room_type):
 
     return render_template('select_bed.html', rooms=rooms, mode=mode, hostel_id=hostel_id, room_type=room_type)
 
-
 # Invite Member Route
 @app.route('/invite_member/<int:group_id>', methods=['POST'])
 def invite_member(group_id):
@@ -263,7 +259,6 @@ def invite_member(group_id):
     cur.close()
 
     return redirect(url_for('manage_group', group_id=group_id))
-
 
 # Booking Confirmation Route
 @app.route('/booking_confirmation')
