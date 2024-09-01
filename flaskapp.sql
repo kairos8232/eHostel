@@ -58,7 +58,7 @@ CREATE TABLE IF NOT EXISTS `groups` (
   `group_id` int NOT NULL AUTO_INCREMENT,
   `leader_id` int NOT NULL,
   `hostel_id` int DEFAULT NULL,
-  `room_type` varchar(50) COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
+  `room_type` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
   PRIMARY KEY (`group_id`),
   KEY `leader_id` (`leader_id`),
   CONSTRAINT `groups_ibfk_1` FOREIGN KEY (`leader_id`) REFERENCES `users` (`id`)
@@ -118,11 +118,12 @@ CREATE TABLE IF NOT EXISTS `rooms` (
   CONSTRAINT `rooms_ibfk_2` FOREIGN KEY (`chosen_by`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table flaskapp.rooms: ~9 rows (approximately)
+-- Dumping data for table flaskapp.rooms: ~10 rows (approximately)
 INSERT INTO `rooms` (`number`, `hostel_id`, `category`, `capacity`, `status`, `price`, `chosen_by`) VALUES
 	(101, 1, 'Single', 1, 'Available', 100.00, NULL),
 	(102, 1, 'Double', 2, 'Available', 150.00, NULL),
 	(103, 1, 'Triple', 3, 'Available', 200.00, NULL),
+	(104, 1, 'Double', 2, 'Available', 200.00, NULL),
 	(201, 2, 'Single', 1, 'Available', 110.00, NULL),
 	(202, 2, 'Double', 2, 'Available', 160.00, NULL),
 	(203, 2, 'Triple', 3, 'Available', 210.00, NULL),

@@ -159,15 +159,13 @@ def select_room_type(mode, hostel_id):
 
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
 
+    # Fetch distinct room types available in the selected hostel
     if mode == 'individual':
         cur.execute("SELECT DISTINCT category FROM rooms WHERE hostel_id = %s", (hostel_id,))
     elif mode == 'group':
         group_id = session.get('group_id')
         cur.execute("SELECT COUNT(*) as count FROM group_members WHERE group_id = %s", (group_id,))
         group_size = cur.fetchone()['count']
-        
-        # Add a debug print to help understand the flow
-        print(f"Group size: {group_size}")
         
         if group_size == 2:
             cur.execute("SELECT DISTINCT category FROM rooms WHERE hostel_id = %s AND capacity >= 2", (hostel_id,))
@@ -177,16 +175,22 @@ def select_room_type(mode, hostel_id):
             return render_template('error.html', message="No suitable room types available for your group size.")
     
     room_types = cur.fetchall()
+    
+    # Get the selected room type from query parameters
+    selected_room_type = request.args.get('room_type')
+    rooms = []
+    
+    if selected_room_type:
+        cur.execute("SELECT * FROM rooms WHERE category = %s AND hostel_id = %s AND status = 'Available'", (selected_room_type, hostel_id))
+        rooms = cur.fetchall()
+
     cur.close()
 
     if not room_types:
-        return render_template('error.html', message="No suitable room types available for your group size.")
+        return render_template('error.html', message="No suitable room types available.")
     
-    if request.method == 'POST':
-        room_type = request.form['room_type']
-        return redirect(url_for('select_bed', mode=mode, hostel_id=hostel_id, room_type=room_type))
+    return render_template('select_room_type.html', mode=mode, hostel_id=hostel_id, room_types=room_types, selected_room_type=selected_room_type, rooms=rooms)
 
-    return render_template('select_room_type.html', mode=mode, hostel_id=hostel_id, room_types=room_types)
 
 
 # Select Bed Route
@@ -202,26 +206,34 @@ def select_bed(mode, hostel_id, room_type):
     cur.close()
 
     if request.method == 'POST':
-        selected_room = request.form['selected_room']  # Make sure this matches the form field name
-        datein = request.form['datein']
-        dateout = request.form['dateout']
-        cost = request.form['cost']
+        # Fetch form data with a fallback to avoid KeyErrors
+        selected_room = request.form.get('selected_room')
+        datein = request.form.get('datein')
+        dateout = request.form.get('dateout')
+        cost = request.form.get('cost')
+
+        # Check if any of the required fields are missing
+        if not selected_room or not datein or not dateout or not cost:
+            return "Missing form data. Please fill out all fields."
 
         if mode == 'individual':
             cur = mysql.connection.cursor()
-            cur.execute("INSERT INTO booking(usersid, roomno, datein, dateout, cost) VALUES(%s, %s, %s, %s, %s)", (user_id, selected_room, datein, dateout, cost))
+            cur.execute("INSERT INTO booking(usersid, roomno, datein, dateout, cost) VALUES(%s, %s, %s, %s, %s)", 
+                        (user_id, selected_room, datein, dateout, cost))
             mysql.connection.commit()
             cur.close()
             return redirect(url_for('booking_confirmation'))
         elif mode == 'group':
             group_id = session.get('group_id')
             cur = mysql.connection.cursor()
-            cur.execute("INSERT INTO booking(usersid, roomno, datein, dateout, cost, group_id) VALUES(%s, %s, %s, %s, %s, %s)", (user_id, selected_room, datein, dateout, cost, group_id))
+            cur.execute("INSERT INTO booking(usersid, roomno, datein, dateout, cost, group_id) VALUES(%s, %s, %s, %s, %s, %s)", 
+                        (user_id, selected_room, datein, dateout, cost, group_id))
             mysql.connection.commit()
             cur.close()
             return redirect(url_for('booking_confirmation'))
-     
+
     return render_template('select_bed.html', rooms=rooms, mode=mode, hostel_id=hostel_id, room_type=room_type)
+
 
 # Invite Member Route
 @app.route('/invite_member/<int:group_id>', methods=['POST'])

@@ -5,18 +5,56 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Select Room Type</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script>
+        function fetchRooms() {
+            const roomType = document.getElementById('room_type').value;
+            const url = "{{ url_for('select_room_type', mode=mode, hostel_id=hostel_id) }}?room_type=" + roomType;
+            window.location.href = url;
+        }
+    </script>
 </head>
 <body>
     <h1>Select Room Type</h1>
-    <form method="POST" action="{{ url_for('select_room_type', mode=mode, hostel_id=hostel_id) }}">
+    <form method="GET" action="{{ url_for('select_room_type', mode=mode, hostel_id=hostel_id) }}">
         <label for="room_type">Choose a Room Type:</label>
-        <select name="room_type" id="room_type">
+        <select name="room_type" id="room_type" onchange="fetchRooms()">
+            <option value="">Select Room Type</option>
             {% for room_type in room_types %}
-                <option value="{{ room_type['category'] }}">{{ room_type['category'] }}</option>
+                <option value="{{ room_type['category'] }}" {% if selected_room_type == room_type['category'] %}selected{% endif %}>
+                    {{ room_type['category'] }}
+                </option>
             {% endfor %}
         </select>
-        <button type="submit">Next</button>
     </form>
+
+    {% if rooms %}
+        <h2>Available Rooms</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Room Number</th>
+                    <th>Capacity</th>
+                    <th>Price</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for room in rooms %}
+                <tr>
+                    <td>{{ room['number'] }}</td>
+                    <td>{{ room['capacity'] }}</td>
+                    <td>{{ room['price'] }}</td>
+                    <td>
+                        <form method="POST" action="{{ url_for('select_bed', mode=mode, hostel_id=hostel_id, room_type=selected_room_type) }}">
+                            <input type="hidden" name="selected_room" value="{{ room['number'] }}">
+                            <button type="submit">Choose</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
     
 </body>
 </html>
