@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Group Booking</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <h1>Group Booking</h1>
+    <form action="{{ url_for('group_page') }}" method="POST">
+        <h3>Create a New Group</h3>
+        <button type="submit" name="group_action" value="create">Create Group</button>
+    </form>
+</body>
+</html>

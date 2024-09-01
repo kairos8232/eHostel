@@ -1,0 +1,68 @@
+/* General Styles */
+.main-container {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    width: 90%;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.room-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background-color: #fff;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.room-table thead {
+    background-color: #007bff;
+    color: #fff;
+}
+
+.room-table th, .room-table td {
+    padding: 15px;
+    text-align: left;
+}
+
+.room-table th {
+    font-weight: bold;
+}
+
+.room-table tr:nth-child(even) {
+    background-color: #f2f2f2;
+}
+
+.room-table .choose-btn {
+    background-color: #28a745;
+    color: #fff;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.room-table .choose-btn:hover {
+    background-color: #218838;
+}
+
+.room-table .chosen {
+    background-color: #dc3545;
+    color: #fff;
+    padding: 10px 15px;
+    border-radius: 5px;
+    font-size: 14px;
+    text-align: center;
+}
+
+.room-table .choose-btn, .room-table .chosen {
+    text-align: center;
+    display: inline-block;
+    vertical-align: middle;
+}

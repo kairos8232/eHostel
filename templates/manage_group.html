@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Group</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <h1>Manage Your Group</h1>
+
+    <h2>Group Members</h2>
+    <ul>
+        {% for member in members %}
+            <li>{{ member['email'] }}</li>
+        {% endfor %}
+    </ul>
+
+    <h2>Invite New Members</h2>
+    <form action="{{ url_for('manage_group', group_id=group_id) }}" method="POST">
+        <label for="filter_student_id">Filter by Student ID:</label>
+        <input type="number" name="filter_student_id" id="filter_student_id" min="1">
+        <button type="submit">Filter</button>
+    </form>
+
+    {% if request.method == 'POST' and students is not none %}
+        {% if students %}
+            <h2>Available Students</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Student ID</th>
+                        <th>Student Name</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for student in students %}
+                        <tr>
+                            <td>{{ student['id'] }}</td>
+                            <td>{{ student['email'] }}</td>
+                            <td>
+                                <form action="{{ url_for('invite_member', group_id=group_id) }}" method="POST">
+                                    <input type="hidden" name="email" value="{{ student['email'] }}">
+                                    <button type="submit">Invite</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No students found with the given ID.</p>
+        {% endif %}
+    {% endif %}
+
+    <a href="{{ url_for('select_hostel', mode='group') }}">Continue to Hostel Selection</a>
+</body>
+</html>
