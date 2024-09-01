@@ -16,25 +16,60 @@
 
 
 -- Dumping database structure for flaskapp
-CREATE DATABASE IF NOT EXISTS `flaskapp` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
+DROP DATABASE IF EXISTS `flaskapp`;
+CREATE DATABASE IF NOT EXISTS `flaskapp` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
 USE `flaskapp`;
 
--- Dumping structure for table flaskapp.users
-CREATE TABLE IF NOT EXISTS `users` (
-  `name` varchar(20) DEFAULT NULL,
-  `email` varchar(40) DEFAULT NULL,
-  `password` varchar(60) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+-- Dumping structure for table flaskapp.admin
+DROP TABLE IF EXISTS `admin`;
+CREATE TABLE IF NOT EXISTS `admin` (
+  `id` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci NOT NULL,
+  `name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
+  `password` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
--- Dumping data for table flaskapp.users: ~6 rows (approximately)
+-- Dumping data for table flaskapp.admin: ~1 rows (approximately)
+DELETE FROM `admin`;
+INSERT INTO `admin` (`id`, `name`, `password`) VALUES
+	('9900', 'Admin', '12345');
+
+-- Dumping structure for table flaskapp.rooms
+DROP TABLE IF EXISTS `rooms`;
+CREATE TABLE IF NOT EXISTS `rooms` (
+  `number` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci NOT NULL DEFAULT '',
+  `category` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
+  `capacity` int DEFAULT NULL,
+  `status` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
+  `cost` int DEFAULT NULL,
+  `chosen_by` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
+  PRIMARY KEY (`number`),
+  KEY `FK_rooms_users` (`chosen_by`),
+  CONSTRAINT `FK_rooms_users` FOREIGN KEY (`chosen_by`) REFERENCES `users` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+
+-- Dumping data for table flaskapp.rooms: ~2 rows (approximately)
+DELETE FROM `rooms`;
+INSERT INTO `rooms` (`number`, `category`, `capacity`, `status`, `cost`, `chosen_by`) VALUES
+	('100', 'Single', 1, 'Available', 400, '101249'),
+	('102', 'Single', 1, 'Available', 400, '1231102119');
+
+-- Dumping structure for table flaskapp.users
+DROP TABLE IF EXISTS `users`;
+CREATE TABLE IF NOT EXISTS `users` (
+  `id` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci NOT NULL DEFAULT '',
+  `email` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
+  `gender` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
+  `password` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+
+-- Dumping data for table flaskapp.users: ~3 rows (approximately)
 DELETE FROM `users`;
-INSERT INTO `users` (`name`, `email`, `password`) VALUES
-	('Covid-19', 'terrychinyy@gmail.com', '1212112'),
-	('Covid-19/slide', 'hoha4102@gmail.com', '121212'),
-	('REX', 'gywong2005@gmail.com', 'wong1234567'),
-	('123', '1234@gmail.com', '123'),
-	('20', '20@gmail.com', '20'),
-	('21', '21@gmail.com', '21');
+INSERT INTO `users` (`id`, `email`, `gender`, `password`) VALUES
+	('101249', '2346@gmail.com', 'male', '12345'),
+	('123', '112@gmail.com', 'male', '124'),
+	('1231102119', '123@gmail.com', 'male', '123');
 
 /*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;

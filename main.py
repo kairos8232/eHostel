@@ -28,18 +28,18 @@ def Index():
 
 @main.route("/home")
 def home():
-    return render_template('home.html', name = session['name'])
+    return render_template('home.html', name = session['id'])
 
 @main.route('/signup', methods = ['POST', 'GET'])
 def SignUp():
     if request.method == 'POST':
         userDetails = request.form
-        name = userDetails['name']
+        id = userDetails['id']
         email = userDetails['email']
+        gender = userDetails['gender']
         password = userDetails['password']
-        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
         cur = mysql.connection.cursor()
-        cur.execute("INSERT INTO users(name, email, password) VALUES(%s, %s, %s)", (name, email, hashed_password))
+        cur.execute("INSERT INTO users(id, email, gender, password) VALUES(%s, %s, %s, %s)", (id, email, gender, password))
         mysql.connection.commit()
         cur.close()
         return redirect(url_for("home"))
@@ -49,15 +49,15 @@ def SignUp():
 def Login():
     if request.method == 'POST':
         userDetails = request.form
-        email = userDetails['email']
+        id = userDetails['id']
         password = userDetails['password']
         cur = mysql.connection.cursor()
-        cur.execute('SELECT * FROM users WHERE email=%s AND password=%s', (email, password))
+        cur.execute('SELECT * FROM users WHERE id=%s AND password=%s', (id, password))
         record = cur.fetchone()
-        if record and bcrypt.checkpw(password.encode('utf-8'), record[2].encode('utf-8')):
+        if record:
             session['loggedin']= True
-            session['email']= record[1]
-            session['name'] = record[0]
+            session['password']= record[3]
+            session['id'] = record[0]
             return redirect(url_for('home'))
         else:
             msg='Incorrect username/password. Try again!'
@@ -68,7 +68,7 @@ def Login():
 
 @main.route('/register-hostel', methods = ['POST', 'GET'])
 def Register():
-    return render_template
+    return render_template('select_hostel.html')
 
 if __name__ == "__main__":
     main.run(debug=True) 
