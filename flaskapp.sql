@@ -61,15 +61,20 @@ CREATE TABLE IF NOT EXISTS `users` (
   `email` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
   `gender` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
   `password` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
+  `profile_pic` varchar(255) CHARACTER SET armscii8 COLLATE armscii8_bin DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
 -- Dumping data for table flaskapp.users: ~3 rows (approximately)
 DELETE FROM `users`;
-INSERT INTO `users` (`id`, `email`, `gender`, `password`) VALUES
-	('101249', '2346@gmail.com', 'male', '12345'),
-	('123', '112@gmail.com', 'male', '124'),
-	('1231102119', '123@gmail.com', 'male', '123');
+INSERT INTO `users` (`id`, `email`, `gender`, `password`, `profile_pic`) VALUES
+	('101249', '2346@gmail.com', 'male', '12345', NULL),
+	('1212', '1212@gmail.com', 'male', '1212', NULL),
+	('12134', '12134@gmail.com', 'male', '12134', NULL),
+	('123', '112@gmail.com', 'male', '124', NULL),
+	('1231', '1231@gmail.com', 'male', '1231', NULL),
+	('1231102119', '123@gmail.com', 'male', '123', NULL),
+	('12313', '123136463646@gmail.com', 'Male', '12313', 'static/uploads\\Screenshot 2023-04-06 212423.png');
 
 /*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;

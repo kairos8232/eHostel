@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/profile-style.css">
+    <link rel="stylesheet" href="..\static\css\profile-style.css">
 </head>
 <body>
     <div class="container">
@@ -33,15 +33,15 @@
             <p id="biography">{{ biography }}</p>
         </div>
         <form id="edit-form" method="post" enctype="multipart/form-data" style="display: none;">
-            <input type="text" name="name" placeholder="Name" value="{{ name }}">
+            <!-- <input type="text" name="name" placeholder="Name" value="{{ name }}"> -->
             <select name="gender" required="" placeholder="Gender">{{ gender }}
                 <option value="" disabled selected>Select Gender</option>
                 <option value="Male">Male</option>
                 <option value="Female">Female</option>
             </select> 
-            <textarea name="contact" placeholder="Contact Number">{{ contact }}</textarea>
+            <!-- <textarea name="contact" placeholder="Contact Number">{{ contact }}</textarea> -->
             <textarea name="email" placeholder="Email">{{ email }}</textarea>
-            <textarea name="biography" placeholder="Biography">{{ biography }}</textarea>
+            <!-- <textarea name="biography" placeholder="Biography">{{ biography }}</textarea> -->
             <input type="file" name="image" accept="image/*">
             <div class="form-buttons">
                 <input type="submit" value="Update Profile">
