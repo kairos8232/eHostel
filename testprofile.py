@@ -9,6 +9,7 @@ app.config['UPLOAD_FOLDER'] = 'static/uploads'
 profile_data = {
     'name': 'Username',
     'image_url': '/static/images/anime-default-pfp-5.jpg',
+    'gender': 'Male / Female',
     'contact': 'Contact Number',
     'email': 'Email Address',
     'biography': 'Anythings u can write...'
@@ -18,6 +19,7 @@ profile_data = {
 def profile():
     if request.method == 'POST':
         profile_data['name'] = request.form['name']
+        profile_data['gender'] = request.form['gender']
         profile_data['contact'] = request.form['contact']
         profile_data['email'] = request.form['email']
         profile_data['biography'] = request.form['biography']
