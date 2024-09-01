@@ -55,24 +55,6 @@ body {
     white-space: normal;
     overflow-wrap: break-word;
 }
-
-/*.edit-button {
-    background-color: #f1f1f1;
-    border: 1px solid #ddd;
-    padding: 5px 10px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
-    border: rgba(255,255,255,0.5) 2px solid;
-    padding: 8px 16px;
-    margin-left: 16px;
-    border-radius: 99px;
-    transition: 300ms;
-}
-.edit-button:hover {
-    background: rgb(145, 103, 103);
-    color: black;
-}*/
 .edit-button {
     display: inline-block;
     padding: 10px 20px;
