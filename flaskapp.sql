@@ -16,50 +16,65 @@
 
 
 -- Dumping database structure for flaskapp
+DROP DATABASE IF EXISTS `flaskapp`;
 CREATE DATABASE IF NOT EXISTS `flaskapp` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
 USE `flaskapp`;
 
 -- Dumping structure for table flaskapp.admin
+DROP TABLE IF EXISTS `admin`;
 CREATE TABLE IF NOT EXISTS `admin` (
   `id` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci NOT NULL,
-  `name` varchar(50) COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
-  `password` varchar(50) COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
+  `name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
+  `password` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
--- Dumping data for table flaskapp.admin: ~0 rows (approximately)
+-- Dumping data for table flaskapp.admin: ~1 rows (approximately)
+DELETE FROM `admin`;
 INSERT INTO `admin` (`id`, `name`, `password`) VALUES
 	('9900', 'Admin', '12345');
 
 -- Dumping structure for table flaskapp.rooms
+DROP TABLE IF EXISTS `rooms`;
 CREATE TABLE IF NOT EXISTS `rooms` (
   `number` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci NOT NULL DEFAULT '',
-  `category` varchar(50) COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
+  `category` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
   `capacity` int DEFAULT NULL,
-  `status` varchar(50) COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
+  `status` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
   `cost` int DEFAULT NULL,
-  `chosen_by` varchar(50) COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
+  `chosen_by` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
   PRIMARY KEY (`number`),
   KEY `FK_rooms_users` (`chosen_by`),
   CONSTRAINT `FK_rooms_users` FOREIGN KEY (`chosen_by`) REFERENCES `users` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
--- Dumping data for table flaskapp.rooms: ~1 rows (approximately)
+-- Dumping data for table flaskapp.rooms: ~2 rows (approximately)
+DELETE FROM `rooms`;
 INSERT INTO `rooms` (`number`, `category`, `capacity`, `status`, `cost`, `chosen_by`) VALUES
-	('123', 'Single', 1, 'Available', 500, NULL);
+	('100', 'Single', 1, 'Available', 400, '101249'),
+	('102', 'Single', 1, 'Available', 400, '1231102119');
 
 -- Dumping structure for table flaskapp.users
+DROP TABLE IF EXISTS `users`;
 CREATE TABLE IF NOT EXISTS `users` (
   `id` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci NOT NULL DEFAULT '',
   `email` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
-  `gender` varchar(50) COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
-  `password` varchar(50) COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
+  `gender` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
+  `password` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
+  `profile_pic` varchar(255) CHARACTER SET armscii8 COLLATE armscii8_bin DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
--- Dumping data for table flaskapp.users: ~1 rows (approximately)
-INSERT INTO `users` (`id`, `email`, `gender`, `password`) VALUES
-	('1231102119', '123@gmail.com', 'male', '123');
+-- Dumping data for table flaskapp.users: ~3 rows (approximately)
+DELETE FROM `users`;
+INSERT INTO `users` (`id`, `email`, `gender`, `password`, `profile_pic`) VALUES
+	('101249', '2346@gmail.com', 'male', '12345', NULL),
+	('1212', '1212@gmail.com', 'male', '1212', NULL),
+	('12134', '12134@gmail.com', 'male', '12134', NULL),
+	('123', '112@gmail.com', 'male', '124', NULL),
+	('1231', '1231@gmail.com', 'male', '1231', NULL),
+	('1231102119', '123@gmail.com', 'male', '123', NULL),
+	('12313', '123136463646@gmail.com', 'Male', '12313', 'static/uploads\\Screenshot 2023-04-06 212423.png');
 
 /*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;
