@@ -223,4 +223,24 @@ main{
     margin-top: 8%;
  
 }
+input, textarea {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.form-buttons {
+    display: flex;
+    justify-content: flex-start;
+    gap: 10px;
+}
+
+
 
