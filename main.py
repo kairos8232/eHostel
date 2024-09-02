@@ -262,9 +262,10 @@ def select_bed(mode, hostel_id, room_type):
                 (int(user_id), int(session.get('trimester')), 0, int(hostel_id), str(selected_room), str(selected_bed), float(cost))
             )
             cur.execute(
-                "UPDATE rooms SET status = 'Occupied', chosen_by = %s WHERE number = %s AND hostel_id = %s",
-                (int(user_id), str(selected_room), int(hostel_id))
+                "UPDATE rooms SET status = 'Occupied' WHERE number = %s AND hostel_id = %s",
+                (str(selected_room), int(hostel_id))
             )
+
         elif mode == 'group':
             group_id = session.get('group_id')
             cur.execute(
@@ -273,10 +274,9 @@ def select_bed(mode, hostel_id, room_type):
                 (int(user_id), int(session.get('trimester')), 1, int(group_id), int(hostel_id), str(selected_room), str(selected_bed), float(cost))
             )
             cur.execute(
-                "UPDATE rooms SET status = 'Occupied', chosen_by = %s WHERE number = %s AND hostel_id = %s",
-                (int(user_id), str(selected_room), int(hostel_id))
+                "UPDATE rooms SET status = 'Occupied' WHERE number = %s AND hostel_id = %s",
+                (str(selected_room), int(hostel_id))
             )
-
 
         mysql.connection.commit()
         cur.close()
