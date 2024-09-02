@@ -10,22 +10,25 @@
     <h1>Select a Bed</h1>
     <form action="{{ url_for('select_bed', mode=mode, hostel_id=hostel_id, room_type=room_type) }}" method="POST">
         <label for="room">Choose a Room:</label>
-        <select name="selected_room" id="room"> <!-- Changed from name="room" to name="selected_room" -->
+        <select name="selected_room" id="room" required>
             {% for room in rooms %}
                 <option value="{{ room['number'] }}">{{ room['category'] }} - Room {{ room['number'] }}</option>
             {% endfor %}
         </select><br><br>
 
-        <label for="datein">Check-In Date:</label>
-        <input type="date" name="datein" id="datein" required><br><br>
+        <label for="bed">Choose a Bed:</label>
+        <select name="selected_bed" id="bed" required>
+            {% for room in rooms %}
+                {% if room['selected'] %} <!-- Check if this is the selected room -->
+                    {% set bed_labels = ['A', 'B', 'C', 'D', 'E'] %}
+                    {% for i in range(room['capacity']) %}
+                        <option value="Bed {{ bed_labels[i] }}">Bed {{ bed_labels[i] }}</option>
+                    {% endfor %}
+                {% endif %}
+            {% endfor %}
+        </select><br><br>
 
-        <label for="dateout">Check-Out Date:</label>
-        <input type="date" name="dateout" id="dateout" required><br><br>
-
-        <label for="cost">Cost:</label>
-        <input type="text" name="cost" id="cost" required><br><br>
-        
-        <button type="submit">Confirm Booking</button>
+        <button type="submit">Confirm Bed</button>
     </form>
 </body>
 </html>

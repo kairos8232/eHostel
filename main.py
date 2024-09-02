@@ -96,7 +96,6 @@ def choose_mode():
             return redirect(url_for('group_page'))
     return render_template('choose_mode.html')
 
-
 # Group page route (Create or Join Group)
 @app.route('/group', methods=['GET', 'POST'])
 def group_page():
@@ -221,50 +220,83 @@ def select_room_type(mode, hostel_id):
     
     return render_template('select_room_type.html', mode=mode, hostel_id=hostel_id, room_types=room_types, selected_room_type=selected_room_type, rooms=rooms)
 
-
 @app.route('/select_bed/<mode>/<int:hostel_id>/<room_type>', methods=['GET', 'POST'])
 def select_bed(mode, hostel_id, room_type):
     user_id = session.get('id')
     if not user_id:
         return redirect(url_for('Login'))
 
-    selected_room = request.form.get('selected_room')
+    # Fetch the selected room from the request or session
+    if request.method == 'POST':
+        selected_room = request.form.get('selected_room')
+        session['selected_room'] = selected_room
+    else:
+        selected_room = session.get('selected_room')
 
     # Debug: Print selected_room and hostel_id
     print(f"Selected Room: {selected_room}, Hostel ID: {hostel_id}")
 
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    cur.execute("SELECT * FROM rooms WHERE number = %s AND hostel_id = %s AND status = 'Available'", (selected_room, hostel_id))
+
+    # Fetch room information to confirm selection
+    cur.execute("SELECT * FROM rooms WHERE number = %s AND hostel_id = %s AND status = 'Available'", 
+                (str(selected_room), int(hostel_id)))
     room_info = cur.fetchone()
 
     # Debug: Print room_info to check if the room was fetched successfully
     print(f"Room Info: {room_info}")
 
     if room_info is None:
+        cur.close()
         return render_template('error.html', message="Room not found or already booked.")
 
     cost = room_info['price']
-    
-    if mode == 'individual':
-        cur.execute("INSERT INTO booking(user_id, trimester_id, group_individual, hostel_id, room_no, bed_number, cost) VALUES(%s, %s, %s, %s, %s, 0, %s)",
-                    (user_id, session.get('trimester'), 0, hostel_id, selected_room, cost))
-        cur.execute("UPDATE rooms SET status = 'Occupied' WHERE number = %s AND hostel_id = %s", (selected_room, hostel_id))
-    elif mode == 'group':
-        group_id = session.get('group_id')
-        cur.execute("INSERT INTO booking(user_id, trimester_id, group_individual, group_id, hostel_id, room_no, bed_number, cost) VALUES(%s, %s, %s, %s, %s, %s, %s)",
-                    (user_id, session.get('trimester'), 1, group_id, hostel_id, selected_room, 'actual_bed_number', cost))
-        cur.execute("UPDATE rooms SET status = 'Occupied' WHERE number = %s AND hostel_id = %s", (selected_room, hostel_id))
 
-    mysql.connection.commit()
+    if request.method == 'POST':
+        selected_bed = request.form.get('selected_bed')  # Capture the selected bed
+
+        if mode == 'individual':
+            cur.execute(
+                "INSERT INTO booking(user_id, trimester_id, group_individual, hostel_id, room_no, bed_number, cost) "
+                "VALUES(%s, %s, %s, %s, %s, %s, %s)",
+                (int(user_id), int(session.get('trimester')), 0, int(hostel_id), str(selected_room), str(selected_bed), float(cost))
+            )
+            cur.execute(
+                "UPDATE rooms SET status = 'Occupied', chosen_by = %s WHERE number = %s AND hostel_id = %s",
+                (int(user_id), str(selected_room), int(hostel_id))
+            )
+        elif mode == 'group':
+            group_id = session.get('group_id')
+            cur.execute(
+                "INSERT INTO booking(user_id, trimester_id, group_individual, group_id, hostel_id, room_no, bed_number, cost) "
+                "VALUES(%s, %s, %s, %s, %s, %s, %s, %s)",
+                (int(user_id), int(session.get('trimester')), 1, int(group_id), int(hostel_id), str(selected_room), str(selected_bed), float(cost))
+            )
+            cur.execute(
+                "UPDATE rooms SET status = 'Occupied', chosen_by = %s WHERE number = %s AND hostel_id = %s",
+                (int(user_id), str(selected_room), int(hostel_id))
+            )
+
+
+        mysql.connection.commit()
+        cur.close()
+
+        return render_template('success.html', message="Booking successful!")
+
+    # Generate bed labels based on room capacity (A, B, C, etc.)
+    bed_labels = ['A', 'B', 'C', 'D', 'E']
+    beds = bed_labels[:room_info['capacity']]
+
     cur.close()
-    
-    return render_template('success.html', message="Booking successful!")
 
-
-
-
-
-
+    return render_template(
+        'select_bed.html',
+        mode=mode,
+        hostel_id=hostel_id,
+        room_type=room_type,
+        selected_room=selected_room,
+        beds=beds
+    )
 
 
 
