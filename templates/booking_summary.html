@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking Summary</title>
+</head>
+<body>
+    <h1>Booking Summary</h1>
+    <p>Hostel: {{ booking_details.hostel_name }}</p>
+    <p>Room Number: {{ booking_details.room_number }}</p>
+    <p>Room Type: {{ booking_details.room_type }}</p>
+    <p>Bed: {{ booking_details.bed_letter }}</p>
+    <p>Price: ${{ booking_details.price }}</p>
+
+    <form method="POST" action="{{ url_for('booking_summary', mode=mode, hostel_id=hostel_id, room_type=room_type, room_number=room_number, bed_id=bed_id) }}">
+        <input type="submit" value="Confirm Booking">
+    </form>
+</body>
+</html>

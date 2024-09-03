@@ -4,31 +4,30 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Select Bed</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
-    <h1>Select a Bed</h1>
-    <form action="{{ url_for('select_bed', mode=mode, hostel_id=hostel_id, room_type=room_type) }}" method="POST">
-        <label for="room">Choose a Room:</label>
-        <select name="selected_room" id="room" required>
-            {% for room in rooms %}
-                <option value="{{ room['number'] }}">{{ room['category'] }} - Room {{ room['number'] }}</option>
-            {% endfor %}
-        </select><br><br>
+    <h1>Select Bed</h1>
+    <h2>Room {{ selected_room }}</h2>
 
-        <label for="bed">Choose a Bed:</label>
-        <select name="selected_bed" id="bed" required>
-            {% for room in rooms %}
-                {% if room['selected'] %} <!-- Check if this is the selected room -->
-                    {% set bed_labels = ['A', 'B', 'C', 'D', 'E'] %}
-                    {% for i in range(room['capacity']) %}
-                        <option value="Bed {{ bed_labels[i] }}">Bed {{ bed_labels[i] }}</option>
-                    {% endfor %}
-                {% endif %}
-            {% endfor %}
-        </select><br><br>
-
-        <button type="submit">Confirm Bed</button>
+    <form method="POST">
+        <table>
+            <thead>
+                <tr>
+                    <th>Bed</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for bed in beds %}
+                    <tr>
+                        <td>{{ bed['bed_letter'] }}</td>
+                        <td>
+                            <button type="submit" name="bed_id" value="{{ bed['id'] }}">Select</button>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </form>
 </body>
 </html>

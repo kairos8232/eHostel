@@ -31,6 +31,40 @@ CREATE TABLE IF NOT EXISTS `admin` (
 INSERT INTO `admin` (`id`, `name`, `password`) VALUES
 	(1, 'AdminUser', 'adminpass');
 
+-- Dumping structure for table flaskapp.beds
+CREATE TABLE IF NOT EXISTS `beds` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `room_number` int NOT NULL,
+  `bed_letter` char(1) NOT NULL,
+  `status` varchar(20) NOT NULL DEFAULT 'Available',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `room_bed` (`room_number`,`bed_letter`),
+  CONSTRAINT `fk_beds_rooms` FOREIGN KEY (`room_number`) REFERENCES `rooms` (`number`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=32 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Dumping data for table flaskapp.beds: ~20 rows (approximately)
+INSERT INTO `beds` (`id`, `room_number`, `bed_letter`, `status`) VALUES
+	(1, 101, 'A', 'Available'),
+	(2, 102, 'A', 'Available'),
+	(3, 103, 'A', 'Available'),
+	(4, 104, 'A', 'Available'),
+	(5, 201, 'A', 'Available'),
+	(6, 202, 'A', 'Available'),
+	(7, 203, 'A', 'Available'),
+	(8, 301, 'A', 'Available'),
+	(9, 302, 'A', 'Available'),
+	(10, 303, 'A', 'Available'),
+	(11, 102, 'B', 'Available'),
+	(12, 103, 'B', 'Available'),
+	(13, 104, 'B', 'Available'),
+	(14, 202, 'B', 'Available'),
+	(15, 203, 'B', 'Available'),
+	(16, 302, 'B', 'Available'),
+	(17, 303, 'B', 'Available'),
+	(18, 103, 'C', 'Available'),
+	(19, 203, 'C', 'Available'),
+	(20, 303, 'C', 'Available');
+
 -- Dumping structure for table flaskapp.booking
 CREATE TABLE IF NOT EXISTS `booking` (
   `booking_no` int NOT NULL AUTO_INCREMENT,
@@ -40,8 +74,8 @@ CREATE TABLE IF NOT EXISTS `booking` (
   `group_id` int DEFAULT NULL,
   `hostel_id` int NOT NULL,
   `room_no` int NOT NULL,
-  `bed_number` int NOT NULL,
   `cost` decimal(10,2) NOT NULL,
+  `bed_number` varchar(50) COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
   PRIMARY KEY (`booking_no`),
   KEY `FK_booking_trimester` (`trimester_id`),
   KEY `FK_booking_users` (`user_id`),
@@ -53,7 +87,7 @@ CREATE TABLE IF NOT EXISTS `booking` (
   CONSTRAINT `FK_booking_rooms` FOREIGN KEY (`room_no`) REFERENCES `rooms` (`number`),
   CONSTRAINT `FK_booking_trimester` FOREIGN KEY (`trimester_id`) REFERENCES `trimester` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `FK_booking_users` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
 -- Dumping data for table flaskapp.booking: ~0 rows (approximately)
 
@@ -67,7 +101,7 @@ CREATE TABLE IF NOT EXISTS `groups` (
   CONSTRAINT `groups_ibfk_1` FOREIGN KEY (`leader_id`) REFERENCES `users` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
--- Dumping data for table flaskapp.groups: ~0 rows (approximately)
+-- Dumping data for table flaskapp.groups: ~1 rows (approximately)
 INSERT INTO `groups` (`group_id`, `leader_id`, `trimester`) VALUES
 	(3, 1, NULL);
 
@@ -81,9 +115,12 @@ CREATE TABLE IF NOT EXISTS `group_members` (
   KEY `user_id` (`user_id`),
   CONSTRAINT `group_members_ibfk_1` FOREIGN KEY (`group_id`) REFERENCES `groups` (`group_id`),
   CONSTRAINT `group_members_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
--- Dumping data for table flaskapp.group_members: ~0 rows (approximately)
+-- Dumping data for table flaskapp.group_members: ~2 rows (approximately)
+INSERT INTO `group_members` (`id`, `group_id`, `user_id`) VALUES
+	(5, 3, 1),
+	(6, 3, 2);
 
 -- Dumping structure for table flaskapp.hostel
 CREATE TABLE IF NOT EXISTS `hostel` (
@@ -106,26 +143,23 @@ CREATE TABLE IF NOT EXISTS `rooms` (
   `capacity` int NOT NULL,
   `status` varchar(20) NOT NULL DEFAULT 'Available',
   `price` decimal(10,2) NOT NULL,
-  `chosen_by` int DEFAULT NULL,
   PRIMARY KEY (`number`),
   KEY `hostel_id` (`hostel_id`),
-  KEY `chosen_by` (`chosen_by`),
-  CONSTRAINT `rooms_ibfk_1` FOREIGN KEY (`hostel_id`) REFERENCES `hostel` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `rooms_ibfk_2` FOREIGN KEY (`chosen_by`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+  CONSTRAINT `rooms_ibfk_1` FOREIGN KEY (`hostel_id`) REFERENCES `hostel` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Dumping data for table flaskapp.rooms: ~10 rows (approximately)
-INSERT INTO `rooms` (`number`, `hostel_id`, `category`, `capacity`, `status`, `price`, `chosen_by`) VALUES
-	(101, 1, 'Single', 1, 'Available', 100.00, NULL),
-	(102, 1, 'Double', 2, 'Available', 150.00, NULL),
-	(103, 1, 'Triple', 3, 'Available', 200.00, NULL),
-	(104, 1, 'Double', 2, 'Available', 200.00, NULL),
-	(201, 2, 'Single', 1, 'Available', 110.00, NULL),
-	(202, 2, 'Double', 2, 'Available', 160.00, NULL),
-	(203, 2, 'Triple', 3, 'Available', 210.00, NULL),
-	(301, 3, 'Single', 1, 'Available', 120.00, NULL),
-	(302, 3, 'Double', 2, 'Available', 170.00, NULL),
-	(303, 3, 'Triple', 3, 'Available', 220.00, NULL);
+INSERT INTO `rooms` (`number`, `hostel_id`, `category`, `capacity`, `status`, `price`) VALUES
+	(101, 1, 'Single', 1, 'Available', 100.00),
+	(102, 1, 'Double', 2, 'Available', 150.00),
+	(103, 1, 'Triple', 3, 'Available', 200.00),
+	(104, 1, 'Double', 2, 'Available', 200.00),
+	(201, 2, 'Single', 1, 'Available', 110.00),
+	(202, 2, 'Double', 2, 'Available', 160.00),
+	(203, 2, 'Triple', 3, 'Available', 210.00),
+	(301, 3, 'Single', 1, 'Available', 120.00),
+	(302, 3, 'Double', 2, 'Available', 170.00),
+	(303, 3, 'Triple', 3, 'Available', 220.00);
 
 -- Dumping structure for table flaskapp.trimester
 CREATE TABLE IF NOT EXISTS `trimester` (
@@ -134,7 +168,7 @@ CREATE TABLE IF NOT EXISTS `trimester` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
--- Dumping data for table flaskapp.trimester: ~0 rows (approximately)
+-- Dumping data for table flaskapp.trimester: ~1 rows (approximately)
 INSERT INTO `trimester` (`id`, `name`) VALUES
 	(2310, 'Trimester March/April 2024');
 
