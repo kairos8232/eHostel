@@ -1,11 +1,11 @@
-<!-- select_trimester.html -->
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Select Trimester</title>
-</head>
-<body>
+{% extends 'base.html' %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/select_trimester-style.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="container">
     <h1>Select Trimester</h1>
     <form method="POST">
         <label for="trimester">Choose a trimester:</label>
@@ -16,5 +16,5 @@
         </select>
         <button type="submit">Continue</button>
     </form>
-</body>
-</html>
+</div>
+{% endblock %}

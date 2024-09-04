@@ -302,27 +302,85 @@ def invite_member(group_id):
     if not user_id:
         return redirect(url_for('Login'))
 
-    email = request.form['email']
+    new_member_id = request.form['user_id']
 
     # Check if the user exists
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    cur.execute("SELECT * FROM users WHERE email = %s", (email,))
+    cur.execute("SELECT * FROM users WHERE id = %s", (new_member_id,))
     new_member = cur.fetchone()
 
     if not new_member:
-        return render_template('error.html', message="User with this email does not exist.")
+        return render_template('error.html', message="User does not exist.")
 
     # Check if the user is already in the group
-    cur.execute("SELECT * FROM group_members WHERE group_id = %s AND user_id = %s", (group_id, new_member['id']))
+    cur.execute("SELECT * FROM group_members WHERE group_id = %s AND user_id = %s", (group_id, new_member_id))
     if cur.fetchone():
         return render_template('error.html', message="This user is already a member of your group.")
 
     # Add the user to the group
-    cur.execute("INSERT INTO group_members(group_id, user_id) VALUES(%s, %s)", (group_id, new_member['id']))
+    cur.execute("INSERT INTO group_members(group_id, user_id) VALUES(%s, %s)", (group_id, new_member_id))
     mysql.connection.commit()
     cur.close()
 
     return redirect(url_for('manage_group', group_id=group_id))
+
+# Transfer Leadership
+@app.route('/transfer_leadership/<int:group_id>/<int:new_leader_id>', methods=['POST'])
+def transfer_leadership(group_id, new_leader_id):
+    user_id = session.get('id')
+    if not user_id:
+        return redirect(url_for('Login'))
+
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    cur.execute("SELECT * FROM `groups` WHERE group_id = %s AND leader_id = %s", (group_id, user_id))
+    group = cur.fetchone()
+    if not group:
+        return render_template('error.html', message="You are not the leader of this group.")
+
+    cur.execute("UPDATE `groups` SET leader_id = %s WHERE group_id = %s", (new_leader_id, group_id))
+    mysql.connection.commit()
+    cur.close()
+
+    return redirect(url_for('manage_group', group_id=group_id))
+
+# Remove Member
+@app.route('/remove_member/<int:group_id>/<int:member_id>', methods=['POST'])
+def remove_member(group_id, member_id):
+    user_id = session.get('id')
+    if not user_id:
+        return redirect(url_for('Login'))
+
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    cur.execute("SELECT * FROM `groups` WHERE group_id = %s AND leader_id = %s", (group_id, user_id))
+    group = cur.fetchone()
+    if not group:
+        return render_template('error.html', message="You are not the leader of this group.")
+
+    cur.execute("DELETE FROM group_members WHERE group_id = %s AND user_id = %s", (group_id, member_id))
+    mysql.connection.commit()
+    cur.close()
+
+    return redirect(url_for('manage_group', group_id=group_id))
+
+# Disband Group
+@app.route('/disband_group/<int:group_id>', methods=['POST'])
+def disband_group(group_id):
+    user_id = session.get('id')
+    if not user_id:
+        return redirect(url_for('Login'))
+
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    cur.execute("SELECT * FROM `groups` WHERE group_id = %s AND leader_id = %s", (group_id, user_id))
+    group = cur.fetchone()
+    if not group:
+        return render_template('error.html', message="You are not the leader of this group.")
+
+    cur.execute("DELETE FROM group_members WHERE group_id = %s", (group_id,))
+    cur.execute("DELETE FROM `groups` WHERE group_id = %s", (group_id,))
+    mysql.connection.commit()
+    cur.close()
+
+    return redirect(url_for('choose_mode'))
 
 # Logout Route
 @app.route('/logout')
