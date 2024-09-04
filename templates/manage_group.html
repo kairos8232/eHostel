@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Your Group</title>
+</head>
+<body>
+    <h1>Manage Your Group</h1>
+
+    <h2>Group Members</h2>
+    <ul>
+        {% for member in members %}
+        <li>
+            {{ member['email'] }}
+            {% if member['id'] != session['id'] %}
+                <form action="{{ url_for('transfer_leadership', group_id=group_id, new_leader_id=member['id']) }}" method="POST" style="display: inline;">
+                    <button type="submit">Transfer Leadership</button>
+                </form>
+                <form action="{{ url_for('remove_member', group_id=group_id, member_id=member['id']) }}" method="POST" style="display: inline;">
+                    <button type="submit">Remove</button>
+                </form>
+            {% else %}
+                (Leader)
+            {% endif %}
+        </li>
+        {% endfor %}
+    </ul>
+
+    <h2>Invite New Members</h2>
+    <form action="{{ url_for('manage_group', group_id=group_id) }}" method="POST">
+        <input type="text" name="filter_student_id" placeholder="Enter Student ID" required>
+        <button type="submit">Search</button>
+    </form>
+
+    {% if request.method == 'POST' and students is not none %}
+        {% if students %}
+            <h3>Available Students</h3>
+            <table>
+                <tr>
+                    <th>Student ID</th>
+                    <th>Student Email</th>
+                    <th>Action</th>
+                </tr>
+                {% for student in students %}
+                <tr>
+                    <td>{{ student['id'] }}</td>
+                    <td>{{ student['email'] }}</td>
+                    <td>
+                        <form action="{{ url_for('invite_member', group_id=group_id) }}" method="POST">
+                            <input type="hidden" name="user_id" value="{{ student['id'] }}">
+                            <button type="submit">Invite</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </table>
+        {% else %}
+            <p>No students found with the given ID.</p>
+        {% endif %}
+    {% endif %}
+
+    <a href="{{ url_for('select_hostel', mode='group') }}">Continue to Hostel Selection</a>
+
+    <form action="{{ url_for('disband_group', group_id=group_id) }}" method="POST" onsubmit="return confirm('Are you sure you want to disband the group? This action cannot be undone.');">
+        <button type="submit">Disband Group</button>
+    </form>
+</body>
+</html>

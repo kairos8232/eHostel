@@ -17,58 +17,81 @@
     justify-content: center; /* center the sign-in container */
     align-items: center; /* center the sign-in container */
   }
-  
-  .sign-up-container {
-    width: 400px;
-    padding: 20px;
-    background-color: #fff;
-    border-radius: 10px;
-    text-align: center;
+
+    .sign-up-container {
+      width: 400px;
+      padding: 20px;
+      background-color: #fff;
+      border-radius: 10px;
+      text-align: center;
   }
   
   .sign-up-container h1 {
-    font-size: 40px;
-    font-weight: bold;
-    margin-bottom: 10px;
+      font-size: 40px;
+      font-weight: bold;
+      margin-bottom: 10px;
   }
   
-  .sign-up-container input {
-    width: 94%;
-    font-size: 14px;
-    padding: 10px;
-    margin-top: 10px;
-    margin-bottom: 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    display: block;
+  .sign-up-container input,
+  .sign-up-container select {
+      width: 94%;
+      font-size: 14px;
+      padding: 10px;
+      margin-top: 10px;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      display: block;
+      background-color: #fff;
   }
   
-  .sign-up-container input:focus {
-    border-color: #aaa;
+  .sign-up-container input:focus,
+  .sign-up-container select:focus {
+      border-color: #aaa;
+  }
+  
+  .sign-up-container select {
+      background-color: #fff;
+      color: #333;
+      cursor: pointer;
+      width: 99.4%;
+      position: relative;
+  }
+  
+  .sign-up-container select::after {
+      content: '';
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      border: 5px solid transparent;
+      border-top-color: #333;
+      pointer-events: none;
   }
   
   .sign-up-container a {
-    font-size: 14px;
-    color: #337ab7;
-    text-decoration: none;
+      font-size: 14px;
+      color: #337ab7;
+      text-decoration: none;
   }
   
   .sign-up-container a:hover {
-    color: #23527c;
+      color: #23527c;
   }
   
   .sign-up-container button {
-    width: 100%;
-    padding: 10px;
-    margin-top: 10px;
-    font-size: 18px;
-    background-color: #337ab7;
-    color: #fff;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      font-size: 18px;
+      background-color: #337ab7;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
   }
   
   .sign-up-container button:hover {
-    background-color: #23527c;
+      background-color: #23527c;
   }
+  

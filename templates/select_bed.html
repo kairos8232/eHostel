@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select Bed</title>
+</head>
+<body>
+    <h1>Select Bed</h1>
+    <h2>Room {{ selected_room }}</h2>
+
+    <form method="POST">
+        <table>
+            <thead>
+                <tr>
+                    <th>Bed</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for bed in beds %}
+                    <tr>
+                        <td>{{ bed['bed_letter'] }}</td>
+                        <td>
+                            <button type="submit" name="bed_id" value="{{ bed['id'] }}">Select</button>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </form>
+</body>
+</html>
