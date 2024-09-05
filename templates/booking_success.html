@@ -3,15 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Booking Successful</title>
+    <title>Booking Confirmation</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
-    <h1>Booking Successful</h1>
-    <p>Your booking has been confirmed successfully!</p>
-    <p><strong>Room Number:</strong> {{ room_number }}</p>
-    <p><strong>Date In:</strong> {{ date_in }}</p>
-    <p><strong>Date Out:</strong> {{ date_out }}</p>
-    <p><strong>Total Cost:</strong> ${{ cost }}</p>
-    <p><a href="{{ url_for('room_status') }}">Back to Room Status</a></p>
+    <h1>Booking Confirmed!</h1>
+    <p>Your booking has been successfully completed.</p>
+    <a href="{{ url_for('Index') }}">Go to Home</a>
 </body>
 </html>
