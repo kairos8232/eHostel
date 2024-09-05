@@ -152,11 +152,17 @@ def manage_group(group_id):
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     cur.execute("SELECT * FROM `groups` WHERE group_id = %s AND leader_id = %s", (group_id, user_id))
     group = cur.fetchone()
-    if not group:
+
+    # Check if the user is a member of the group, regardless of whether they are the leader or not
+    cur.execute("SELECT users.id, users.email FROM users JOIN group_members ON users.id = group_members.user_id WHERE group_members.group_id = %s AND group_members.user_id = %s", (group_id, user_id))
+    is_group_member = cur.fetchone()
+
+    if not group and not is_group_member:
         return redirect(url_for('group_page'))
 
     session['group_id'] = group_id
 
+    # Fetch all group members
     cur.execute("SELECT users.id, users.email FROM users JOIN group_members ON users.id = group_members.user_id WHERE group_members.group_id = %s", (group_id,))
     members = cur.fetchall()
 
@@ -355,10 +361,17 @@ def transfer_leadership(group_id, new_leader_id):
     if not group:
         return render_template('error.html', message="You are not the leader of this group.")
 
+    # Update the leader_id in the groups table
     cur.execute("UPDATE `groups` SET leader_id = %s WHERE group_id = %s", (new_leader_id, group_id))
     mysql.connection.commit()
+
+    # If the current user was the leader, update the session data
+    if user_id == session['id']:
+        session['id'] = new_leader_id  # Update the session id to the new leader's id
+
     cur.close()
 
+    # Redirect the user back to the manage_group page
     return redirect(url_for('manage_group', group_id=group_id))
 
 # Remove Member
