@@ -43,7 +43,6 @@ header {
     font-weight: 600;
     font-size: 18px;
 }
-<<<<<<< HEAD
 .user-pic{
     width: 50px;
     border: solid;
@@ -118,25 +117,6 @@ header {
 .sub-menu-link:hover p{
     font-weight: 600;
 }
-=======
-.signup {
-    border: rgba(255,255,255,0.5) 2px solid;
-    padding: 8px 16px;
-    margin-left: 16px;
-    border-radius: 99px;
-    transition: 300ms;
-}
-.signup:hover {
-    background: white;
-    color: black;
-}
-
-.fa-regular {
-    font-size: 25px;
-    color: white;
-    cursor: pointer;
-}
->>>>>>> 87054606100a08f409d82c22a1a4f697ff5d211b
 
 .nav .logo{
     background-color: white;
@@ -185,7 +165,6 @@ header {
         margin-right: 16px;
     }
       
-<<<<<<< HEAD
       
     .fa-regular {
         font-size: 25px;
@@ -208,8 +187,6 @@ header {
         display: block;
     }
     
-=======
->>>>>>> 87054606100a08f409d82c22a1a4f697ff5d211b
     .fa-regular {
         font-size: 25px;
         color: white;
@@ -234,7 +211,36 @@ header {
         left: 0%;
     }
 }
-<<<<<<< HEAD
 
-=======
->>>>>>> 87054606100a08f409d82c22a1a4f697ff5d211b
+main{
+    background: white;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    max-width: 800px;
+    margin: 0 auto;
+    margin-top: 8%;
+ 
+}
+input, textarea {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.form-buttons {
+    display: flex;
+    justify-content: flex-start;
+    gap: 10px;
+}
+
+
+
