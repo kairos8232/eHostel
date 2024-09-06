@@ -92,12 +92,25 @@ def choose_mode():
     if 'trimester' not in session:
         return redirect(url_for('select_trimester'))
 
+    user_id = session.get('id')
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    
+    # Check if user is in a group
+    cur.execute("SELECT group_id FROM group_members WHERE user_id = %s", (user_id,))
+    user_group = cur.fetchone()
+    
+    if user_group:
+        # User is in a group, redirect to manage_group
+        return redirect(url_for('manage_group', group_id=user_group['group_id']))
+
     if request.method == 'POST':
         mode = request.form['mode']
         if mode == 'individual':
             return redirect(url_for('select_hostel', mode='individual'))
         elif mode == 'group':
             return redirect(url_for('group_page'))
+
+    cur.close()
     return render_template('choose_mode.html')
 
 # Group page route (Create or Join Group)
@@ -138,24 +151,34 @@ def manage_group(group_id):
         return redirect(url_for('Login'))
 
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    cur.execute("SELECT * FROM `groups` WHERE group_id = %s AND leader_id = %s", (group_id, user_id))
-    group = cur.fetchone()
-
-    # Check if the user is a member of the group, regardless of whether they are the leader or not
-    cur.execute("SELECT users.id, users.email, users.name, users.faculty FROM users JOIN group_members ON users.id = group_members.user_id WHERE group_members.group_id = %s AND group_members.user_id = %s", (group_id, user_id))
+    
+    # Check if the user is a member of the group
+    cur.execute("SELECT * FROM group_members WHERE group_id = %s AND user_id = %s", (group_id, user_id))
     is_group_member = cur.fetchone()
 
-    if not group and not is_group_member:
+    if not is_group_member:
+        cur.close()
         return redirect(url_for('group_page'))
 
-    session['group_id'] = group_id
+    # Get group information
+    cur.execute("SELECT * FROM `groups` WHERE group_id = %s", (group_id,))
+    group = cur.fetchone()
+
+    is_leader = group['leader_id'] == user_id
 
     # Fetch all group members with additional information
-    cur.execute("SELECT users.id, users.email, users.name, users.faculty FROM users JOIN group_members ON users.id = group_members.user_id WHERE group_members.group_id = %s", (group_id,))
+    cur.execute("""
+        SELECT users.id, users.email, users.name, users.faculty, 
+               CASE WHEN users.id = groups.leader_id THEN 1 ELSE 0 END as is_leader
+        FROM users 
+        JOIN group_members ON users.id = group_members.user_id 
+        JOIN `groups` ON group_members.group_id = groups.group_id
+        WHERE group_members.group_id = %s
+    """, (group_id,))
     members = cur.fetchall()
 
     students = None
-    if request.method == 'POST':
+    if request.method == 'POST' and is_leader:
         filter_student_id = request.form.get('filter_student_id')
         if filter_student_id:
             cur.execute("SELECT id, email, name, faculty FROM users WHERE id = %s AND id NOT IN (SELECT user_id FROM group_members WHERE group_id = %s)", (filter_student_id, group_id))
@@ -165,7 +188,39 @@ def manage_group(group_id):
 
     cur.close()
 
-    return render_template('manage_group.html', members=members, group_id=group_id, students=students)
+    return render_template('manage_group.html', members=members, group_id=group_id, students=students, is_leader=is_leader, current_user_id=user_id)
+
+@main.route('/leave_group/<int:group_id>', methods=['POST'])
+def leave_group(group_id):
+    user_id = session.get('id')
+    if not user_id:
+        return redirect(url_for('Login'))
+
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    
+    # Check if the user is the leader
+    cur.execute("SELECT leader_id FROM `groups` WHERE group_id = %s", (group_id,))
+    group = cur.fetchone()
+    
+    if group and group['leader_id'] == user_id:
+        return render_template('error.html', message="As the leader, you cannot leave the group. You must transfer leadership or disband the group.")
+
+    # Remove the user from the group
+    cur.execute("DELETE FROM group_members WHERE group_id = %s AND user_id = %s", (group_id, user_id))
+    mysql.connection.commit()
+    
+    # Check if the group is now empty
+    cur.execute("SELECT COUNT(*) as count FROM group_members WHERE group_id = %s", (group_id,))
+    member_count = cur.fetchone()['count']
+    
+    if member_count == 0:
+        # If the group is empty, delete it
+        cur.execute("DELETE FROM `groups` WHERE group_id = %s", (group_id,))
+        mysql.connection.commit()
+
+    cur.close()
+
+    return redirect(url_for('choose_mode'))
 
 # Select Hostel Route
 @main.route('/select_hostel/<mode>', methods=['GET', 'POST'])
@@ -384,19 +439,18 @@ def transfer_leadership(group_id, new_leader_id):
         return redirect(url_for('Login'))
 
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    cur.execute("SELECT * FROM `groups` WHERE group_id = %s AND leader_id = %s", (group_id, user_id))
+    
+    # Check if the current user is the leader
+    cur.execute("SELECT leader_id FROM `groups` WHERE group_id = %s", (group_id,))
     group = cur.fetchone()
-    if not group:
-        return render_template('error.html', message="You are not the leader of this group.")
+    
+    if not group or group['leader_id'] != user_id:
+        cur.close()
+        return render_template('error.html', message="You are not authorized to transfer leadership.")
 
     # Update the leader_id in the groups table
     cur.execute("UPDATE `groups` SET leader_id = %s WHERE group_id = %s", (new_leader_id, group_id))
     mysql.connection.commit()
-
-    # If the current user was the leader, update the session data
-    if user_id == session['id']:
-        session['id'] = new_leader_id  # Update the session id to the new leader's id
-
     cur.close()
 
     # Redirect the user back to the manage_group page
