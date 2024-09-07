@@ -17,10 +17,12 @@
 
 -- Dumping database structure for flaskapp
 DROP DATABASE IF EXISTS `flaskapp`;
+DROP DATABASE IF EXISTS `flaskapp`;
 CREATE DATABASE IF NOT EXISTS `flaskapp` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
 USE `flaskapp`;
 
 -- Dumping structure for table flaskapp.admin
+DROP TABLE IF EXISTS `admin`;
 DROP TABLE IF EXISTS `admin`;
 CREATE TABLE IF NOT EXISTS `admin` (
   `id` int NOT NULL,
@@ -29,11 +31,12 @@ CREATE TABLE IF NOT EXISTS `admin` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table flaskapp.admin: ~1 rows (approximately)
+-- Dumping data for table flaskapp.admin: ~0 rows (approximately)
 INSERT INTO `admin` (`id`, `name`, `password`) VALUES
 	(1, 'AdminUser', 'adminpass');
 
 -- Dumping structure for table flaskapp.beds
+DROP TABLE IF EXISTS `beds`;
 DROP TABLE IF EXISTS `beds`;
 CREATE TABLE IF NOT EXISTS `beds` (
   `id` int NOT NULL AUTO_INCREMENT,
@@ -44,10 +47,11 @@ CREATE TABLE IF NOT EXISTS `beds` (
   UNIQUE KEY `room_bed` (`room_number`,`bed_letter`),
   CONSTRAINT `fk_beds_rooms` FOREIGN KEY (`room_number`) REFERENCES `rooms` (`number`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Dumping data for table flaskapp.beds: ~20 rows (approximately)
 INSERT INTO `beds` (`id`, `room_number`, `bed_letter`, `status`) VALUES
-	(1, 101, 'A', 'Available'),
+	(1, 101, 'A', 'Occupied'),
 	(2, 102, 'A', 'Available'),
 	(3, 103, 'A', 'Available'),
 	(4, 104, 'A', 'Available'),
@@ -69,6 +73,7 @@ INSERT INTO `beds` (`id`, `room_number`, `bed_letter`, `status`) VALUES
 	(20, 303, 'C', 'Available');
 
 -- Dumping structure for table flaskapp.booking
+DROP TABLE IF EXISTS `booking`;
 DROP TABLE IF EXISTS `booking`;
 CREATE TABLE IF NOT EXISTS `booking` (
   `booking_no` int NOT NULL AUTO_INCREMENT,
@@ -93,9 +98,10 @@ CREATE TABLE IF NOT EXISTS `booking` (
   CONSTRAINT `FK_booking_users` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=31 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
--- Dumping data for table flaskapp.booking: ~0 rows (approximately)
+-- Dumping data for table flaskapp.booking: ~1 rows (approximately)
 
 -- Dumping structure for table flaskapp.groups
+DROP TABLE IF EXISTS `groups`;
 DROP TABLE IF EXISTS `groups`;
 CREATE TABLE IF NOT EXISTS `groups` (
   `group_id` int NOT NULL AUTO_INCREMENT,
@@ -109,6 +115,7 @@ CREATE TABLE IF NOT EXISTS `groups` (
 -- Dumping data for table flaskapp.groups: ~0 rows (approximately)
 
 -- Dumping structure for table flaskapp.group_members
+DROP TABLE IF EXISTS `group_members`;
 DROP TABLE IF EXISTS `group_members`;
 CREATE TABLE IF NOT EXISTS `group_members` (
   `id` int NOT NULL AUTO_INCREMENT,
@@ -125,6 +132,7 @@ CREATE TABLE IF NOT EXISTS `group_members` (
 
 -- Dumping structure for table flaskapp.hostel
 DROP TABLE IF EXISTS `hostel`;
+DROP TABLE IF EXISTS `hostel`;
 CREATE TABLE IF NOT EXISTS `hostel` (
   `id` int NOT NULL AUTO_INCREMENT,
   `name` varchar(50) NOT NULL,
@@ -138,6 +146,7 @@ INSERT INTO `hostel` (`id`, `name`) VALUES
 	(3, 'Hostel C');
 
 -- Dumping structure for table flaskapp.rooms
+DROP TABLE IF EXISTS `rooms`;
 DROP TABLE IF EXISTS `rooms`;
 CREATE TABLE IF NOT EXISTS `rooms` (
   `number` int NOT NULL,
@@ -166,6 +175,7 @@ INSERT INTO `rooms` (`number`, `hostel_id`, `category`, `capacity`, `status`, `p
 
 -- Dumping structure for table flaskapp.trimester
 DROP TABLE IF EXISTS `trimester`;
+DROP TABLE IF EXISTS `trimester`;
 CREATE TABLE IF NOT EXISTS `trimester` (
   `id` int NOT NULL,
   `name` varchar(50) COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
@@ -177,6 +187,7 @@ INSERT INTO `trimester` (`id`, `name`) VALUES
 	(2310, 'Trimester March/April 2024');
 
 -- Dumping structure for table flaskapp.users
+DROP TABLE IF EXISTS `users`;
 DROP TABLE IF EXISTS `users`;
 CREATE TABLE IF NOT EXISTS `users` (
   `id` int NOT NULL,
