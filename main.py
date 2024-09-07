@@ -8,7 +8,8 @@ import os
 
 
 main = Flask(__name__)
-  
+
+# Load database configuration
 db = yaml.safe_load(open('db.yaml'))
 main.config['MYSQL_HOST'] = db['mysql_host']
 main.config['MYSQL_USER'] = db['mysql_user']
@@ -17,18 +18,16 @@ main.config['MYSQL_DB'] = db['mysql_db']
 main.config['UPLOAD_FOLDER'] = db['mysql_profile_pic']
 main.secret_key = 'terrychin'
 
+# Initialize MySQL
 mysql = MySQL(main)
 
-
+# Index route
 @main.route('/')
 def Index():
     return render_template('index.html')
 
-@main.route("/home")
-def home():
-    return render_template('home.html')
-
-@main.route('/signup', methods = ['POST', 'GET'])
+# Sign-up route
+@main.route('/signup', methods=['POST', 'GET'])
 def SignUp():
     if request.method == 'POST':
         userDetails = request.form
@@ -43,8 +42,8 @@ def SignUp():
         return redirect(url_for('home'))
     return render_template('signup.html')
 
-
-@main.route('/login' ,methods = ['POST' , 'GET'])
+# Login route
+@main.route('/login', methods=['POST', 'GET'])
 def Login():
     if request.method == 'POST':
         userDetails = request.form
@@ -139,12 +138,25 @@ def choose_mode():
     if 'trimester' not in session:
         return redirect(url_for('select_trimester'))
 
+    user_id = session.get('id')
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    
+    # Check if user is in a group
+    cur.execute("SELECT group_id FROM group_members WHERE user_id = %s", (user_id,))
+    user_group = cur.fetchone()
+    
+    if user_group:
+        # User is in a group, redirect to manage_group
+        return redirect(url_for('manage_group', group_id=user_group['group_id']))
+
     if request.method == 'POST':
         mode = request.form['mode']
         if mode == 'individual':
             return redirect(url_for('select_hostel', mode='individual'))
         elif mode == 'group':
             return redirect(url_for('group_page'))
+
+    cur.close()
     return render_template('choose_mode.html')
 
 # Group page route (Create or Join Group)
@@ -185,28 +197,77 @@ def manage_group(group_id):
         return redirect(url_for('Login'))
 
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    cur.execute("SELECT * FROM `groups` WHERE group_id = %s AND leader_id = %s", (group_id, user_id))
-    group = cur.fetchone()
-    if not group:
+    
+    # Check if the user is a member of the group
+    cur.execute("SELECT * FROM group_members WHERE group_id = %s AND user_id = %s", (group_id, user_id))
+    is_group_member = cur.fetchone()
+
+    if not is_group_member:
+        cur.close()
         return redirect(url_for('group_page'))
 
-    session['group_id'] = group_id
+    # Get group information
+    cur.execute("SELECT * FROM `groups` WHERE group_id = %s", (group_id,))
+    group = cur.fetchone()
 
-    cur.execute("SELECT users.id, users.email FROM users JOIN group_members ON users.id = group_members.user_id WHERE group_members.group_id = %s", (group_id,))
+    is_leader = group['leader_id'] == user_id
+
+    # Fetch all group members with additional information
+    cur.execute("""
+        SELECT users.id, users.email, users.name, users.faculty, 
+               CASE WHEN users.id = groups.leader_id THEN 1 ELSE 0 END as is_leader
+        FROM users 
+        JOIN group_members ON users.id = group_members.user_id 
+        JOIN `groups` ON group_members.group_id = groups.group_id
+        WHERE group_members.group_id = %s
+    """, (group_id,))
     members = cur.fetchall()
 
     students = None
-    if request.method == 'POST':
+    if request.method == 'POST' and is_leader:
         filter_student_id = request.form.get('filter_student_id')
         if filter_student_id:
-            cur.execute("SELECT id, email FROM users WHERE id = %s AND id NOT IN (SELECT user_id FROM group_members WHERE group_id = %s)", (filter_student_id, group_id))
+            cur.execute("SELECT id, email, name, faculty FROM users WHERE id = %s AND id NOT IN (SELECT user_id FROM group_members WHERE group_id = %s)", (filter_student_id, group_id))
             students = cur.fetchall()
         else:
             students = []
 
     cur.close()
 
-    return render_template('manage_group.html', members=members, group_id=group_id, students=students)
+    return render_template('manage_group.html', members=members, group_id=group_id, students=students, is_leader=is_leader, current_user_id=user_id)
+
+# Leave Group
+@main.route('/leave_group/<int:group_id>', methods=['POST'])
+def leave_group(group_id):
+    user_id = session.get('id')
+    if not user_id:
+        return redirect(url_for('Login'))
+
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    
+    # Check if the user is the leader
+    cur.execute("SELECT leader_id FROM `groups` WHERE group_id = %s", (group_id,))
+    group = cur.fetchone()
+    
+    if group and group['leader_id'] == user_id:
+        return render_template('error.html', message="As the leader, you cannot leave the group. You must transfer leadership or disband the group.")
+
+    # Remove the user from the group
+    cur.execute("DELETE FROM group_members WHERE group_id = %s AND user_id = %s", (group_id, user_id))
+    mysql.connection.commit()
+    
+    # Check if the group is now empty
+    cur.execute("SELECT COUNT(*) as count FROM group_members WHERE group_id = %s", (group_id,))
+    member_count = cur.fetchone()['count']
+    
+    if member_count == 0:
+        # If the group is empty, delete it
+        cur.execute("DELETE FROM `groups` WHERE group_id = %s", (group_id,))
+        mysql.connection.commit()
+
+    cur.close()
+
+    return redirect(url_for('choose_mode'))
 
 # Select Hostel Route
 @main.route('/select_hostel/<mode>', methods=['GET', 'POST'])
@@ -236,39 +297,38 @@ def select_room_type(mode, hostel_id):
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
 
     if mode == 'individual':
-        cur.execute("SELECT DISTINCT category FROM rooms WHERE hostel_id = %s", (hostel_id,))
+        cur.execute("""
+            SELECT r.*, COUNT(b.id) as total_beds, 
+            SUM(CASE WHEN b.status = 'Available' THEN 1 ELSE 0 END) as available_beds
+            FROM rooms r
+            LEFT JOIN beds b ON r.number = b.room_number
+            WHERE r.hostel_id = %s
+            GROUP BY r.number
+            HAVING available_beds > 0
+        """, (hostel_id,))
     elif mode == 'group':
         group_id = session.get('group_id')
         cur.execute("SELECT COUNT(*) as count FROM group_members WHERE group_id = %s", (group_id,))
         group_size = cur.fetchone()['count']
-        if group_size == 2:
-            cur.execute("SELECT DISTINCT category FROM rooms WHERE hostel_id = %s AND capacity >= 2", (hostel_id,))
-        elif group_size == 3:
-            cur.execute("SELECT DISTINCT category FROM rooms WHERE hostel_id = %s AND capacity >= 3", (hostel_id,))
-        else:
-            return render_template('error.html', message="No suitable room types available for your group size.")
+        cur.execute("""
+            SELECT r.*, COUNT(b.id) as total_beds, 
+            SUM(CASE WHEN b.status = 'Available' THEN 1 ELSE 0 END) as available_beds
+            FROM rooms r
+            LEFT JOIN beds b ON r.number = b.room_number
+            WHERE r.hostel_id = %s
+            GROUP BY r.number
+            HAVING available_beds >= %s
+        """, (hostel_id, group_size))
     
-    room_types = cur.fetchall()
-
-    available_rooms = None
-    selected_room_type = session.get('selected_room_type')
+    available_rooms = cur.fetchall()
 
     if request.method == 'POST':
-        if 'room_type' in request.form:
-            selected_room_type = request.form.get('room_type')
-            session['selected_room_type'] = selected_room_type
-            cur.execute("SELECT * FROM rooms WHERE category = %s AND hostel_id = %s AND status = 'Available'", (selected_room_type, hostel_id))
-            available_rooms = cur.fetchall()
-        elif 'room_number' in request.form:
-            selected_room = request.form.get('room_number')
-            selected_room_type = session.get('selected_room_type')
-            if selected_room_type:
-                return redirect(url_for('select_bed', mode=mode, hostel_id=hostel_id, room_type=selected_room_type, selected_room=selected_room))
-            else:
-                return render_template('error.html', message="Room type not selected. Please start over.")
+        selected_room = request.form.get('room_number')
+        if selected_room:
+            return redirect(url_for('select_bed', mode=mode, hostel_id=hostel_id, room_type=available_rooms[0]['category'], selected_room=selected_room))
 
     cur.close()
-    return render_template('select_room_type.html', mode=mode, hostel_id=hostel_id, room_types=room_types, available_rooms=available_rooms, selected_room_type=selected_room_type)
+    return render_template('select_room_type.html', mode=mode, hostel_id=hostel_id, available_rooms=available_rooms)
 
 # Select Bed Route
 @main.route('/select_bed/<mode>/<int:hostel_id>/<room_type>', methods=['GET', 'POST'])
@@ -282,20 +342,49 @@ def select_bed(mode, hostel_id, room_type):
         return redirect(url_for('select_room_type', mode=mode, hostel_id=hostel_id))
 
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    
+    cur.execute("SELECT * FROM rooms WHERE number = %s", (selected_room,))
+    room_info = cur.fetchone()
+    if not room_info:
+        cur.close()
+        return render_template('error.html', message="Room not found.")
+
     cur.execute("SELECT * FROM beds WHERE room_number = %s AND status = 'Available'", (selected_room,))
     available_beds = cur.fetchall()
 
-    if request.method == 'POST' and 'bed_id' in request.form:
-        bed_id = request.form['bed_id']
-        cur.close()
-        return redirect(url_for('booking_summary', mode=mode, hostel_id=hostel_id, room_type=room_type, room_number=selected_room, bed_id=bed_id))
+    group_id = session.get('group_id')
+    group_members = []
+
+    if mode == 'group' and group_id:
+        cur.execute("SELECT users.id, users.name, users.email FROM users JOIN group_members ON users.id = group_members.user_id WHERE group_members.group_id = %s", (group_id,))
+        group_members = cur.fetchall()
+    elif mode == 'individual':
+        cur.execute("SELECT id, name, email FROM users WHERE id = %s", (user_id,))
+        current_user = cur.fetchone()
+        group_members = [current_user] if current_user else []
+
+    if request.method == 'POST':
+        bed_assignments = {}
+        for bed in available_beds:
+            assigned_user_id = request.form.get(f'user_for_bed_{bed["id"]}')
+            if assigned_user_id:
+                bed_assignments[bed['id']] = int(assigned_user_id)
+
+        if bed_assignments:
+            bed_ids = ','.join(map(str, bed_assignments.keys()))
+            user_ids = ','.join(map(str, bed_assignments.values()))
+            return redirect(url_for('booking_summary', mode=mode, hostel_id=hostel_id, 
+                                    room_type=room_type, room_number=selected_room, 
+                                    bed_ids=bed_ids, user_ids=user_ids))
 
     cur.close()
-    return render_template('select_bed.html', mode=mode, hostel_id=hostel_id, room_type=room_type, selected_room=selected_room, beds=available_beds)
+    return render_template('select_bed.html', mode=mode, hostel_id=hostel_id, room_type=room_type, 
+                           selected_room=selected_room, beds=available_beds, 
+                           group_members=group_members, room_info=room_info)
 
 # Booking Confirmation
-@main.route('/booking_summary/<mode>/<int:hostel_id>/<room_type>/<int:room_number>/<int:bed_id>', methods=['GET', 'POST'])
-def booking_summary(mode, hostel_id, room_type, room_number, bed_id):
+@main.route('/booking_summary/<mode>/<int:hostel_id>/<room_type>/<int:room_number>/<bed_ids>/<user_ids>', methods=['GET', 'POST'])
+def booking_summary(mode, hostel_id, room_type, room_number, bed_ids, user_ids):
     user_id = session.get('id')
     if not user_id:
         return redirect(url_for('Login'))
@@ -304,34 +393,52 @@ def booking_summary(mode, hostel_id, room_type, room_number, bed_id):
     cur.execute("SELECT * FROM rooms WHERE number = %s", (room_number,))
     room_info = cur.fetchone()
     
-    cur.execute("SELECT * FROM beds WHERE id = %s", (bed_id,))
-    bed_info = cur.fetchone()
-    
     cur.execute("SELECT * FROM hostel WHERE id = %s", (hostel_id,))
     hostel_info = cur.fetchone()
+
+    bed_id_list = bed_ids.split(',')
+    user_id_list = user_ids.split(',')
+    bed_assignments = []
+    group_id = session.get('group_id') if mode == 'group' else None
+
+    for bed_id, assigned_user_id in zip(bed_id_list, user_id_list):
+        cur.execute("SELECT * FROM beds WHERE id = %s", (bed_id,))
+        bed_info = cur.fetchone()
+        
+        cur.execute("SELECT * FROM users WHERE id = %s", (assigned_user_id,))
+        user_info = cur.fetchone()
+        
+        bed_assignments.append({
+            'bed': bed_info,
+            'user': user_info if user_info else {'id': user_id, 'name': 'You'}
+        })
 
     booking_details = {
         'hostel_name': hostel_info['name'],
         'room_number': room_number,
         'room_type': room_type,
-        'bed_letter': bed_info['bed_letter'],
-        'price': room_info['price']
+        'price': room_info['price'],
+        'bed_assignments': bed_assignments
     }
 
     if request.method == 'POST':
         trimester_id = session.get('trimester')
-        cost = room_info['price']
-        group_id = session.get('group_id') if mode == 'group' else None
 
-        # Insert booking
-        cur.execute(
-            "INSERT INTO booking(user_id, trimester_id, group_individual, group_id, hostel_id, room_no, bed_number, cost) "
-            "VALUES(%s, %s, %s, %s, %s, %s, %s, %s)",
-            (user_id, trimester_id, 1 if mode == 'group' else 0, group_id, hostel_id, room_number, bed_info['bed_letter'], cost)
-        )
+        for assignment in bed_assignments:
+            cur.execute(
+                "INSERT INTO booking(user_id, trimester_id, group_individual, group_id, hostel_id, room_no, bed_number, cost) "
+                "VALUES(%s, %s, %s, %s, %s, %s, %s, %s)",
+                (assignment['user']['id'], trimester_id, 1 if mode == 'group' else 0, group_id, hostel_id, room_number, assignment['bed']['bed_letter'], room_info['price'])
+            )
+            cur.execute("UPDATE beds SET status = 'Occupied' WHERE id = %s", (assignment['bed']['id'],))
 
-        # Update bed status
-        cur.execute("UPDATE beds SET status = 'Occupied' WHERE id = %s", (bed_id,))
+        # Update room status if all beds are occupied
+        cur.execute("SELECT COUNT(*) as total, SUM(CASE WHEN status = 'Occupied' THEN 1 ELSE 0 END) as occupied FROM beds WHERE room_number = %s", (room_number,))
+        bed_status = cur.fetchone()
+        if bed_status['total'] == bed_status['occupied']:
+            cur.execute("UPDATE rooms SET status = 'Occupied' WHERE number = %s", (room_number,))
+        else:
+            cur.execute("UPDATE rooms SET status = 'Partially Occupied' WHERE number = %s", (room_number,))
 
         mysql.connection.commit()
         cur.close()
@@ -340,7 +447,7 @@ def booking_summary(mode, hostel_id, room_type, room_number, bed_id):
 
     cur.close()
 
-    return render_template('booking_summary.html', booking_details=booking_details, mode=mode, hostel_id=hostel_id, room_type=room_type, room_number=room_number, bed_id=bed_id)
+    return render_template('booking_summary.html', booking_details=booking_details, mode=mode, hostel_id=hostel_id, room_type=room_type, room_number=room_number, bed_ids=bed_ids)
 
 # Invite Member Route
 @main.route('/invite_member/<int:group_id>', methods=['POST'])
@@ -380,15 +487,21 @@ def transfer_leadership(group_id, new_leader_id):
         return redirect(url_for('Login'))
 
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    cur.execute("SELECT * FROM `groups` WHERE group_id = %s AND leader_id = %s", (group_id, user_id))
+    
+    # Check if the current user is the leader
+    cur.execute("SELECT leader_id FROM `groups` WHERE group_id = %s", (group_id,))
     group = cur.fetchone()
-    if not group:
-        return render_template('error.html', message="You are not the leader of this group.")
+    
+    if not group or group['leader_id'] != user_id:
+        cur.close()
+        return render_template('error.html', message="You are not authorized to transfer leadership.")
 
+    # Update the leader_id in the groups table
     cur.execute("UPDATE `groups` SET leader_id = %s WHERE group_id = %s", (new_leader_id, group_id))
     mysql.connection.commit()
     cur.close()
 
+    # Redirect the user back to the manage_group page
     return redirect(url_for('manage_group', group_id=group_id))
 
 # Remove Member
