@@ -134,26 +134,29 @@ def choose_mode():
     if 'loggedin' not in session:
         return redirect(url_for('Login'))
     
-    # Check if trimester is selected
     if 'trimester' not in session:
         return redirect(url_for('select_trimester'))
 
     user_id = session.get('id')
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     
-    # Check if user is in a group
     cur.execute("SELECT group_id FROM group_members WHERE user_id = %s", (user_id,))
     user_group = cur.fetchone()
     
     if user_group:
-        # User is in a group, redirect to manage_group
+        session['group_id'] = user_group['group_id']
         return redirect(url_for('manage_group', group_id=user_group['group_id']))
 
     if request.method == 'POST':
         mode = request.form['mode']
         if mode == 'individual':
+            session['group_id'] = None
             return redirect(url_for('select_hostel', mode='individual'))
         elif mode == 'group':
+            cur.execute("SELECT group_id FROM group_members WHERE user_id = %s", (user_id,))
+            user_group = cur.fetchone()
+            if user_group:
+                session['group_id'] = user_group['group_id']
             return redirect(url_for('group_page'))
 
     cur.close()
@@ -279,12 +282,15 @@ def select_hostel(mode):
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     cur.execute("SELECT * FROM hostel")
     hostels = cur.fetchall()
-    cur.close()
 
     if request.method == 'POST':
-        hostel_id = request.form['hostel']
-        return redirect(url_for('select_room_type', mode=mode, hostel_id=hostel_id))
+        selected_hostel_id = request.form.get('hostel')
+        if selected_hostel_id:
+            hostel_id = int(selected_hostel_id)
+            session['hostel_id'] = hostel_id
+            return redirect(url_for('select_room_type', mode=mode, hostel_id=hostel_id))
 
+    cur.close()
     return render_template('select_hostel.html', mode=mode, hostels=hostels)
 
 # Select Room Type Route
@@ -358,10 +364,14 @@ def select_bed(mode, hostel_id, room_type):
     if mode == 'group' and group_id:
         cur.execute("SELECT users.id, users.name, users.email FROM users JOIN group_members ON users.id = group_members.user_id WHERE group_members.group_id = %s", (group_id,))
         group_members = cur.fetchall()
+        print(f"Group members: {group_members}")  # Debug print
     elif mode == 'individual':
         cur.execute("SELECT id, name, email FROM users WHERE id = %s", (user_id,))
         current_user = cur.fetchone()
         group_members = [current_user] if current_user else []
+        print(f"Individual user: {group_members}")  # Debug print
+
+    assigned_users = []
 
     if request.method == 'POST':
         bed_assignments = {}
@@ -369,6 +379,7 @@ def select_bed(mode, hostel_id, room_type):
             assigned_user_id = request.form.get(f'user_for_bed_{bed["id"]}')
             if assigned_user_id:
                 bed_assignments[bed['id']] = int(assigned_user_id)
+                assigned_users.append(str(assigned_user_id))
 
         if bed_assignments:
             bed_ids = ','.join(map(str, bed_assignments.keys()))
@@ -380,7 +391,7 @@ def select_bed(mode, hostel_id, room_type):
     cur.close()
     return render_template('select_bed.html', mode=mode, hostel_id=hostel_id, room_type=room_type, 
                            selected_room=selected_room, beds=available_beds, 
-                           group_members=group_members, room_info=room_info)
+                           group_members=group_members, room_info=room_info, assigned_users=assigned_users)
 
 # Booking Confirmation
 @main.route('/booking_summary/<mode>/<int:hostel_id>/<room_type>/<int:room_number>/<bed_ids>/<user_ids>', methods=['GET', 'POST'])

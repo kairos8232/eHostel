@@ -17,12 +17,10 @@
 
 -- Dumping database structure for flaskapp
 DROP DATABASE IF EXISTS `flaskapp`;
-DROP DATABASE IF EXISTS `flaskapp`;
 CREATE DATABASE IF NOT EXISTS `flaskapp` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
 USE `flaskapp`;
 
 -- Dumping structure for table flaskapp.admin
-DROP TABLE IF EXISTS `admin`;
 DROP TABLE IF EXISTS `admin`;
 CREATE TABLE IF NOT EXISTS `admin` (
   `id` int NOT NULL,
@@ -37,7 +35,6 @@ INSERT INTO `admin` (`id`, `name`, `password`) VALUES
 
 -- Dumping structure for table flaskapp.beds
 DROP TABLE IF EXISTS `beds`;
-DROP TABLE IF EXISTS `beds`;
 CREATE TABLE IF NOT EXISTS `beds` (
   `id` int NOT NULL AUTO_INCREMENT,
   `room_number` int NOT NULL,
@@ -47,11 +44,10 @@ CREATE TABLE IF NOT EXISTS `beds` (
   UNIQUE KEY `room_bed` (`room_number`,`bed_letter`),
   CONSTRAINT `fk_beds_rooms` FOREIGN KEY (`room_number`) REFERENCES `rooms` (`number`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Dumping data for table flaskapp.beds: ~20 rows (approximately)
 INSERT INTO `beds` (`id`, `room_number`, `bed_letter`, `status`) VALUES
-	(1, 101, 'A', 'Occupied'),
+	(1, 101, 'A', 'Available'),
 	(2, 102, 'A', 'Available'),
 	(3, 103, 'A', 'Available'),
 	(4, 104, 'A', 'Available'),
@@ -73,7 +69,6 @@ INSERT INTO `beds` (`id`, `room_number`, `bed_letter`, `status`) VALUES
 	(20, 303, 'C', 'Available');
 
 -- Dumping structure for table flaskapp.booking
-DROP TABLE IF EXISTS `booking`;
 DROP TABLE IF EXISTS `booking`;
 CREATE TABLE IF NOT EXISTS `booking` (
   `booking_no` int NOT NULL AUTO_INCREMENT,
@@ -98,10 +93,9 @@ CREATE TABLE IF NOT EXISTS `booking` (
   CONSTRAINT `FK_booking_users` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=31 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
--- Dumping data for table flaskapp.booking: ~1 rows (approximately)
+-- Dumping data for table flaskapp.booking: ~0 rows (approximately)
 
 -- Dumping structure for table flaskapp.groups
-DROP TABLE IF EXISTS `groups`;
 DROP TABLE IF EXISTS `groups`;
 CREATE TABLE IF NOT EXISTS `groups` (
   `group_id` int NOT NULL AUTO_INCREMENT,
@@ -110,12 +104,11 @@ CREATE TABLE IF NOT EXISTS `groups` (
   PRIMARY KEY (`group_id`),
   KEY `leader_id` (`leader_id`),
   CONSTRAINT `groups_ibfk_1` FOREIGN KEY (`leader_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=41 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=44 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
 -- Dumping data for table flaskapp.groups: ~0 rows (approximately)
 
 -- Dumping structure for table flaskapp.group_members
-DROP TABLE IF EXISTS `group_members`;
 DROP TABLE IF EXISTS `group_members`;
 CREATE TABLE IF NOT EXISTS `group_members` (
   `id` int NOT NULL AUTO_INCREMENT,
@@ -126,12 +119,11 @@ CREATE TABLE IF NOT EXISTS `group_members` (
   KEY `user_id` (`user_id`),
   CONSTRAINT `group_members_ibfk_1` FOREIGN KEY (`group_id`) REFERENCES `groups` (`group_id`),
   CONSTRAINT `group_members_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=86 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=93 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
 -- Dumping data for table flaskapp.group_members: ~0 rows (approximately)
 
 -- Dumping structure for table flaskapp.hostel
-DROP TABLE IF EXISTS `hostel`;
 DROP TABLE IF EXISTS `hostel`;
 CREATE TABLE IF NOT EXISTS `hostel` (
   `id` int NOT NULL AUTO_INCREMENT,
@@ -147,7 +139,6 @@ INSERT INTO `hostel` (`id`, `name`) VALUES
 
 -- Dumping structure for table flaskapp.rooms
 DROP TABLE IF EXISTS `rooms`;
-DROP TABLE IF EXISTS `rooms`;
 CREATE TABLE IF NOT EXISTS `rooms` (
   `number` int NOT NULL,
   `hostel_id` int NOT NULL,
@@ -160,12 +151,13 @@ CREATE TABLE IF NOT EXISTS `rooms` (
   CONSTRAINT `rooms_ibfk_1` FOREIGN KEY (`hostel_id`) REFERENCES `hostel` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table flaskapp.rooms: ~10 rows (approximately)
+-- Dumping data for table flaskapp.rooms: ~11 rows (approximately)
 INSERT INTO `rooms` (`number`, `hostel_id`, `category`, `capacity`, `status`, `price`) VALUES
 	(101, 1, 'Single', 1, 'Available', 100.00),
 	(102, 1, 'Double', 2, 'Available', 150.00),
 	(103, 1, 'Triple', 3, 'Available', 200.00),
 	(104, 1, 'Double', 2, 'Available', 200.00),
+	(105, 1, 'Double', 2, 'Available', 200.00),
 	(201, 2, 'Single', 1, 'Available', 110.00),
 	(202, 2, 'Double', 2, 'Available', 160.00),
 	(203, 2, 'Triple', 3, 'Available', 210.00),
@@ -174,7 +166,6 @@ INSERT INTO `rooms` (`number`, `hostel_id`, `category`, `capacity`, `status`, `p
 	(303, 3, 'Triple', 3, 'Available', 220.00);
 
 -- Dumping structure for table flaskapp.trimester
-DROP TABLE IF EXISTS `trimester`;
 DROP TABLE IF EXISTS `trimester`;
 CREATE TABLE IF NOT EXISTS `trimester` (
   `id` int NOT NULL,
@@ -187,7 +178,6 @@ INSERT INTO `trimester` (`id`, `name`) VALUES
 	(2310, 'Trimester March/April 2024');
 
 -- Dumping structure for table flaskapp.users
-DROP TABLE IF EXISTS `users`;
 DROP TABLE IF EXISTS `users`;
 CREATE TABLE IF NOT EXISTS `users` (
   `id` int NOT NULL,

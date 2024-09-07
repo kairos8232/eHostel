@@ -1,37 +1,41 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Booking Summary</title>
-</head>
-<body>
-    <h1>Booking Summary</h1>
-    <p>Hostel: {{ booking_details.hostel_name }}</p>
-    <p>Room Number: {{ booking_details.room_number }}</p>
-    <p>Room Type: {{ booking_details.room_type }}</p>
-    <p>Price: ${{ booking_details.price }}</p>
+{% extends 'base.html' %}
 
-    <h2>Bed Assignments:</h2>
-    {% for assignment in booking_details.bed_assignments %}
-        <div>
-            <p>Bed: {{ assignment.bed.bed_letter }}</p>
-            {% if assignment.user %}
-                <p>Assigned to: 
-                {% if assignment.user.name == 'You' %}
-                    You
-                {% else %}
-                    {{ assignment.user.name }} ({{ assignment.user.email }})
-                {% endif %}
-                </p>
-            {% else %}
-                <p>Unassigned</p>
-            {% endif %}
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/booking_summary-style.css') }}">
+{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Booking Summary</h1>
+    <div class="booking-details-wrapper">
+        <div class="booking-details">
+            <p>Hostel: {{ booking_details.hostel_name }}</p>
+            <p>Room Number: {{ booking_details.room_number }}</p>
+            <p>Room Type: {{ booking_details.room_type }}</p>
+            <p>Price: ${{ booking_details.price }}</p>
+
+            <h2>Bed Assignments:</h2>
+            <div class="bed-assignments">
+                {% for assignment in booking_details.bed_assignments %}
+                    <div>
+                        <p>Bed: {{ assignment.bed.bed_letter }}</p>
+                        {% if assignment.user %}
+                            <p>Assigned to: 
+                            {% if assignment.user.name == 'You' %}
+                                You
+                            {% else %}
+                                {{ assignment.user.name }} ({{ assignment.user.email }})
+                            {% endif %}
+                            </p>
+                        {% else %}
+                            <p>Unassigned</p>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+
+            <form method="POST">
+                <button type="submit">Confirm Booking</button>
+            </form>
         </div>
-    {% endfor %}
-
-    <form method="POST">
-        <button type="submit">Confirm Booking</button>
-    </form>
-</body>
-</html>
+    </div>
+{% endblock %}
