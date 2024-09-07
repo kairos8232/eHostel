@@ -7,14 +7,7 @@ import os
 from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user
 
 main = Flask(__name__)
-
-
-def create_main():
-   main = Flask(__name__)
-   main.config['SECRET_KEY'] = 'Hostel management secret key'
-   return main
-   
-
+  
 db = yaml.safe_load(open('db.yaml'))
 main.config['MYSQL_HOST'] = db['mysql_host']
 main.config['MYSQL_USER'] = db['mysql_user']
@@ -70,6 +63,10 @@ def Login():
 
     return render_template('signin.html')
 
+@main.route("/home")
+def Home():
+    return render_template('home.html')
+
 @main.route('/profile', methods=['GET', 'POST'])
 def Profile():
     user_id = session.get('id')
@@ -113,10 +110,6 @@ def Profile():
     else:
         return redirect(url_for('home'))
 
-@main.route("/home")
-def Home():
-    return render_template('home.html')
-
 # Select Trimester Route
 @main.route('/select_trimester', methods=['GET', 'POST'])
 def select_trimester():
@@ -135,6 +128,7 @@ def select_trimester():
         return redirect(url_for('choose_mode'))
 
     return render_template('select_trimester.html', trimesters=trimesters)
+
 
 @main.route('/edit_admin_trimester', methods=['GET', 'POST'])
 def edit_trimester():
@@ -297,6 +291,29 @@ def select_room_type(mode, hostel_id):
     cur.close()
     return render_template('select_room_type.html', mode=mode, hostel_id=hostel_id, room_types=room_types, available_rooms=available_rooms, selected_room_type=selected_room_type)
 
+# Select Bed Route
+@main.route('/select_bed/<mode>/<int:hostel_id>/<room_type>', methods=['GET', 'POST'])
+def select_bed(mode, hostel_id, room_type):
+    user_id = session.get('id')
+    if not user_id:
+        return redirect(url_for('Login'))
+
+    selected_room = request.args.get('selected_room')
+    if not selected_room:
+        return redirect(url_for('select_room_type', mode=mode, hostel_id=hostel_id))
+
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    cur.execute("SELECT * FROM beds WHERE room_number = %s AND status = 'Available'", (selected_room,))
+    available_beds = cur.fetchall()
+
+    if request.method == 'POST' and 'bed_id' in request.form:
+        bed_id = request.form['bed_id']
+        cur.close()
+        return redirect(url_for('booking_summary', mode=mode, hostel_id=hostel_id, room_type=room_type, room_number=selected_room, bed_id=bed_id))
+
+    cur.close()
+    return render_template('select_bed.html', mode=mode, hostel_id=hostel_id, room_type=room_type, selected_room=selected_room, beds=available_beds)
+
 # Booking Confirmation
 @main.route('/booking_summary/<mode>/<int:hostel_id>/<room_type>/<int:room_number>/<int:bed_id>', methods=['GET', 'POST'])
 def booking_summary(mode, hostel_id, room_type, room_number, bed_id):
@@ -345,28 +362,6 @@ def booking_summary(mode, hostel_id, room_type, room_number, bed_id):
     cur.close()
 
     return render_template('booking_summary.html', booking_details=booking_details, mode=mode, hostel_id=hostel_id, room_type=room_type, room_number=room_number, bed_id=bed_id)
-
-@main.route('/select_bed/<mode>/<int:hostel_id>/<room_type>', methods=['GET', 'POST'])
-def select_bed(mode, hostel_id, room_type):
-    user_id = session.get('id')
-    if not user_id:
-        return redirect(url_for('Login'))
-
-    selected_room = request.args.get('selected_room')
-    if not selected_room:
-        return redirect(url_for('select_room_type', mode=mode, hostel_id=hostel_id))
-
-    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    cur.execute("SELECT * FROM beds WHERE room_number = %s AND status = 'Available'", (selected_room,))
-    available_beds = cur.fetchall()
-
-    if request.method == 'POST' and 'bed_id' in request.form:
-        bed_id = request.form['bed_id']
-        cur.close()
-        return redirect(url_for('booking_summary', mode=mode, hostel_id=hostel_id, room_type=room_type, room_number=selected_room, bed_id=bed_id))
-
-    cur.close()
-    return render_template('select_bed.html', mode=mode, hostel_id=hostel_id, room_type=room_type, selected_room=selected_room, beds=available_beds)
 
 # Invite Member Route
 @main.route('/invite_member/<int:group_id>', methods=['POST'])

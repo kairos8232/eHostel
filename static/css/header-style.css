@@ -43,7 +43,6 @@ header {
     font-weight: 600;
     font-size: 18px;
 }
-<<<<<<< HEAD
 .user-pic{
     width: 50px;
     border: solid;
@@ -118,25 +117,6 @@ header {
 .sub-menu-link:hover p{
     font-weight: 600;
 }
-=======
-.signup {
-    border: rgba(255,255,255,0.5) 2px solid;
-    padding: 8px 16px;
-    margin-left: 16px;
-    border-radius: 99px;
-    transition: 300ms;
-}
-.signup:hover {
-    background: white;
-    color: black;
-}
-
-.fa-regular {
-    font-size: 25px;
-    color: white;
-    cursor: pointer;
-}
->>>>>>> 87054606100a08f409d82c22a1a4f697ff5d211b
 
 .nav .logo{
     background-color: white;
@@ -149,92 +129,3 @@ header {
 .user-form-group label {
     display: none;
 }
-@media (max-width: 768px) {
-    .nav {
-        position: absolute;
-        left: 0;
-        top: 0;
-        display: flex;
-        flex-direction: column;
-        background: #0f172a;
-        height: 100vh;
-        width: 50%;
-        padding: 0px 20px;
-        gap: 16px;
-        transition: 500ms;
-        box-shadow: 10px 0px 10px rgba(0,0,0,0.2) ;
-    }
-    .nav .logo {
-        margin-left: 16px;
-        margin-top: 20px;
-        display: block;
-    }
-    .divider {
-        background: rgba(255,255,255,0.1);
-        width: 100%;
-        height: 2px;
-        margin: 10px 0px;  
-    }
-
-    .user-form-group {
-        display: flex;
-        align-items: center;
-    }
-
-    .signup {
-        margin-right: 16px;
-    }
-      
-<<<<<<< HEAD
-      
-    .fa-regular {
-        font-size: 25px;
-        color: white;
-        cursor: pointer;
-    }
-    #check:checked~.user-form-group .fa-regular {
-        display: none;
-    }
-
-    .close-menu {
-        font-size: 45px;
-        color: white;
-        cursor: pointer;
-    }
-    .user-form-group .close-menu {
-        display: none;
-    }
-    #check:checked~.user-form-group .close-menu {
-        display: block;
-    }
-    
-=======
->>>>>>> 87054606100a08f409d82c22a1a4f697ff5d211b
-    .fa-regular {
-        font-size: 25px;
-        color: white;
-        cursor: pointer;
-    }
-    #check:checked~.user-form-group .fa-regular {
-        display: none;
-    }
-
-    .close-menu {
-        font-size: 45px;
-        color: white;
-        cursor: pointer;
-    }
-    .user-form-group .close-menu {
-        display: none;
-    }
-    #check:checked~.user-form-group .close-menu {
-        display: block;
-    }
-    #check:checked~.nav {
-        left: 0%;
-    }
-}
-<<<<<<< HEAD
-
-=======
->>>>>>> 87054606100a08f409d82c22a1a4f697ff5d211b

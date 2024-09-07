@@ -4,14 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MMU Hostel Management</title>
-    <link rel="stylesheet" href="home-style.css">
     <!--import fonts poppins-->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static' , filename = 'css/header-style.css' ) }}">
-    <!--import box icons-->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     {% block styles %}{% endblock %}
 </head>
 <body>
@@ -25,11 +22,45 @@
             <a href="#">Services</a>
             <a href="#">Contact</a>
         </nav>
-       <div class="user-form-group">
-            <a class="login" href="#">Login</a>
-            <a class="signup" href="#">Sign up</a>
-            <i class="fa-regular fa-user"></i>
-        </div>
+
+        <div class="user-form-group">
+            <img src="/static/images/anime-default-pfp-5.jpg" class="user-pic" onclick="togglemenu()">
+    
+                <div class="sub-menu-wrap" id="sub-menu-wrap">
+                    <div class="sub-menu">
+                        <div class="user-info">
+                            <img src="/static/images/anime-default-pfp-5.jpg">
+                            <h1>User Name</h1>
+                        </div>
+                        <hr>
+    
+                    <a href="{{ url_for('Profile') }}" class="sub-menu-link">
+                        <img src="/static/images/account.png">
+                        <p>Edit Profile</p>
+                        <span></span>
+                    </a>
+                   
+                    <a href="#" class="sub-menu-link">
+                        <img src="/static/images/setting.png">
+                        <p>Settings</p>
+                        <span></span>
+                    </a>
+    
+                    <a href="{{ url_for('logout') }}" class="sub-menu-link">
+                        <img src="/static/images/logout.png">
+                        <p>Logout</p>
+                        <span></span>
+                    </a>
+                    </div>
+                </div>
+            </div>
+            <script>
+                let submenu = document.getElementById("sub-menu-wrap");
+        
+                function togglemenu(){
+                submenu.classList.toggle("open-menu");
+                }
+            </script> 
     </header>
     {% else %}
     <script>

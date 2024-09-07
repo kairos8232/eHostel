@@ -95,8 +95,12 @@ CREATE TABLE IF NOT EXISTS `booking` (
   CONSTRAINT `FK_booking_users` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
+<<<<<<< HEAD
 -- Dumping data for table flaskapp.booking: ~0 rows (approximately)
 DELETE FROM `booking`;
+=======
+-- Dumping data for table flaskapp.booking: ~1 rows (approximately)
+>>>>>>> 86379aaf6643791352d76462991eb1f8058b1f78
 
 -- Dumping structure for table flaskapp.groups
 DROP TABLE IF EXISTS `groups`;
@@ -110,7 +114,10 @@ CREATE TABLE IF NOT EXISTS `groups` (
 ) ENGINE=InnoDB AUTO_INCREMENT=33 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
 -- Dumping data for table flaskapp.groups: ~0 rows (approximately)
+<<<<<<< HEAD
 DELETE FROM `groups`;
+=======
+>>>>>>> 86379aaf6643791352d76462991eb1f8058b1f78
 INSERT INTO `groups` (`group_id`, `leader_id`, `trimester`) VALUES
 	(32, 2, '2310');
 
@@ -127,8 +134,12 @@ CREATE TABLE IF NOT EXISTS `group_members` (
   CONSTRAINT `group_members_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=59 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
+<<<<<<< HEAD
 -- Dumping data for table flaskapp.group_members: ~3 rows (approximately)
 DELETE FROM `group_members`;
+=======
+-- Dumping data for table flaskapp.group_members: ~0 rows (approximately)
+>>>>>>> 86379aaf6643791352d76462991eb1f8058b1f78
 INSERT INTO `group_members` (`id`, `group_id`, `user_id`) VALUES
 	(55, 32, 1),
 	(57, 32, 2),
@@ -197,16 +208,26 @@ CREATE TABLE IF NOT EXISTS `users` (
   `email` varchar(50) NOT NULL,
   `gender` varchar(10) NOT NULL,
   `password` varchar(50) NOT NULL,
+<<<<<<< HEAD
   `profile_pic` varchar(255) DEFAULT NULL,
+=======
+>>>>>>> 86379aaf6643791352d76462991eb1f8058b1f78
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Dumping data for table flaskapp.users: ~3 rows (approximately)
+<<<<<<< HEAD
 DELETE FROM `users`;
 INSERT INTO `users` (`id`, `email`, `gender`, `password`, `profile_pic`) VALUES
 	(1, 'user1@example.com', 'Male', 'password1', NULL),
 	(2, 'user2@example.com', 'Female', 'password2', NULL),
 	(3, 'user3@example.com', 'Male', 'password3', NULL);
+=======
+INSERT INTO `users` (`id`, `email`, `gender`, `password`) VALUES
+	(1, 'user1@example.com', 'Male', 'password1'),
+	(2, 'user2@example.com', 'Female', 'password2'),
+	(3, 'user3@example.com', 'Male', 'password3');
+>>>>>>> 86379aaf6643791352d76462991eb1f8058b1f78
 
 /*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;
