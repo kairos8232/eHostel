@@ -63,7 +63,6 @@ def Login():
     return render_template('signin.html')
 
 @main.route("/home")
-@main.route("/home")
 def Home():
     return render_template('home.html')
 
@@ -112,7 +111,6 @@ def Profile():
 
 # Select Trimester Route
 @main.route('/select_trimester', methods=['GET', 'POST'])
-@main.route('/select_trimester', methods=['GET', 'POST'])
 def select_trimester():
     user_id = session.get('id')
     if not user_id:
@@ -131,7 +129,6 @@ def select_trimester():
     return render_template('select_trimester.html', trimesters=trimesters)
 
 # Mode selection route (Individual or Group)
-@main.route('/choose_mode', methods=['GET', 'POST'])
 @main.route('/choose_mode', methods=['GET', 'POST'])
 def choose_mode():
     if 'loggedin' not in session:
@@ -164,7 +161,6 @@ def choose_mode():
 
 # Group page route (Create or Join Group)
 @main.route('/group', methods=['GET', 'POST'])
-@main.route('/group', methods=['GET', 'POST'])
 def group_page():
     user_id = session.get('id')
     if not user_id:
@@ -194,7 +190,6 @@ def group_page():
     return render_template('group_page.html')
 
 # Manage Group route with student filtering
-@main.route('/manage_group/<int:group_id>', methods=['GET', 'POST'])
 @main.route('/manage_group/<int:group_id>', methods=['GET', 'POST'])
 def manage_group(group_id):
     user_id = session.get('id')
@@ -241,6 +236,7 @@ def manage_group(group_id):
 
     return render_template('manage_group.html', members=members, group_id=group_id, students=students, is_leader=is_leader, current_user_id=user_id)
 
+# Leave Group
 @main.route('/leave_group/<int:group_id>', methods=['POST'])
 def leave_group(group_id):
     user_id = session.get('id')
@@ -275,7 +271,6 @@ def leave_group(group_id):
 
 # Select Hostel Route
 @main.route('/select_hostel/<mode>', methods=['GET', 'POST'])
-@main.route('/select_hostel/<mode>', methods=['GET', 'POST'])
 def select_hostel(mode):
     user_id = session.get('id')
     if not user_id:
@@ -293,7 +288,6 @@ def select_hostel(mode):
     return render_template('select_hostel.html', mode=mode, hostels=hostels)
 
 # Select Room Type Route
-@main.route('/select_room_type/<mode>/<int:hostel_id>', methods=['GET', 'POST'])
 @main.route('/select_room_type/<mode>/<int:hostel_id>', methods=['GET', 'POST'])
 def select_room_type(mode, hostel_id):
     user_id = session.get('id')
@@ -337,7 +331,6 @@ def select_room_type(mode, hostel_id):
     return render_template('select_room_type.html', mode=mode, hostel_id=hostel_id, available_rooms=available_rooms)
 
 # Select Bed Route
-@main.route('/select_bed/<mode>/<int:hostel_id>/<room_type>', methods=['GET', 'POST'])
 @main.route('/select_bed/<mode>/<int:hostel_id>/<room_type>', methods=['GET', 'POST'])
 def select_bed(mode, hostel_id, room_type):
     user_id = session.get('id')
@@ -458,7 +451,6 @@ def booking_summary(mode, hostel_id, room_type, room_number, bed_ids, user_ids):
 
 # Invite Member Route
 @main.route('/invite_member/<int:group_id>', methods=['POST'])
-@main.route('/invite_member/<int:group_id>', methods=['POST'])
 def invite_member(group_id):
     user_id = session.get('id')
 
@@ -489,7 +481,6 @@ def invite_member(group_id):
 
 # Transfer Leadership
 @main.route('/transfer_leadership/<int:group_id>/<int:new_leader_id>', methods=['POST'])
-@main.route('/transfer_leadership/<int:group_id>/<int:new_leader_id>', methods=['POST'])
 def transfer_leadership(group_id, new_leader_id):
     user_id = session.get('id')
     if not user_id:
@@ -515,7 +506,6 @@ def transfer_leadership(group_id, new_leader_id):
 
 # Remove Member
 @main.route('/remove_member/<int:group_id>/<int:member_id>', methods=['POST'])
-@main.route('/remove_member/<int:group_id>/<int:member_id>', methods=['POST'])
 def remove_member(group_id, member_id):
     user_id = session.get('id')
     if not user_id:
@@ -534,7 +524,6 @@ def remove_member(group_id, member_id):
     return redirect(url_for('manage_group', group_id=group_id))
 
 # Disband Group
-@main.route('/disband_group/<int:group_id>', methods=['POST'])
 @main.route('/disband_group/<int:group_id>', methods=['POST'])
 def disband_group(group_id):
     user_id = session.get('id')
@@ -556,13 +545,11 @@ def disband_group(group_id):
 
 # Logout Route
 @main.route('/logout')
-@main.route('/logout')
 def logout():
     session.pop('loggedin', None)
     session.pop('id', None)
     return redirect(url_for('Index'))
 
 if __name__ == "__main__":
-    main.run(debug=True)
     main.run(debug=True)
 
