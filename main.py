@@ -4,7 +4,7 @@ import MySQLdb.cursors
 import yaml
 import bcrypt
 import os
-
+from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user
 
 main = Flask(__name__)
 
@@ -70,6 +70,49 @@ def Login():
 
     return render_template('signin.html')
 
+@main.route('/profile', methods=['GET', 'POST'])
+def Profile():
+    user_id = session.get('id')
+    
+    if not user_id:
+        return redirect(url_for('login'))
+    
+    if request.method == 'POST':
+        # name = request.form['name']
+        gender = request.form['gender']
+        email = request.form['email']
+        profile_pic = request.files['image']
+        
+        if profile_pic:
+            profile_pic_path = os.path.join(main.config['UPLOAD_FOLDER'], profile_pic.filename)
+            profile_pic.save(profile_pic_path)
+        else:
+            profile_pic_path = None
+
+        cur = mysql.connection.cursor()
+        cur.execute("""
+            UPDATE users SET gender=%s, email=%s,  profile_pic=%s 
+            WHERE id=%s
+            """, (gender, email, profile_pic_path, user_id))
+        mysql.connection.commit()
+        cur.close()
+        return redirect(url_for('Profile'))
+
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT * FROM users WHERE id=%s", [user_id])
+    user_data = cur.fetchone()
+    cur.close()
+
+    if user_data:
+        user_profile = {
+            'gender': user_data[2],
+            'email': user_data[1],
+            'image_url': url_for('static', filename=f"uploads/{user_data[4]}")
+        }
+        return render_template('profile.html', **user_profile)
+    else:
+        return redirect(url_for('home'))
+
 @main.route("/home")
 def Home():
     return render_template('home.html')
@@ -92,6 +135,19 @@ def select_trimester():
         return redirect(url_for('choose_mode'))
 
     return render_template('select_trimester.html', trimesters=trimesters)
+
+@main.route('/edit_admin_trimester', methods=['GET', 'POST'])
+def edit_trimester():
+    if request.method == 'POST':
+        userDetails = request.form
+        trimesters = userDetails['semester']
+        cur = mysql.connection.cursor()
+        cur.execute("INSERT INTO trimester(id ,name) VALUES(%s  , %s)", (id , trimesters))
+        mysql.connection.commit()
+        cur.close()
+        return redirect(url_for('home'))
+    return render_template('admin_trimester.html')
+
 
 # Mode selection route (Individual or Group)
 @main.route('/choose_mode', methods=['GET', 'POST'])
@@ -241,24 +297,6 @@ def select_room_type(mode, hostel_id):
     cur.close()
     return render_template('select_room_type.html', mode=mode, hostel_id=hostel_id, room_types=room_types, available_rooms=available_rooms, selected_room_type=selected_room_type)
 
-@main.route('/register-hostel', methods = ['POST', 'GET'])
-def Register():
-    selected_room = request.args.get('selected_room')
-    if not selected_room:
-        return redirect(url_for('select_room_type', mode=mode, hostel_id=hostel_id))
-
-    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    cur.execute("SELECT * FROM beds WHERE room_number = %s AND status = 'Available'", (selected_room,))
-    available_beds = cur.fetchall()
-
-    if request.method == 'POST' and 'bed_id' in request.form:
-        bed_id = request.form['bed_id']
-        cur.close()
-        return redirect(url_for('booking_summary', mode=mode, hostel_id=hostel_id, room_type=room_type, room_number=selected_room, bed_id=bed_id))
-
-    cur.close()
-    return render_template('select_bed.html', mode=mode, hostel_id=hostel_id, room_type=room_type, selected_room=selected_room, beds=available_beds)
-
 # Booking Confirmation
 @main.route('/booking_summary/<mode>/<int:hostel_id>/<room_type>/<int:room_number>/<int:bed_id>', methods=['GET', 'POST'])
 def booking_summary(mode, hostel_id, room_type, room_number, bed_id):
@@ -308,13 +346,34 @@ def booking_summary(mode, hostel_id, room_type, room_number, bed_id):
 
     return render_template('booking_summary.html', booking_details=booking_details, mode=mode, hostel_id=hostel_id, room_type=room_type, room_number=room_number, bed_id=bed_id)
 
+@main.route('/select_bed/<mode>/<int:hostel_id>/<room_type>', methods=['GET', 'POST'])
+def select_bed(mode, hostel_id, room_type):
+    user_id = session.get('id')
+    if not user_id:
+        return redirect(url_for('Login'))
+
+    selected_room = request.args.get('selected_room')
+    if not selected_room:
+        return redirect(url_for('select_room_type', mode=mode, hostel_id=hostel_id))
+
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    cur.execute("SELECT * FROM beds WHERE room_number = %s AND status = 'Available'", (selected_room,))
+    available_beds = cur.fetchall()
+
+    if request.method == 'POST' and 'bed_id' in request.form:
+        bed_id = request.form['bed_id']
+        cur.close()
+        return redirect(url_for('booking_summary', mode=mode, hostel_id=hostel_id, room_type=room_type, room_number=selected_room, bed_id=bed_id))
+
+    cur.close()
+    return render_template('select_bed.html', mode=mode, hostel_id=hostel_id, room_type=room_type, selected_room=selected_room, beds=available_beds)
+
 # Invite Member Route
 @main.route('/invite_member/<int:group_id>', methods=['POST'])
 def invite_member(group_id):
     user_id = session.get('id')
-
     if not user_id:
-        return redirect(url_for('Login'))  # Redirect to login if the user ID is not in session
+        return redirect(url_for('Login'))
 
     new_member_id = request.form['user_id']
 
@@ -336,17 +395,7 @@ def invite_member(group_id):
     mysql.connection.commit()
     cur.close()
 
-    if room and room['chosen_by'] is None:
-        cur.execute("UPDATE rooms SET chosen_by = %s WHERE number = %s", (user_id, room_number))
-        mysql.connection.commit()
-        cur.close()
-        return redirect(url_for('room_list', success='Room chosen successfully'))
-    elif room:
-        cur.close()
-        return redirect(url_for('room_list', error='Room is already chosen'))
-    else:
-        cur.close()
-        return redirect(url_for('room_list', error='Room not found'))
+    return redirect(url_for('manage_group', group_id=group_id))
 
 # Transfer Leadership
 @main.route('/transfer_leadership/<int:group_id>/<int:new_leader_id>', methods=['POST'])

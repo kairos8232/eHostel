@@ -15,7 +15,7 @@ profile_data = {
     'biography': 'Anythings u can write...'
 }
 
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/profile', methods=['GET', 'POST'])
 def profile():
     if request.method == 'POST':
         profile_data['name'] = request.form['name']
