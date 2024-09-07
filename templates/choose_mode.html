@@ -1,21 +1,21 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Choose Booking Mode</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-</head>
-<body>
+{% extends 'base.html' %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/choose_mode-style.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="container">
     <h1>Choose Your Booking Mode</h1>
     <form action="{{ url_for('choose_mode') }}" method="POST">
-        <input type="radio" id="individual" name="mode" value="individual" required>
-        <label for="individual">Individual Booking</label><br>
-        
-        <input type="radio" id="group" name="mode" value="group" required>
-        <label for="group">Group Booking</label><br><br>
-        
+        <div class="dropdown-container">
+            <select id="booking-mode" name="mode" required>
+                <option value="" disabled selected>Select your booking mode</option>
+                <option value="individual">Individual Booking</option>
+                <option value="group">Group Booking</option>
+            </select>
+        </div>
         <button type="submit">Continue</button>
     </form>
-</body>
-</html>
+</div>
+{% endblock %}

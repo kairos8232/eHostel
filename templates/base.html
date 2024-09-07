@@ -5,21 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MMU Hostel Management</title>
     <!--import fonts poppins-->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static' , filename = 'css/header-style.css' ) }}">
     {% block styles %}{% endblock %}
 </head>
 <body>
-    {% if session.loggedin %}
     <header>
-        <div class="heading"><img src="static/images/Multimedia_University_logo.png" alt="Multimedia University" style="width: 150px; height: 50px;" class="logo" ></div>
+        <div class="heading"><img src="/static/images/Multimedia_University_logo.png" alt="Multimedia University" style="width: 150px; height: 50px;" class="logo" ></div>
         <nav class="nav">
             <div class="divider"></div>
             <a href="{{ url_for('Home') }}">Home</a>
             <a href="{{ url_for('select_trimester') }}">Room</a>   
-            <a href="#">Services</a>
+            <a href="{{ url_for('logout') }}">Services</a>
             <a href="#">Contact</a>
         </nav>
 
@@ -62,12 +59,6 @@
                 }
             </script> 
     </header>
-    {% else %}
-    <script>
-        window.location.href = "/login";
-    </script>
-    {% endif %}
-
 </body>
 </html>
 
