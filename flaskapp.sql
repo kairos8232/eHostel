@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS `admin` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table flaskapp.admin: ~1 rows (approximately)
+-- Dumping data for table flaskapp.admin: ~0 rows (approximately)
 DELETE FROM `admin`;
 INSERT INTO `admin` (`id`, `name`, `password`) VALUES
 	(1, 'AdminUser', 'adminpass');
@@ -55,7 +55,7 @@ INSERT INTO `beds` (`id`, `room_number`, `bed_letter`, `status`) VALUES
 	(4, 104, 'A', 'Available'),
 	(5, 201, 'A', 'Available'),
 	(6, 202, 'A', 'Available'),
-	(7, 203, 'A', 'Available'),
+	(7, 203, 'A', 'Occupied'),
 	(8, 301, 'A', 'Available'),
 	(9, 302, 'A', 'Available'),
 	(10, 303, 'A', 'Available'),
@@ -93,14 +93,13 @@ CREATE TABLE IF NOT EXISTS `booking` (
   CONSTRAINT `FK_booking_rooms` FOREIGN KEY (`room_no`) REFERENCES `rooms` (`number`),
   CONSTRAINT `FK_booking_trimester` FOREIGN KEY (`trimester_id`) REFERENCES `trimester` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `FK_booking_users` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
-<<<<<<< HEAD
--- Dumping data for table flaskapp.booking: ~0 rows (approximately)
-DELETE FROM `booking`;
-=======
 -- Dumping data for table flaskapp.booking: ~1 rows (approximately)
->>>>>>> 86379aaf6643791352d76462991eb1f8058b1f78
+DELETE FROM `booking`;
+INSERT INTO `booking` (`booking_no`, `user_id`, `trimester_id`, `group_individual`, `group_id`, `hostel_id`, `room_no`, `cost`, `bed_number`) VALUES
+	(19, 1, 2310, 0, NULL, 1, 101, 100.00, 'A'),
+	(20, 1, 2310, 0, NULL, 2, 203, 210.00, 'A');
 
 -- Dumping structure for table flaskapp.groups
 DROP TABLE IF EXISTS `groups`;
@@ -111,13 +110,10 @@ CREATE TABLE IF NOT EXISTS `groups` (
   PRIMARY KEY (`group_id`),
   KEY `leader_id` (`leader_id`),
   CONSTRAINT `groups_ibfk_1` FOREIGN KEY (`leader_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=33 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=34 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
 -- Dumping data for table flaskapp.groups: ~0 rows (approximately)
-<<<<<<< HEAD
 DELETE FROM `groups`;
-=======
->>>>>>> 86379aaf6643791352d76462991eb1f8058b1f78
 INSERT INTO `groups` (`group_id`, `leader_id`, `trimester`) VALUES
 	(32, 2, '2310');
 
@@ -132,14 +128,10 @@ CREATE TABLE IF NOT EXISTS `group_members` (
   KEY `user_id` (`user_id`),
   CONSTRAINT `group_members_ibfk_1` FOREIGN KEY (`group_id`) REFERENCES `groups` (`group_id`),
   CONSTRAINT `group_members_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=59 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=61 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
-<<<<<<< HEAD
--- Dumping data for table flaskapp.group_members: ~3 rows (approximately)
+-- Dumping data for table flaskapp.group_members: ~4 rows (approximately)
 DELETE FROM `group_members`;
-=======
--- Dumping data for table flaskapp.group_members: ~0 rows (approximately)
->>>>>>> 86379aaf6643791352d76462991eb1f8058b1f78
 INSERT INTO `group_members` (`id`, `group_id`, `user_id`) VALUES
 	(55, 32, 1),
 	(57, 32, 2),
@@ -207,27 +199,20 @@ CREATE TABLE IF NOT EXISTS `users` (
   `id` int NOT NULL,
   `email` varchar(50) NOT NULL,
   `gender` varchar(10) NOT NULL,
-  `password` varchar(50) NOT NULL,
-<<<<<<< HEAD
+  `password` varchar(250) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `profile_pic` varchar(255) DEFAULT NULL,
-=======
->>>>>>> 86379aaf6643791352d76462991eb1f8058b1f78
+  `biography` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table flaskapp.users: ~3 rows (approximately)
-<<<<<<< HEAD
+-- Dumping data for table flaskapp.users: ~4 rows (approximately)
 DELETE FROM `users`;
-INSERT INTO `users` (`id`, `email`, `gender`, `password`, `profile_pic`) VALUES
-	(1, 'user1@example.com', 'Male', 'password1', NULL),
-	(2, 'user2@example.com', 'Female', 'password2', NULL),
-	(3, 'user3@example.com', 'Male', 'password3', NULL);
-=======
-INSERT INTO `users` (`id`, `email`, `gender`, `password`) VALUES
-	(1, 'user1@example.com', 'Male', 'password1'),
-	(2, 'user2@example.com', 'Female', 'password2'),
-	(3, 'user3@example.com', 'Male', 'password3');
->>>>>>> 86379aaf6643791352d76462991eb1f8058b1f78
+INSERT INTO `users` (`id`, `email`, `gender`, `password`, `profile_pic`, `biography`) VALUES
+	(1, 'profile1@gmail.com', 'Male', 'password1', NULL, 'haloo'),
+	(2, 'user2@example.com', 'Female', 'password2', NULL, NULL),
+	(3, 'user3@example.com', 'Male', 'password3', NULL, NULL),
+	(123, 'hoha4102@gmail.com', 'male', '$2b$12$mye/QRXPt93yEJzJ3gLwAOib.jPa5zqJGDqRL5TrZj55Ee81gMfJa', NULL, NULL),
+	(124, '19@gmail.com', 'Male', '$2b$12$O0js2gE2tVWknP7Dgac97uXkx9K23DJN0Ys0mRlS8XiVfQu1vaP0e', NULL, 'I like to sleep and I like to building castle in the sky \r\n');
 
 /*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;
