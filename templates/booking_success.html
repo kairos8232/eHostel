@@ -1,14 +1,13 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Booking Confirmation</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-</head>
-<body>
-    <h1>Booking Confirmed!</h1>
+{% extends 'base.html' %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/booking_success-style.css') }}">
+{% endblock %}
+
+{% block content %}
+<h1>Booking Summary</h1>
+<div class="wrapper">
     <p>Your booking has been successfully completed.</p>
-    <a href="{{ url_for('Home') }}">Go to Home</a>
-</body>
-</html>
+    <a href="{{ url_for('Home') }}" class="btn">Go to Home</a>
+</div>
+{% endblock %}

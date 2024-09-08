@@ -1,20 +1,24 @@
+.parent-container {
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+}
+
 .page-title {
     font-size: 2em;
     color: #ffffff;
-    margin-bottom: 20px;
+    margin: 50px 0 20px 0;
     font-weight: bold;
     text-align: center;
-    margin-top: 50px;
 }
 
 .manage-group-wrapper {
     background-color: #ffffff;
     border-radius: 15px;
-    max-width: 900px;
-    margin: 0 auto 50px;
-    box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.1);
+    margin: 0 auto;
     padding: 30px;
-    position: relative;
+    box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.1);
+    align-items: center;
 }
 
 .manage-group-container {
@@ -34,16 +38,16 @@ h2 {
 }
 
 table {
-    position: relative;
     width: 100%;
     background-color: #f9f9f9;
-    border-collapse: collapse;
-    border-radius: 8px;
-    overflow: hidden;
+    border-collapse: separate; 
+    border-spacing: 0;         
+    border-radius: 15px;       
+    overflow: hidden;         
     box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
     margin-bottom: 25px;
-    white-space: nowrap;
 }
+
 
 th, td {
     padding: 14px 18px;
@@ -66,7 +70,7 @@ tr:nth-child(even) {
     background-color: #f2f2f2;
 }
 
-button {
+button, .btn {
     background-color: #007bff;
     color: #ffffff;
     padding: 10px 15px;
@@ -74,9 +78,9 @@ button {
     border-radius: 4px;
     cursor: pointer;
     font-size: 0.9em;
+    text-decoration: none;
     transition: background-color 0.3s ease;
     box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
-    white-space: nowrap;
     margin-right: 5px;
 }
 
@@ -143,13 +147,7 @@ button:hover {
 
 .action-buttons-horizontal {
     display: flex;
-    gap: 10px; /* Adjust spacing between the buttons */
-}
-
-.disband-container {
-    position: absolute;
-    top: 30px; /* Adjust this value to position it within the table */
-    right: 25px; /* Adjust to align with the right edge of the table */
+    gap: 5px;
 }
 
 .disband {
@@ -166,4 +164,26 @@ button:hover {
 
 .disband:hover {
     background-color: #c82333;
+}
+
+.disband-container {
+    display: inline-block;
+    margin-left: auto;
+    vertical-align: middle;
+}
+
+.manage-group-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 15px;
+}
+
+.invite-member-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 15px;
 }

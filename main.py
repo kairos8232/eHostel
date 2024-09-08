@@ -115,9 +115,7 @@ def select_trimester():
     user_id = session.get('id')
     if not user_id:
         return redirect(url_for('Login'))
-
-    session.pop('group_members', None)
-    session.pop('group_id', None)
+    
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     cur.execute("SELECT * FROM trimester")
     trimesters = cur.fetchall()
@@ -216,11 +214,19 @@ def manage_group(group_id):
     cur.execute("SELECT * FROM `groups` WHERE group_id = %s", (group_id,))
     group = cur.fetchone()
 
+    if not group:
+        cur.close()
+        return render_template('error.html', message="Group not found.")
+
     is_leader = group['leader_id'] == user_id
+
+    # Get the leader's gender
+    cur.execute("SELECT gender FROM users WHERE id = %s", (group['leader_id'],))
+    leader_gender = cur.fetchone()['gender']
 
     # Fetch all group members with additional information
     cur.execute("""
-        SELECT users.id, users.email, users.name, users.faculty, 
+        SELECT users.id, users.email, users.name, users.faculty, users.gender,
                CASE WHEN users.id = groups.leader_id THEN 1 ELSE 0 END as is_leader
         FROM users 
         JOIN group_members ON users.id = group_members.user_id 
@@ -233,14 +239,14 @@ def manage_group(group_id):
     if request.method == 'POST' and is_leader:
         filter_student_id = request.form.get('filter_student_id')
         if filter_student_id:
-            cur.execute("SELECT id, email, name, faculty FROM users WHERE id = %s AND id NOT IN (SELECT user_id FROM group_members WHERE group_id = %s)", (filter_student_id, group_id))
+            cur.execute("SELECT id, email, name, faculty, gender FROM users WHERE id = %s AND gender = %s AND id NOT IN (SELECT user_id FROM group_members WHERE group_id = %s)", (filter_student_id, leader_gender, group_id))
             students = cur.fetchall()
         else:
             students = []
 
     cur.close()
 
-    return render_template('manage_group.html', members=members, group_id=group_id, students=students, is_leader=is_leader, current_user_id=user_id)
+    return render_template('manage_group.html', members=members, group_id=group_id, students=students, is_leader=is_leader, current_user_id=user_id, leader_gender=leader_gender)
 
 # Leave Group
 @main.route('/leave_group/<int:group_id>', methods=['POST'])
@@ -283,7 +289,13 @@ def select_hostel(mode):
         return redirect(url_for('Login'))
 
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    cur.execute("SELECT * FROM hostel")
+    
+    # Get user's gender
+    cur.execute("SELECT gender FROM users WHERE id = %s", (user_id,))
+    user_gender = cur.fetchone()['gender']
+
+    # Get hostels matching the user's gender
+    cur.execute("SELECT * FROM hostel WHERE gender = %s", (user_gender,))
     hostels = cur.fetchall()
 
     if request.method == 'POST':
@@ -494,8 +506,15 @@ def invite_member(group_id):
     cur.execute("SELECT * FROM users WHERE id = %s", (new_member_id,))
     new_member = cur.fetchone()
 
+    # Check if the new member's gender matches the leader's gender
+    cur.execute("SELECT gender FROM users WHERE id = %s", (user_id,))
+    leader_gender = cur.fetchone()['gender']
+
     if not new_member:
         return render_template('error.html', message="User does not exist.")
+    
+    if new_member['gender'] != leader_gender:
+        return render_template('error.html', message="You can only invite members of the same gender.")
 
     # Check if the user is already in the group
     cur.execute("SELECT * FROM group_members WHERE group_id = %s AND user_id = %s", (group_id, new_member_id))
