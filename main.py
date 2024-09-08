@@ -1,11 +1,11 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from flask_mysqldb import MySQL
-import bcrypt
 import MySQLdb.cursors
 import yaml
-import bcrypt
+from flask_bcrypt import Bcrypt
 import os
-
+from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user
+import hashlib
 
 main = Flask(__name__)
 
@@ -17,8 +17,7 @@ main.config['MYSQL_PASSWORD'] = db['mysql_password']
 main.config['MYSQL_DB'] = db['mysql_db']
 main.config['UPLOAD_FOLDER'] = db['mysql_profile_pic']
 main.secret_key = 'terrychin'
-
-# Initialize MySQL
+bcrypt = Bcrypt(main)
 mysql = MySQL(main)
 
 # Index route
@@ -35,8 +34,9 @@ def SignUp():
         email = userDetails['email']
         gender = userDetails['gender']
         password = userDetails['password']
+        hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
         cur = mysql.connection.cursor()
-        cur.execute("INSERT INTO users(id, email, gender, password) VALUES(%s, %s, %s, %s)", (id, email, gender, password))
+        cur.execute("INSERT INTO users(id, email, gender, password) VALUES(%s, %s, %s, %s)", (id, email, gender, hashed_password))
         mysql.connection.commit()
         cur.close()
         return redirect(url_for('home'))
@@ -50,12 +50,13 @@ def Login():
         id = userDetails['id']
         password = userDetails['password']
         cur = mysql.connection.cursor()
-        cur.execute('SELECT * FROM users WHERE id=%s AND password=%s', (id, password))
+        cur.execute('SELECT * FROM users WHERE id=%s', (id,))
         record = cur.fetchone()
-        if record:
-            session['loggedin'] = True
-            session['id'] = record[0]
-            return redirect(url_for('Home'))
+        if record and bcrypt.check_password_hash(record[3] , password):
+            session['loggedin']= True
+            session['id']= record[0]
+            session['password'] = record[3]
+            return redirect(url_for('home'))
         else:
             msg='Incorrect username/password. Try again!'
             return render_template('index.html', msg = msg)   
@@ -81,6 +82,7 @@ def Profile():
         name = request.form['name']
         gender = request.form['gender']
         email = request.form['email']
+        biography = request.form['biography']
         profile_pic = request.files['image']
         
         if profile_pic:
@@ -91,9 +93,9 @@ def Profile():
 
         cur = mysql.connection.cursor()
         cur.execute("""
-            UPDATE users SET gender=%s, email=%s,  profile_pic=%s 
+            UPDATE users SET gender=%s, email=%s,  profile_pic=%s, biography=%s
             WHERE id=%s
-            """, (gender, email, profile_pic_path, user_id))
+            """, (gender, email, profile_pic_path, biography, user_id))
         mysql.connection.commit()
         cur.close()
         return redirect(url_for('Profile'))
@@ -107,7 +109,8 @@ def Profile():
         user_profile = {
             'gender': user_data[2],
             'email': user_data[1],
-            'image_url': url_for('static', filename=f"uploads/{user_data[4]}")
+            'image_url': url_for('static', filename=f"uploads/{user_data[4]}"),
+            'biography': user_data[5]
         }
         return render_template('profile.html', **user_profile)
     else:
@@ -157,6 +160,21 @@ def select_trimester():
 
     return render_template('select_trimester.html', trimesters=trimesters)
 
+
+@main.route('/edit_admin_trimester', methods=['GET', 'POST'])
+def edit_trimester():
+    if request.method == 'POST':
+        userDetails = request.form
+        trimesters = userDetails['semester']
+        term = userDetails['term']
+        cur = mysql.connection.cursor()
+        cur.execute("INSERT INTO trimester(name , term) VALUES(%s  , %s)", (trimesters,term))
+        mysql.connection.commit()
+        cur.close()
+        return redirect(url_for('home'))
+    return render_template('admin_trimester.html')
+
+
 # Mode selection route (Individual or Group)
 @main.route('/choose_mode', methods=['GET', 'POST'])
 def choose_mode():
@@ -196,6 +214,7 @@ def choose_mode():
 @main.route('/group', methods=['GET', 'POST'])
 def group_page():
     user_id = session.get('id')
+    
     if not user_id:
         return redirect(url_for('Login'))
 
@@ -230,13 +249,14 @@ def manage_group(group_id):
         return redirect(url_for('Login'))
 
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    
-    # Check if the user is a member of the group
-    cur.execute("SELECT * FROM group_members WHERE group_id = %s AND user_id = %s", (group_id, user_id))
+    cur.execute("SELECT * FROM `groups` WHERE group_id = %s AND leader_id = %s", (group_id, user_id))
+    group = cur.fetchone()
+
+    # Check if the user is a member of the group, regardless of whether they are the leader or not
+    cur.execute("SELECT users.id, users.email FROM users JOIN group_members ON users.id = group_members.user_id WHERE group_members.group_id = %s AND group_members.user_id = %s", (group_id, user_id))
     is_group_member = cur.fetchone()
 
-    if not is_group_member:
-        cur.close()
+    if not group and not is_group_member:
         return redirect(url_for('group_page'))
 
     # Get group information
@@ -265,7 +285,7 @@ def manage_group(group_id):
     members = cur.fetchall()
 
     students = None
-    if request.method == 'POST' and is_leader:
+    if request.method == 'POST':
         filter_student_id = request.form.get('filter_student_id')
         if filter_student_id:
             cur.execute("SELECT id, email, name, faculty, gender FROM users WHERE id = %s AND gender = %s AND id NOT IN (SELECT user_id FROM group_members WHERE group_id = %s)", (filter_student_id, leader_gender, group_id))
@@ -524,9 +544,8 @@ def booking_summary(mode, hostel_id, room_type, room_number, bed_ids, user_ids):
 @main.route('/invite_member/<int:group_id>', methods=['POST'])
 def invite_member(group_id):
     user_id = session.get('id')
-
     if not user_id:
-        return redirect(url_for('Login'))  # Redirect to login if the user ID is not in session
+        return redirect(url_for('Login'))
 
     new_member_id = request.form['user_id']
 
@@ -577,6 +596,11 @@ def transfer_leadership(group_id, new_leader_id):
     # Update the leader_id in the groups table
     cur.execute("UPDATE `groups` SET leader_id = %s WHERE group_id = %s", (new_leader_id, group_id))
     mysql.connection.commit()
+
+    # If the current user was the leader, update the session data
+    if user_id == session['id']:
+        session['id'] = new_leader_id  # Update the session id to the new leader's id
+
     cur.close()
 
     # Redirect the user back to the manage_group page

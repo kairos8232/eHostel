@@ -1,0 +1,59 @@
+.heading{
+    position: absolute;
+    left: 6%;
+}
+
+.nav{
+    position: absolute;
+    left: 30%;
+}
+
+.container {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    max-width: 500px;
+    margin: 0 auto;
+    margin-top: 10%;
+    display: flex;
+    justify-content: center;
+}
+.sign-up-container h1{
+    margin-left: 19%;
+}
+
+input, textarea {
+    width: 40%;
+    padding: 10px;
+    margin: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 18px;
+}
+textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+.add-button {
+    display: inline-block;
+    padding: 4px 10px;
+    margin-left: 84%;
+    font-size: 20px;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    outline: none;
+    color: #fff;
+    background-color: #04AA6D;
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 9px #999;
+  }
+.edd-button:hover {background-color: #3e8e41}
+  
+.add-button:active {
+    background-color: #3e8e41;
+    box-shadow: 0 5px #666;
+    transform: translateY(4px);
+}

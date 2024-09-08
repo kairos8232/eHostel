@@ -29,7 +29,8 @@ CREATE TABLE IF NOT EXISTS `admin` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table flaskapp.admin: ~1 rows (approximately)
+-- Dumping data for table flaskapp.admin: ~0 rows (approximately)
+DELETE FROM `admin`;
 INSERT INTO `admin` (`id`, `name`, `password`) VALUES
 	(1, 'AdminUser', 'adminpass');
 
@@ -45,7 +46,8 @@ CREATE TABLE IF NOT EXISTS `beds` (
   CONSTRAINT `fk_beds_rooms` FOREIGN KEY (`room_number`) REFERENCES `rooms` (`number`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table flaskapp.beds: ~9 rows (approximately)
+-- Dumping data for table flaskapp.beds: ~20 rows (approximately)
+DELETE FROM `beds`;
 INSERT INTO `beds` (`id`, `room_number`, `bed_letter`, `status`) VALUES
 	(1, 101, 'A', 'Available'),
 	(2, 102, 'A', 'Available'),
@@ -53,7 +55,7 @@ INSERT INTO `beds` (`id`, `room_number`, `bed_letter`, `status`) VALUES
 	(4, 104, 'A', 'Available'),
 	(5, 201, 'A', 'Available'),
 	(6, 202, 'A', 'Available'),
-	(7, 203, 'A', 'Available'),
+	(7, 203, 'A', 'Occupied'),
 	(8, 301, 'A', 'Available'),
 	(9, 302, 'A', 'Available'),
 	(10, 303, 'A', 'Available'),
@@ -79,6 +81,7 @@ CREATE TABLE IF NOT EXISTS `booking` (
   `hostel_id` int NOT NULL,
   `room_no` int NOT NULL,
   `cost` decimal(10,2) NOT NULL,
+  `bed_number` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
   `bed_number` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
   PRIMARY KEY (`booking_no`),
   KEY `FK_booking_trimester` (`trimester_id`),
@@ -157,7 +160,8 @@ CREATE TABLE IF NOT EXISTS `rooms` (
   CONSTRAINT `rooms_ibfk_1` FOREIGN KEY (`hostel_id`) REFERENCES `hostel` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table flaskapp.rooms: ~11 rows (approximately)
+-- Dumping data for table flaskapp.rooms: ~10 rows (approximately)
+DELETE FROM `rooms`;
 INSERT INTO `rooms` (`number`, `hostel_id`, `category`, `capacity`, `status`, `price`) VALUES
 	(101, 1, 'Single', 1, 'Available', 100.00),
 	(102, 1, 'Double', 2, 'Available', 150.00),
