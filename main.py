@@ -1,10 +1,11 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from flask_mysqldb import MySQL
+import bcrypt
 import MySQLdb.cursors
 import yaml
 import bcrypt
 import os
-from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user
+
 
 main = Flask(__name__)
 
@@ -52,19 +53,14 @@ def Login():
         cur.execute('SELECT * FROM users WHERE id=%s AND password=%s', (id, password))
         record = cur.fetchone()
         if record:
-            session['loggedin']= True
-            session['id']= record[0]
-            session['password'] = record[3]
-            return redirect(url_for('home'))
+            session['loggedin'] = True
+            session['id'] = record[0]
+            return redirect(url_for('Home'))
         else:
             msg='Incorrect username/password. Try again!'
-            return render_template('index.html')   
+            return render_template('index.html', msg = msg)   
 
     return render_template('signin.html')
-
-@main.route("/home")
-def Home():
-    return render_template('home.html')
 
 @main.route('/profile', methods=['GET', 'POST'])
 def Profile():
@@ -128,20 +124,6 @@ def select_trimester():
 
     return render_template('select_trimester.html', trimesters=trimesters)
 
-
-@main.route('/edit_admin_trimester', methods=['GET', 'POST'])
-def edit_trimester():
-    if request.method == 'POST':
-        userDetails = request.form
-        trimesters = userDetails['semester']
-        cur = mysql.connection.cursor()
-        cur.execute("INSERT INTO trimester(id ,name) VALUES(%s  , %s)", (id , trimesters))
-        mysql.connection.commit()
-        cur.close()
-        return redirect(url_for('home'))
-    return render_template('admin_trimester.html')
-
-
 # Mode selection route (Individual or Group)
 @main.route('/choose_mode', methods=['GET', 'POST'])
 def choose_mode():
@@ -177,7 +159,6 @@ def choose_mode():
 @main.route('/group', methods=['GET', 'POST'])
 def group_page():
     user_id = session.get('id')
-    
     if not user_id:
         return redirect(url_for('Login'))
 
@@ -468,8 +449,9 @@ def booking_summary(mode, hostel_id, room_type, room_number, bed_ids, user_ids):
 @main.route('/invite_member/<int:group_id>', methods=['POST'])
 def invite_member(group_id):
     user_id = session.get('id')
+
     if not user_id:
-        return redirect(url_for('Login'))
+        return redirect(url_for('Login'))  # Redirect to login if the user ID is not in session
 
     new_member_id = request.form['user_id']
 

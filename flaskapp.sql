@@ -218,18 +218,10 @@ CREATE TABLE IF NOT EXISTS `users` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Dumping data for table flaskapp.users: ~3 rows (approximately)
-<<<<<<< HEAD
-DELETE FROM `users`;
-INSERT INTO `users` (`id`, `email`, `gender`, `password`, `profile_pic`) VALUES
-	(1, 'user1@example.com', 'Male', 'password1', NULL),
-	(2, 'user2@example.com', 'Female', 'password2', NULL),
-	(3, 'user3@example.com', 'Male', 'password3', NULL);
-=======
-INSERT INTO `users` (`id`, `email`, `gender`, `password`) VALUES
-	(1, 'user1@example.com', 'Male', 'password1'),
-	(2, 'user2@example.com', 'Female', 'password2'),
-	(3, 'user3@example.com', 'Male', 'password3');
->>>>>>> 86379aaf6643791352d76462991eb1f8058b1f78
+INSERT INTO `users` (`id`, `name`, `email`, `faculty`, `gender`, `password`) VALUES
+	(1, 'John Doe', 'user1@example.com', 'Engineering', 'Male', 'password1'),
+	(2, 'Jane Smith', 'user2@example.com', 'Science', 'Female', 'password2'),
+	(3, 'Bob Johnson', 'user3@example.com', 'Arts', 'Male', 'password3');
 
 /*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;
