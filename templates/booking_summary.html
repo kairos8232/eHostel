@@ -10,11 +10,28 @@
     <p>Hostel: {{ booking_details.hostel_name }}</p>
     <p>Room Number: {{ booking_details.room_number }}</p>
     <p>Room Type: {{ booking_details.room_type }}</p>
-    <p>Bed: {{ booking_details.bed_letter }}</p>
     <p>Price: ${{ booking_details.price }}</p>
 
-    <form method="POST" action="{{ url_for('booking_summary', mode=mode, hostel_id=hostel_id, room_type=room_type, room_number=room_number, bed_id=bed_id) }}">
-        <input type="submit" value="Confirm Booking">
+    <h2>Bed Assignments:</h2>
+    {% for assignment in booking_details.bed_assignments %}
+        <div>
+            <p>Bed: {{ assignment.bed.bed_letter }}</p>
+            {% if assignment.user %}
+                <p>Assigned to: 
+                {% if assignment.user.name == 'You' %}
+                    You
+                {% else %}
+                    {{ assignment.user.name }} ({{ assignment.user.email }})
+                {% endif %}
+                </p>
+            {% else %}
+                <p>Unassigned</p>
+            {% endif %}
+        </div>
+    {% endfor %}
+
+    <form method="POST">
+        <button type="submit">Confirm Booking</button>
     </form>
 </body>
 </html>

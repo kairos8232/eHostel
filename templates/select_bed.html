@@ -6,28 +6,22 @@
     <title>Select Bed</title>
 </head>
 <body>
-    <h1>Select Bed</h1>
-    <h2>Room {{ selected_room }}</h2>
-
+    <h2>Select Beds for Room {{ selected_room }}</h2>
     <form method="POST">
-        <table>
-            <thead>
-                <tr>
-                    <th>Bed</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for bed in beds %}
-                    <tr>
-                        <td>{{ bed['bed_letter'] }}</td>
-                        <td>
-                            <button type="submit" name="bed_id" value="{{ bed['id'] }}">Select</button>
-                        </td>
-                    </tr>
+        {% for bed in beds %}
+        <div>
+            <h3>Bed {{ bed['bed_letter'] }}</h3>
+            <select name="user_for_bed_{{ bed['id'] }}">
+                <option value="">Select a user</option>
+                {% for member in group_members %}
+                    {% if member['id']|string not in assigned_users %}
+                        <option value="{{ member['id'] }}">{{ member['name'] }} ({{ member['email'] }})</option>
+                    {% endif %}
                 {% endfor %}
-            </tbody>
-        </table>
+            </select>
+        </div>
+        {% endfor %}
+        <button type="submit">Confirm Bed Assignments</button>
     </form>
 </body>
 </html>
