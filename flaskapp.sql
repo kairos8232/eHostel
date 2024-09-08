@@ -91,7 +91,7 @@ CREATE TABLE IF NOT EXISTS `booking` (
   CONSTRAINT `FK_booking_rooms` FOREIGN KEY (`room_no`) REFERENCES `rooms` (`number`),
   CONSTRAINT `FK_booking_trimester` FOREIGN KEY (`trimester_id`) REFERENCES `trimester` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `FK_booking_users` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=31 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
 -- Dumping data for table flaskapp.booking: ~0 rows (approximately)
 
@@ -104,9 +104,9 @@ CREATE TABLE IF NOT EXISTS `groups` (
   PRIMARY KEY (`group_id`),
   KEY `leader_id` (`leader_id`),
   CONSTRAINT `groups_ibfk_1` FOREIGN KEY (`leader_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=44 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
--- Dumping data for table flaskapp.groups: ~0 rows (approximately)
+-- Dumping data for table flaskapp.groups: ~1 rows (approximately)
 
 -- Dumping structure for table flaskapp.group_members
 DROP TABLE IF EXISTS `group_members`;
@@ -119,9 +119,9 @@ CREATE TABLE IF NOT EXISTS `group_members` (
   KEY `user_id` (`user_id`),
   CONSTRAINT `group_members_ibfk_1` FOREIGN KEY (`group_id`) REFERENCES `groups` (`group_id`),
   CONSTRAINT `group_members_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=93 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
--- Dumping data for table flaskapp.group_members: ~0 rows (approximately)
+-- Dumping data for table flaskapp.group_members: ~2 rows (approximately)
 
 -- Dumping structure for table flaskapp.hostel
 DROP TABLE IF EXISTS `hostel`;
@@ -191,7 +191,7 @@ CREATE TABLE IF NOT EXISTS `users` (
 
 -- Dumping data for table flaskapp.users: ~3 rows (approximately)
 INSERT INTO `users` (`id`, `name`, `email`, `faculty`, `gender`, `password`) VALUES
-	(1, 'John Doe', 'user1@example.com', 'Engineering', 'Male', 'password1'),
+	(1, 'WAKABAKA', 'userNick@example.com', 'Engineering', 'Male', 'password1'),
 	(2, 'Jane Smith', 'user2@example.com', 'Science', 'Female', 'password2'),
 	(3, 'Bob Johnson', 'user3@example.com', 'Arts', 'Male', 'password3');
 
