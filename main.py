@@ -39,7 +39,7 @@ def SignUp():
         cur.execute("INSERT INTO users(id, email, gender, password) VALUES(%s, %s, %s, %s)", (id, email, gender, hashed_password))
         mysql.connection.commit()
         cur.close()
-        return redirect(url_for('home'))
+        return redirect(url_for('Home'))
     return render_template('signup.html')
 
 # Login route
@@ -56,7 +56,7 @@ def Login():
             session['loggedin']= True
             session['id']= record[0]
             session['password'] = record[3]
-            return redirect(url_for('home'))
+            return redirect(url_for('Home'))
         else:
             msg='Incorrect username/password. Try again!'
             return render_template('index.html', msg = msg)   
