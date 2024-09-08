@@ -17,7 +17,7 @@
 <body>
     <div class="container">
         <div class="profile-header">
-            <img src="{{ image_url }}" alt="Profile Picture" class="profile-image">
+            <img src="{{ image_url }}" class="profile-image">
             <div class="profile-info">
                 <h1 class="name">{{ name }}</h1>
                 <button id="edit-button" class="edit-button">Edit</button>
@@ -34,8 +34,8 @@
             <h2>Email</h2>
             <p id="email-display">{{ email }}</p>
             
-            <!--<h2>Biography</h2>
-            <p id="biography">{{ biography }}</p>-->
+            <h2>Biography</h2>
+            <p id="biography">{{ biography }}</p>
         </div>
         <form id="edit-form" method="post" enctype="multipart/form-data" style="display: none;">
             <!-- <input type="text" name="name" placeholder="Name" value="{{ name }}"> -->
@@ -46,7 +46,7 @@
             </select> 
             <!-- <textarea name="contact" placeholder="Contact Number">{{ contact }}</textarea> -->
             <textarea name="email" placeholder="Email">{{ email }}</textarea>
-            <!-- <textarea name="biography" placeholder="Biography">{{ biography }}</textarea> -->
+            <textarea name="biography" placeholder="Biography">{{ biography }}</textarea>
             <input type="file" name="image" accept="image/*">
             <div class="form-buttons">
                 <input type="submit" value="Update Profile">
