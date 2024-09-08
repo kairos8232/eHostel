@@ -62,8 +62,12 @@ def Login():
 
     return render_template('signin.html')
 
-@main.route("/home")
+@main.route('/home')
 def Home():
+    user_id = session.get('id')
+    if not user_id:
+        return redirect(url_for('Login'))
+
     return render_template('home.html')
 
 @main.route('/profile', methods=['GET', 'POST'])
@@ -74,7 +78,7 @@ def Profile():
         return redirect(url_for('login'))
     
     if request.method == 'POST':
-        # name = request.form['name']
+        name = request.form['name']
         gender = request.form['gender']
         email = request.form['email']
         profile_pic = request.files['image']
@@ -108,6 +112,31 @@ def Profile():
         return render_template('profile.html', **user_profile)
     else:
         return redirect(url_for('home'))
+
+# Room Setting
+@main.route('/room_setting')
+def room_setting():
+    user_id = session.get('id')
+    if not user_id:
+        return redirect(url_for('Login'))
+
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    cur.execute("""
+        SELECT b.*, h.name as hostel_name, r.category as room_type
+        FROM booking b
+        JOIN hostel h ON b.hostel_id = h.id
+        JOIN rooms r ON b.room_no = r.number
+        WHERE b.user_id = %s
+        ORDER BY b.booking_no DESC
+        LIMIT 1
+    """, (user_id,))
+    booking = cur.fetchone()
+    cur.close()
+
+    if not booking:
+        return redirect(url_for('select_trimester'))
+
+    return render_template('room_setting.html', booking=booking)
 
 # Select Trimester Route
 @main.route('/select_trimester', methods=['GET', 'POST'])
@@ -591,6 +620,38 @@ def disband_group(group_id):
     cur.close()
 
     return redirect(url_for('choose_mode'))
+
+# Feedback route
+@main.route('/feedback', methods=['POST'])
+def feedback():
+    user_id = session.get('id')
+    if not user_id:
+        return redirect(url_for('Login'))
+
+    feedback_text = request.form['feedback']
+    # Save feedback to the database
+    cursor = mysql.connection.cursor()
+    cursor.execute("INSERT INTO feedback (user_id, feedback) VALUES (%s, %s)", (user_id, feedback_text))
+    mysql.connection.commit()
+    cursor.close()
+
+    return redirect(url_for('room_status'))
+
+# Room change request route
+@main.route('/request_room_change', methods=['POST'])
+def request_room_change():
+    user_id = session.get('id')
+    if not user_id:
+        return redirect(url_for('Login'))
+
+    room_number = session.get('room_number')
+    # Process room change request
+    cursor = mysql.connection.cursor()
+    cursor.execute("UPDATE booking SET status = 'Room Change Requested' WHERE usersid = %s AND roomno = %s", (user_id, room_number))
+    mysql.connection.commit()
+    cursor.close()
+
+    return redirect(url_for('room_status'))
 
 # Logout Route
 @main.route('/logout')
