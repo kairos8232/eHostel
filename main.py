@@ -2,9 +2,10 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from flask_mysqldb import MySQL
 import MySQLdb.cursors
 import yaml
-import bcrypt
+from flask_bcrypt import Bcrypt
 import os
 from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user
+import hashlib
 
 main = Flask(__name__)
   
@@ -15,7 +16,7 @@ main.config['MYSQL_PASSWORD'] = db['mysql_password']
 main.config['MYSQL_DB'] = db['mysql_db']
 main.config['UPLOAD_FOLDER'] = db['mysql_profile_pic']
 main.secret_key = 'terrychin'
-
+bcrypt = Bcrypt(main)
 mysql = MySQL(main)
 
 
@@ -35,8 +36,9 @@ def SignUp():
         email = userDetails['email']
         gender = userDetails['gender']
         password = userDetails['password']
+        hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
         cur = mysql.connection.cursor()
-        cur.execute("INSERT INTO users(id, email, gender, password) VALUES(%s, %s, %s, %s)", (id, email, gender, password))
+        cur.execute("INSERT INTO users(id, email, gender, password) VALUES(%s, %s, %s, %s)", (id, email, gender, hashed_password))
         mysql.connection.commit()
         cur.close()
         return redirect(url_for('home'))
@@ -50,9 +52,9 @@ def Login():
         id = userDetails['id']
         password = userDetails['password']
         cur = mysql.connection.cursor()
-        cur.execute('SELECT * FROM users WHERE id=%s AND password=%s', (id, password))
+        cur.execute('SELECT * FROM users WHERE id=%s', (id,))
         record = cur.fetchone()
-        if record:
+        if record and bcrypt.check_password_hash(record[3] , password):
             session['loggedin']= True
             session['id']= record[0]
             session['password'] = record[3]
@@ -78,6 +80,7 @@ def Profile():
         # name = request.form['name']
         gender = request.form['gender']
         email = request.form['email']
+        biography = request.form['biography']
         profile_pic = request.files['image']
         
         if profile_pic:
@@ -88,9 +91,9 @@ def Profile():
 
         cur = mysql.connection.cursor()
         cur.execute("""
-            UPDATE users SET gender=%s, email=%s,  profile_pic=%s 
+            UPDATE users SET gender=%s, email=%s,  profile_pic=%s, biography=%s
             WHERE id=%s
-            """, (gender, email, profile_pic_path, user_id))
+            """, (gender, email, profile_pic_path, biography, user_id))
         mysql.connection.commit()
         cur.close()
         return redirect(url_for('Profile'))
@@ -104,7 +107,8 @@ def Profile():
         user_profile = {
             'gender': user_data[2],
             'email': user_data[1],
-            'image_url': url_for('static', filename=f"uploads/{user_data[4]}")
+            'image_url': url_for('static', filename=f"uploads/{user_data[4]}"),
+            'biography': user_data[5]
         }
         return render_template('profile.html', **user_profile)
     else:
