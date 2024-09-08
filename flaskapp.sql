@@ -109,7 +109,12 @@ CREATE TABLE IF NOT EXISTS `groups` (
   PRIMARY KEY (`group_id`),
   KEY `leader_id` (`leader_id`),
   CONSTRAINT `groups_ibfk_1` FOREIGN KEY (`leader_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=33 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+<<<<<<<<< Temporary merge branch 1
+) ENGINE=InnoDB AUTO_INCREMENT=41 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+
+-- Dumping data for table flaskapp.groups: ~0 rows (approximately)
+=========
+) ENGINE=InnoDB AUTO_INCREMENT=35 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
 -- Dumping data for table flaskapp.groups: ~0 rows (approximately)
 DELETE FROM `groups`;
@@ -128,7 +133,12 @@ CREATE TABLE IF NOT EXISTS `group_members` (
   KEY `user_id` (`user_id`),
   CONSTRAINT `group_members_ibfk_1` FOREIGN KEY (`group_id`) REFERENCES `groups` (`group_id`),
   CONSTRAINT `group_members_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=59 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+<<<<<<<<< Temporary merge branch 1
+) ENGINE=InnoDB AUTO_INCREMENT=86 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+
+-- Dumping data for table flaskapp.group_members: ~0 rows (approximately)
+=========
+) ENGINE=InnoDB AUTO_INCREMENT=62 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
 -- Dumping data for table flaskapp.group_members: ~4 rows (approximately)
 DELETE FROM `group_members`;
@@ -137,6 +147,7 @@ INSERT INTO `group_members` (`id`, `group_id`, `user_id`) VALUES
 	(57, 32, 2),
 	(58, 32, 3),
 	(61, 34, 123);
+>>>>>>>>> Temporary merge branch 2
 
 -- Dumping structure for table flaskapp.hostel
 DROP TABLE IF EXISTS `hostel`;

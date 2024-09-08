@@ -217,7 +217,7 @@ def manage_group(group_id):
         return redirect(url_for('Login'))
 
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    cur.execute("SELECT * FROM groups WHERE group_id = %s AND leader_id = %s", (group_id, user_id))
+    cur.execute("SELECT * FROM `groups` WHERE group_id = %s AND leader_id = %s", (group_id, user_id))
     group = cur.fetchone()
 
     # Check if the user is a member of the group, regardless of whether they are the leader or not
@@ -508,6 +508,11 @@ def transfer_leadership(group_id, new_leader_id):
     # Update the leader_id in the groups table
     cur.execute("UPDATE `groups` SET leader_id = %s WHERE group_id = %s", (new_leader_id, group_id))
     mysql.connection.commit()
+
+    # If the current user was the leader, update the session data
+    if user_id == session['id']:
+        session['id'] = new_leader_id  # Update the session id to the new leader's id
+
     cur.close()
 
     # Redirect the user back to the manage_group page
