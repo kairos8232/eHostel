@@ -114,7 +114,7 @@ def Profile():
         }
         return render_template('profile.html', **user_profile)
     else:
-        return redirect(url_for('home'))
+        return redirect(url_for('Home'))
 
 # Room Setting
 @main.route('/room_setting')
@@ -171,7 +171,7 @@ def edit_trimester():
         cur.execute("INSERT INTO trimester(name , term) VALUES(%s  , %s)", (trimesters,term))
         mysql.connection.commit()
         cur.close()
-        return redirect(url_for('home'))
+        return redirect(url_for('Home'))
     return render_template('admin_trimester.html')
 
 
