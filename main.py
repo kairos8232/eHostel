@@ -139,8 +139,9 @@ def edit_trimester():
     if request.method == 'POST':
         userDetails = request.form
         trimesters = userDetails['semester']
+        term = userDetails['term']
         cur = mysql.connection.cursor()
-        cur.execute("INSERT INTO trimester(id ,name) VALUES(%s  , %s)", (id , trimesters))
+        cur.execute("INSERT INTO trimester(name , term) VALUES(%s  , %s)", (trimesters,term))
         mysql.connection.commit()
         cur.close()
         return redirect(url_for('home'))

@@ -19,14 +19,17 @@
     display: flex;
     justify-content: center;
 }
+.sign-up-container h1{
+    margin-left: 19%;
+}
 
 input, textarea {
-    width: 60%;
+    width: 40%;
     padding: 10px;
     margin: 10px;
     border: 1px solid #ddd;
     border-radius: 4px;
-    font-size: 16px;
+    font-size: 18px;
 }
 textarea {
     min-height: 100px;
@@ -35,6 +38,7 @@ textarea {
 .add-button {
     display: inline-block;
     padding: 4px 10px;
+    margin-left: 84%;
     font-size: 20px;
     cursor: pointer;
     text-align: center;
@@ -46,11 +50,10 @@ textarea {
     border-radius: 15px;
     box-shadow: 0 9px #999;
   }
-  .edd-button:hover {background-color: #3e8e41}
+.edd-button:hover {background-color: #3e8e41}
   
-  .add-button:active {
+.add-button:active {
     background-color: #3e8e41;
     box-shadow: 0 5px #666;
     transform: translateY(4px);
-  }
-
+}
