@@ -55,10 +55,11 @@ def Login():
         if record:
             session['loggedin'] = True
             session['id'] = record[0]
+            session['password'] = record[3]
             return redirect(url_for('Home'))
         else:
             msg='Incorrect username/password. Try again!'
-            return render_template('index.html', msg = msg)   
+            return render_template('index.html')   
 
     return render_template('signin.html')
 

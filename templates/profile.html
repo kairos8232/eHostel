@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="..\static\css\profile-style.css">
+    <link rel="stylesheet" href="\static\css\profile-style.css">
 </head>
 {% extends 'base.html' %}
 
@@ -34,8 +34,8 @@
             <h2>Email</h2>
             <p id="email-display">{{ email }}</p>
             
-            <!--<h2>Biography</h2>
-            <p id="biography">{{ biography }}</p>-->
+            <h2>Biography</h2>
+            <p id="biography">{{ biography }}</p>
         </div>
         <form id="edit-form" method="post" enctype="multipart/form-data" style="display: none;">
             <!-- <input type="text" name="name" placeholder="Name" value="{{ name }}"> -->
@@ -46,7 +46,7 @@
             </select> 
             <!-- <textarea name="contact" placeholder="Contact Number">{{ contact }}</textarea> -->
             <textarea name="email" placeholder="Email">{{ email }}</textarea>
-            <!-- <textarea name="biography" placeholder="Biography">{{ biography }}</textarea> -->
+            <textarea name="biography" placeholder="Biography">{{ biography }}</textarea>
             <input type="file" name="image" accept="image/*">
             <div class="form-buttons">
                 <input type="submit" value="Update Profile">
