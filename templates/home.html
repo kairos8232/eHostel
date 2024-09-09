@@ -1,5 +1,28 @@
-{% extends 'base.html' %}
+<link rel="stylesheet" href="{{ url_for('static' , filename = 'css/home-style.css' ) }}">
 
+{% extends 'base.html' %}
 {% block content %}
+
+<div class="container">
+    <div class="content">
+        <h1>Announcements</h1>
+        <hr>
+
+        {% if announcement %}
+            <div class="announcement">
+                <h2>{{ announcement.title }}</h2>
+                <p>{{ announcement.context }}</p>
+            </div>
+            {% if has_next %}
+                <form method="get" action="{{ url_for('home') }}">
+                    <input type="hidden" name="next" value="1">
+                    <button type="submit" class="btn btn-primary">Next</button>
+                </form>
+            {% endif %}
+        {% else %}
+            <p>No announcements available.</p>
+        {% endif %}
+    </div>
+</div>
 
 {% endblock %}

@@ -26,8 +26,25 @@ def Index():
 
 @main.route("/home")
 def home():
-    return render_template('home.html')
+    announcement_id = session.get('id')
+    if not announcement_id:
+        return redirect(url_for('Login'))
 
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    cur.execute("SELECT * FROM announcement ORDER BY id DESC")
+    announcements = cur.fetchall()
+    cur.close()
+
+    current_index = session.get('announcement_index', 0)
+    total_announcements = len(announcements)
+
+    if request.args.get('next'):
+        current_index = (current_index + 1) % total_announcements
+        session['announcement_index'] = current_index
+
+    current_announcement = announcements[current_index] if announcements else None
+
+    return render_template('home.html', announcement=current_announcement, has_next=total_announcements > 1)
 @main.route('/signup', methods=['POST', 'GET'])
 def SignUp():
     if request.method == 'POST':
@@ -64,10 +81,6 @@ def Login():
             return render_template('index.html', msg = msg)   
 
     return render_template('signin.html')
-
-@main.route("/home")
-def Home():
-    return render_template('home.html')
 
 @main.route('/profile', methods=['GET', 'POST'])
 def Profile():
@@ -113,6 +126,23 @@ def Profile():
         return render_template('profile.html', **user_profile)
     else:
         return redirect(url_for('home'))
+    
+@main.route('/post', methods=['GET', 'POST'])
+def post():
+
+    if request.method == 'POST':
+        userDetails = request.form
+        title = userDetails['title']
+        context = userDetails['context']
+        cur = mysql.connection.cursor()
+        cur.execute("INSERT INTO announcement(title, context) VALUES(%s  , %s)", (title, context))
+        mysql.connection.commit()
+        cur.close()
+        return redirect(url_for('home'))
+  
+    return render_template('post_announcement.html')
+    
+
 
 # Select Trimester Route
 @main.route('/select_trimester', methods=['GET', 'POST'])
@@ -139,8 +169,9 @@ def edit_trimester():
     if request.method == 'POST':
         userDetails = request.form
         trimesters = userDetails['semester']
+        term = userDetails['term']
         cur = mysql.connection.cursor()
-        cur.execute("INSERT INTO trimester(id ,name) VALUES(%s  , %s)", (id , trimesters))
+        cur.execute("INSERT INTO trimester(name, term) VALUES(%s  , %s)", (trimesters, term))
         mysql.connection.commit()
         cur.close()
         return redirect(url_for('home'))
