@@ -1,0 +1,47 @@
+html {
+    font-family: Arial, sans-serif;
+    color: #333;
+    margin: 0;
+    padding: 0;
+}
+
+.wrapper {
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    margin: 0 auto;
+    max-width: fit-content; /* Adjust the wrapper size to the content */
+    width: 100%; /* Ensure wrapper does not exceed 100% of the screen width */
+    text-align: center; /* Center the content inside the wrapper */
+    padding-bottom: 20px; /* Add padding at the bottom of the wrapper */
+}
+
+h1 {
+    font-size: 2em;
+    color: #ffffff;
+    margin: 50px 0 20px;
+    font-weight: bold;
+    text-align: center;
+}
+
+p {
+    font-size: 1.2em;
+    color: #444;
+    text-align: center;
+    margin: 0 0 20px;
+}
+
+.btn {
+    background-color: #007bff;
+    color: #ffffff;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+    text-decoration: none;
+    transition: background-color 0.3s ease;
+    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+    display: inline-block; /* Ensure button is treated as an inline-block element */
+}

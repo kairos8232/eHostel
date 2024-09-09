@@ -39,7 +39,7 @@ def SignUp():
         cur.execute("INSERT INTO users(id, email, gender, password) VALUES(%s, %s, %s, %s)", (id, email, gender, hashed_password))
         mysql.connection.commit()
         cur.close()
-        return redirect(url_for('home'))
+        return redirect(url_for('Home'))
     return render_template('signup.html')
 
 # Login route
@@ -56,15 +56,19 @@ def Login():
             session['loggedin']= True
             session['id']= record[0]
             session['password'] = record[3]
-            return redirect(url_for('home'))
+            return redirect(url_for('Home'))
         else:
             msg='Incorrect username/password. Try again!'
             return render_template('index.html', msg = msg)   
 
     return render_template('signin.html')
 
-@main.route("/home")
+@main.route('/home')
 def Home():
+    user_id = session.get('id')
+    if not user_id:
+        return redirect(url_for('Login'))
+
     return render_template('home.html')
 
 @main.route('/profile', methods=['GET', 'POST'])
@@ -75,7 +79,7 @@ def Profile():
         return redirect(url_for('login'))
     
     if request.method == 'POST':
-        # name = request.form['name']
+        name = request.form['name']
         gender = request.form['gender']
         email = request.form['email']
         biography = request.form['biography']
@@ -110,7 +114,32 @@ def Profile():
         }
         return render_template('profile.html', **user_profile)
     else:
-        return redirect(url_for('home'))
+        return redirect(url_for('Home'))
+
+# Room Setting
+@main.route('/room_setting')
+def room_setting():
+    user_id = session.get('id')
+    if not user_id:
+        return redirect(url_for('Login'))
+
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    cur.execute("""
+        SELECT b.*, h.name as hostel_name, r.category as room_type
+        FROM booking b
+        JOIN hostel h ON b.hostel_id = h.id
+        JOIN rooms r ON b.room_no = r.number
+        WHERE b.user_id = %s
+        ORDER BY b.booking_no DESC
+        LIMIT 1
+    """, (user_id,))
+    booking = cur.fetchone()
+    cur.close()
+
+    if not booking:
+        return redirect(url_for('select_trimester'))
+
+    return render_template('room_setting.html', booking=booking)
 
 # Select Trimester Route
 @main.route('/select_trimester', methods=['GET', 'POST'])
@@ -118,7 +147,7 @@ def select_trimester():
     user_id = session.get('id')
     if not user_id:
         return redirect(url_for('Login'))
-
+    
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     cur.execute("SELECT * FROM trimester")
     trimesters = cur.fetchall()
@@ -142,7 +171,7 @@ def edit_trimester():
         cur.execute("INSERT INTO trimester(name , term) VALUES(%s  , %s)", (trimesters,term))
         mysql.connection.commit()
         cur.close()
-        return redirect(url_for('home'))
+        return redirect(url_for('Home'))
     return render_template('admin_trimester.html')
 
 
@@ -152,26 +181,30 @@ def choose_mode():
     if 'loggedin' not in session:
         return redirect(url_for('Login'))
     
-    # Check if trimester is selected
     if 'trimester' not in session:
         return redirect(url_for('select_trimester'))
 
     user_id = session.get('id')
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
     
-    # Check if user is in a group
     cur.execute("SELECT group_id FROM group_members WHERE user_id = %s", (user_id,))
     user_group = cur.fetchone()
     
     if user_group:
-        # User is in a group, redirect to manage_group
+        session['group_id'] = user_group['group_id']
         return redirect(url_for('manage_group', group_id=user_group['group_id']))
 
     if request.method == 'POST':
         mode = request.form['mode']
         if mode == 'individual':
+            session['group_id'] = None
             return redirect(url_for('select_hostel', mode='individual'))
         elif mode == 'group':
+            cur.execute("SELECT group_id FROM group_members WHERE user_id = %s", (user_id,))
+            user_group = cur.fetchone()
+            if user_group:
+                session['group_id'] = user_group['group_id']
             return redirect(url_for('group_page'))
 
     cur.close()
@@ -226,24 +259,43 @@ def manage_group(group_id):
     if not group and not is_group_member:
         return redirect(url_for('group_page'))
 
-    session['group_id'] = group_id
+    # Get group information
+    cur.execute("SELECT * FROM `groups` WHERE group_id = %s", (group_id,))
+    group = cur.fetchone()
 
-    # Fetch all group members
-    cur.execute("SELECT users.id, users.email FROM users JOIN group_members ON users.id = group_members.user_id WHERE group_members.group_id = %s", (group_id,))
+    if not group:
+        cur.close()
+        return render_template('error.html', message="Group not found.")
+
+    is_leader = group['leader_id'] == user_id
+
+    # Get the leader's gender
+    cur.execute("SELECT gender FROM users WHERE id = %s", (group['leader_id'],))
+    leader_gender = cur.fetchone()['gender']
+
+    # Fetch all group members with additional information
+    cur.execute("""
+        SELECT users.id, users.email, users.name, users.faculty, users.gender,
+               CASE WHEN users.id = groups.leader_id THEN 1 ELSE 0 END as is_leader
+        FROM users 
+        JOIN group_members ON users.id = group_members.user_id 
+        JOIN `groups` ON group_members.group_id = groups.group_id
+        WHERE group_members.group_id = %s
+    """, (group_id,))
     members = cur.fetchall()
 
     students = None
     if request.method == 'POST':
         filter_student_id = request.form.get('filter_student_id')
         if filter_student_id:
-            cur.execute("SELECT id, email FROM users WHERE id = %s AND id NOT IN (SELECT user_id FROM group_members WHERE group_id = %s)", (filter_student_id, group_id))
+            cur.execute("SELECT id, email, name, faculty, gender FROM users WHERE id = %s AND gender = %s AND id NOT IN (SELECT user_id FROM group_members WHERE group_id = %s)", (filter_student_id, leader_gender, group_id))
             students = cur.fetchall()
         else:
             students = []
 
     cur.close()
 
-    return render_template('manage_group.html', members=members, group_id=group_id, students=students)
+    return render_template('manage_group.html', members=members, group_id=group_id, students=students, is_leader=is_leader, current_user_id=user_id, leader_gender=leader_gender)
 
 # Leave Group
 @main.route('/leave_group/<int:group_id>', methods=['POST'])
@@ -286,14 +338,23 @@ def select_hostel(mode):
         return redirect(url_for('Login'))
 
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    cur.execute("SELECT * FROM hostel")
+    
+    # Get user's gender
+    cur.execute("SELECT gender FROM users WHERE id = %s", (user_id,))
+    user_gender = cur.fetchone()['gender']
+
+    # Get hostels matching the user's gender
+    cur.execute("SELECT * FROM hostel WHERE gender = %s", (user_gender,))
     hostels = cur.fetchall()
-    cur.close()
 
     if request.method == 'POST':
-        hostel_id = request.form['hostel']
-        return redirect(url_for('select_room_type', mode=mode, hostel_id=hostel_id))
+        selected_hostel_id = request.form.get('hostel')
+        if selected_hostel_id:
+            hostel_id = int(selected_hostel_id)
+            session['hostel_id'] = hostel_id
+            return redirect(url_for('select_room_type', mode=mode, hostel_id=hostel_id))
 
+    cur.close()
     return render_template('select_hostel.html', mode=mode, hostels=hostels)
 
 # Select Room Type Route
@@ -352,44 +413,65 @@ def select_bed(mode, hostel_id, room_type):
 
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     
-    cur.execute("SELECT * FROM rooms WHERE number = %s", (selected_room,))
-    room_info = cur.fetchone()
-    if not room_info:
+    try:
+        cur.execute("SELECT * FROM rooms WHERE number = %s", (selected_room,))
+        room_info = cur.fetchone()
+        if not room_info:
+            raise ValueError("Room not found.")
+
+        cur.execute("SELECT * FROM beds WHERE room_number = %s AND status = 'Available'", (selected_room,))
+        available_beds = cur.fetchall()
+
+        group_id = session.get('group_id')
+        
+        # Always fetch the most up-to-date information from the database
+        if mode == 'group' and group_id:
+            cur.execute("""
+                SELECT users.id, users.name, users.email 
+                FROM users 
+                JOIN group_members ON users.id = group_members.user_id 
+                WHERE group_members.group_id = %s
+            """, (group_id,))
+            group_members = cur.fetchall()
+        elif mode == 'individual':
+            cur.execute("SELECT id, name, email FROM users WHERE id = %s", (user_id,))
+            current_user = cur.fetchone()
+            group_members = [current_user] if current_user else []
+        else:
+            group_members = []
+
+        print(f"Mode: {mode}")
+        print(f"Group Members: {group_members}")  # Debug print
+
+        assigned_users = []
+
+        if request.method == 'POST':
+            bed_assignments = {}
+            for bed in available_beds:
+                assigned_user_id = request.form.get(f'user_for_bed_{bed["id"]}')
+                if assigned_user_id:
+                    bed_assignments[bed['id']] = int(assigned_user_id)
+                    assigned_users.append(str(assigned_user_id))
+
+            if bed_assignments:
+                bed_ids = ','.join(map(str, bed_assignments.keys()))
+                user_ids = ','.join(map(str, bed_assignments.values()))
+                return redirect(url_for('booking_summary', mode=mode, hostel_id=hostel_id, 
+                                        room_type=room_type, room_number=selected_room, 
+                                        bed_ids=bed_ids, user_ids=user_ids))
+
+        print(f"Assigned Users: {assigned_users}")  # Debug print
+
+        return render_template('select_bed.html', mode=mode, hostel_id=hostel_id, room_type=room_type, 
+                               selected_room=selected_room, beds=available_beds, 
+                               group_members=group_members, room_info=room_info, assigned_users=assigned_users)
+
+    except Exception as e:
+        print(f"Error in select_bed: {str(e)}")  # Debug print
+        return render_template('error.html', message=f"An error occurred: {str(e)}")
+
+    finally:
         cur.close()
-        return render_template('error.html', message="Room not found.")
-
-    cur.execute("SELECT * FROM beds WHERE room_number = %s AND status = 'Available'", (selected_room,))
-    available_beds = cur.fetchall()
-
-    group_id = session.get('group_id')
-    group_members = []
-
-    if mode == 'group' and group_id:
-        cur.execute("SELECT users.id, users.name, users.email FROM users JOIN group_members ON users.id = group_members.user_id WHERE group_members.group_id = %s", (group_id,))
-        group_members = cur.fetchall()
-    elif mode == 'individual':
-        cur.execute("SELECT id, name, email FROM users WHERE id = %s", (user_id,))
-        current_user = cur.fetchone()
-        group_members = [current_user] if current_user else []
-
-    if request.method == 'POST':
-        bed_assignments = {}
-        for bed in available_beds:
-            assigned_user_id = request.form.get(f'user_for_bed_{bed["id"]}')
-            if assigned_user_id:
-                bed_assignments[bed['id']] = int(assigned_user_id)
-
-        if bed_assignments:
-            bed_ids = ','.join(map(str, bed_assignments.keys()))
-            user_ids = ','.join(map(str, bed_assignments.values()))
-            return redirect(url_for('booking_summary', mode=mode, hostel_id=hostel_id, 
-                                    room_type=room_type, room_number=selected_room, 
-                                    bed_ids=bed_ids, user_ids=user_ids))
-
-    cur.close()
-    return render_template('select_bed.html', mode=mode, hostel_id=hostel_id, room_type=room_type, 
-                           selected_room=selected_room, beds=available_beds, 
-                           group_members=group_members, room_info=room_info)
 
 # Booking Confirmation
 @main.route('/booking_summary/<mode>/<int:hostel_id>/<room_type>/<int:room_number>/<bed_ids>/<user_ids>', methods=['GET', 'POST'])
@@ -472,8 +554,15 @@ def invite_member(group_id):
     cur.execute("SELECT * FROM users WHERE id = %s", (new_member_id,))
     new_member = cur.fetchone()
 
+    # Check if the new member's gender matches the leader's gender
+    cur.execute("SELECT gender FROM users WHERE id = %s", (user_id,))
+    leader_gender = cur.fetchone()['gender']
+
     if not new_member:
         return render_template('error.html', message="User does not exist.")
+    
+    if new_member['gender'] != leader_gender:
+        return render_template('error.html', message="You can only invite members of the same gender.")
 
     # Check if the user is already in the group
     cur.execute("SELECT * FROM group_members WHERE group_id = %s AND user_id = %s", (group_id, new_member_id))
@@ -555,6 +644,38 @@ def disband_group(group_id):
     cur.close()
 
     return redirect(url_for('choose_mode'))
+
+# Feedback route
+@main.route('/feedback', methods=['POST'])
+def feedback():
+    user_id = session.get('id')
+    if not user_id:
+        return redirect(url_for('Login'))
+
+    feedback_text = request.form['feedback']
+    # Save feedback to the database
+    cursor = mysql.connection.cursor()
+    cursor.execute("INSERT INTO feedback (user_id, feedback) VALUES (%s, %s)", (user_id, feedback_text))
+    mysql.connection.commit()
+    cursor.close()
+
+    return redirect(url_for('room_status'))
+
+# Room change request route
+@main.route('/request_room_change', methods=['POST'])
+def request_room_change():
+    user_id = session.get('id')
+    if not user_id:
+        return redirect(url_for('Login'))
+
+    room_number = session.get('room_number')
+    # Process room change request
+    cursor = mysql.connection.cursor()
+    cursor.execute("UPDATE booking SET status = 'Room Change Requested' WHERE usersid = %s AND roomno = %s", (user_id, room_number))
+    mysql.connection.commit()
+    cursor.close()
+
+    return redirect(url_for('room_status'))
 
 # Logout Route
 @main.route('/logout')
