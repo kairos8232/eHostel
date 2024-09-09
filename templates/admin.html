@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Page</title>
+    <title>Admin</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static' , filename = 'css/admin-trimester.css' ) }}">
     <link rel="stylesheet" href="{{ url_for('static' , filename = 'css/header-style.css' ) }}">
+    {% block styles %}{% endblock %}
 
 </head>
 <body>
@@ -19,16 +20,9 @@
             <a href="{{ url_for('post') }}">Make Announcement</a>
         </nav>
     </header>
-
-    <div class="container">
-        <div class="sign-up-container">
-            <form method="POST">
-                <h1>Add new trimester</h1>
-                <input name="semester" placeholder="August/October">
-                <input name="term" placeholder="2024">
-                <button class="add-button">add</button>
-            </form>
-        </div>
-    </div>
 </body>
 </html>
+
+{% block content %}
+
+{% endblock %}
