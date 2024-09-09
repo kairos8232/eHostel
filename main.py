@@ -24,6 +24,30 @@ mysql = MySQL(main)
 def Index():
     return render_template('index.html')
 
+@main.route('/student', methods=['POST', 'GET'])
+def student():
+    if request.method == 'POST':
+        userDetails = request.form
+        id = userDetails['id']
+        password = userDetails['password']
+        cur = mysql.connection.cursor()
+        cur.execute('SELECT * FROM users WHERE id=%s', (id,))
+        record = cur.fetchone()
+        if record and bcrypt.check_password_hash(record[3] , password):
+            session['loggedin']= True
+            session['id']= record[0]
+            session['password'] = record[3]
+            return redirect(url_for('home'))
+        else:
+            msg='Incorrect username/password. Try again!'
+            return render_template('index.html', msg = msg)   
+
+    return render_template('s-login.html')
+
+@main.route('/admin')
+def admin():
+    return render_template('a-login.html')
+
 @main.route("/home")
 def home():
     announcement_id = session.get('id')
@@ -45,6 +69,7 @@ def home():
     current_announcement = announcements[current_index] if announcements else None
 
     return render_template('home.html', announcement=current_announcement, has_next=total_announcements > 1)
+
 @main.route('/signup', methods=['POST', 'GET'])
 def SignUp():
     if request.method == 'POST':
@@ -62,25 +87,25 @@ def SignUp():
     return render_template('signup.html')
 
 
-@main.route('/login', methods=['POST', 'GET'])
-def Login():
-    if request.method == 'POST':
-        userDetails = request.form
-        id = userDetails['id']
-        password = userDetails['password']
-        cur = mysql.connection.cursor()
-        cur.execute('SELECT * FROM users WHERE id=%s', (id,))
-        record = cur.fetchone()
-        if record and bcrypt.check_password_hash(record[3] , password):
-            session['loggedin']= True
-            session['id']= record[0]
-            session['password'] = record[3]
-            return redirect(url_for('home'))
-        else:
-            msg='Incorrect username/password. Try again!'
-            return render_template('index.html', msg = msg)   
+# @main.route('/login', methods=['POST', 'GET'])
+# def Login():
+#     if request.method == 'POST':
+#         userDetails = request.form
+#         id = userDetails['id']
+#         password = userDetails['password']
+#         cur = mysql.connection.cursor()
+#         cur.execute('SELECT * FROM users WHERE id=%s', (id,))
+#         record = cur.fetchone()
+#         if record and bcrypt.check_password_hash(record[3] , password):
+#             session['loggedin']= True
+#             session['id']= record[0]
+#             session['password'] = record[3]
+#             return redirect(url_for('home'))
+#         else:
+#             msg='Incorrect username/password. Try again!'
+#             return render_template('index.html', msg = msg)   
 
-    return render_template('signin.html')
+#     return render_template('signin.html')
 
 @main.route('/profile', methods=['GET', 'POST'])
 def Profile():
