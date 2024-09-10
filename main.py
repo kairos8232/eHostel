@@ -33,19 +33,35 @@ def student_login():
         cur = mysql.connection.cursor()
         cur.execute('SELECT * FROM users WHERE id=%s', (id,))
         record = cur.fetchone()
-        if record and bcrypt.check_password_hash(record[3] , password):
+        if record and bcrypt.check_password_hash(record[4] , password):
             session['loggedin']= True
             session['id']= record[0]
-            session['password'] = record[3]
+            session['password'] = record[4]
+            return redirect(url_for('home'))
+        else:
+            msg='Incorrect username/password. Try again!'
+            return render_template('index.html', msg = msg)   
+        
+    return render_template('s-login.html')
+
+@main.route('/admin')
+def admin_login():
+    if request.method == 'POST':
+        userDetails = request.form
+        id = userDetails['id']
+        password = userDetails['password']
+        cur = mysql.connection.cursor()
+        cur.execute('SELECT * FROM users WHERE id=%s', (id,))
+        record = cur.fetchone()
+        if record and bcrypt.check_password_hash(record[4] , password):
+            session['loggedin']= True
+            session['id']= record[0]
+            session['password'] = record[4]
             return redirect(url_for('home'))
         else:
             msg='Incorrect username/password. Try again!'
             return render_template('index.html', msg = msg)   
 
-    return render_template('s-login.html')
-
-@main.route('/admin')
-def admin_login():
     return render_template('a-login.html')
 
 @main.route("/home")
@@ -70,51 +86,26 @@ def home():
 
     return render_template('home.html', announcement=current_announcement, has_next=total_announcements > 1)
 
+@main.route("/admin_page")
+def admin():
+        return render_template('admin_page.html')
+
+
 @main.route('/signup', methods=['POST', 'GET'])
 def signup():
     if request.method == 'POST':
         userDetails = request.form
         id = userDetails['id']
+        name = userDetails['name']
         email = userDetails['email']
-        gender = userDetails['gender']
         password = userDetails['password']
         hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
         cur = mysql.connection.cursor()
-        cur.execute("INSERT INTO users(id, email, gender, password) VALUES(%s, %s, %s, %s)", (id, email, gender, hashed_password))
+        cur.execute("INSERT INTO admin(id, name, email, password) VALUES(%s, %s, %s, %s)", (id, name, email, hashed_password))
         mysql.connection.commit()
         cur.close()
-        return redirect(url_for('home'))
+        return redirect(url_for('admin'))
     return render_template('signup.html')
-
-# Login route
-@main.route('/login', methods=['POST', 'GET'])
-def login():
-    if request.method == 'POST':
-        userDetails = request.form
-        id = userDetails['id']
-        password = userDetails['password']
-        cur = mysql.connection.cursor()
-        cur.execute('SELECT * FROM users WHERE id=%s', (id,))
-        record = cur.fetchone()
-        if record and bcrypt.check_password_hash(record[4] , password):
-            session['loggedin']= True
-            session['id']= record[0]
-            session['password'] = record[3]
-            session['profile_pic'] = record[6] if record[6] else url_for('static', filename='default_profile_pic.jpg')
-            return redirect(url_for('home'))
-        else:
-            msg='Incorrect username/password. Try again!'
-            return render_template('index.html', msg = msg)   
-
-    return render_template('signin.html')
-
-@main.route('/home')
-def home():
-    user_id = session.get('id')
-    if not user_id:
-        return redirect(url_for('login'))
-
-    return render_template('home.html')
 
 @main.route('/profile', methods=['GET', 'POST'])
 def profile():
