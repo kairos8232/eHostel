@@ -8,18 +8,17 @@
 </head>
 
 <body class="header">
-    <!-- <img src="{{ url_for('static', filename = 'images/inst-profile-header-mmu.jpg')}}"> -->
-
-
-
+    
     <div class="glass-blur-container">
-        <img src="{{ url_for('static', filename = 'images/Multimedia_University_logo.png')}}" alt="Multimedia University" class="logo">
+        <img src="{{url_for('static', filename = 'images/Multimedia_University_logo.png')}}" alt="Multimedia University" class="logo">
         <div class="button-container">
-            <a href="{{ url_for('Login') }}">
-                <button>Login</button>
+
+            <a href="{{ url_for('student') }}">
+                <button>Login Student</button>
             </a>
-            <a href="{{ url_for('SignUp') }}">
-                <button>Sign Up</button>
+
+            <a href="{{ url_for('admin') }}">
+                <button>Login Admin</button>
             </a>
         </div>
     </div>

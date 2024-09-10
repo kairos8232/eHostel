@@ -1,0 +1,50 @@
+<<<<<<< HEAD
+=======
+.container {
+    background-color: rgba(240, 240, 240, 0.79);
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    max-width: 85%;
+    margin: 0 auto;
+    margin-top: 4%;
+    flex-direction: column;
+    align-items: center;
+    
+}
+
+.content h1{
+    font-size: 40px;
+    padding: 4px;   
+    color: #333;
+    word-wrap: break-word;
+    word-break: break-word;
+    white-space: normal;
+    overflow-wrap: break-word;
+}
+    
+.content h2{
+    font-size: 34px;
+    font-weight: 600;
+    color: #333;
+    word-wrap: break-word;
+    word-break: break-word;
+    white-space: normal;
+    overflow-wrap: break-word;
+    padding: 3px;
+}
+.content p{
+    font-size: 20px;
+    font-weight: 600;
+    color: #5e4242;
+    word-wrap: break-word;
+    word-break: break-word;
+    white-space: normal;
+    overflow-wrap: break-word;
+    padding: 3px;
+}
+.content hr{
+    border: 3px solid black;
+}
+    
+>>>>>>> 24892650f7374aa4a196393b524830df1c7f5131
