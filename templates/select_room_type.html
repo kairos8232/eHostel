@@ -1,51 +1,52 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Select a Room</title>
-</head>
-<body>
-    <h1>Select a Room</h1>
-    
-    <form method="POST">
-        <table border="1">
-            <thead>
-                <tr>
-                    <th>Room Number</th>
-                    <th>Category</th>
-                    <th>Price</th>
-                    <th>Available Beds</th>
-                    <th>Total Beds</th>
-                    <th>Select</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for room in available_rooms %}
-                <tr>
-                    <td>{{ room['number'] }}</td>
-                    <td>{{ room['category'] }}</td>
-                    <td>${{ room['price'] }}</td>
-                    <td>{{ room['available_beds'] }}</td>
-                    <td>{{ room['total_beds'] }}</td>
-                    <td>
-                        <input type="radio" name="room_number" value="{{ room['number'] }}" required>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        
-        <br>
-        <input type="submit" value="Select Room">
-    </form>
+{% extends 'base.html' %}
 
-    {% if mode == 'individual' %}
-    <p>Note: You can select a room with multiple beds. Other users may book the remaining beds later.</p>
-    {% endif %}
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/select_room_type-style.css') }}">
+{% endblock %}
 
-    {% if mode == 'group' %}
-    <p>Note: You can select a room with more beds than your group size if desired.</p>
-    {% endif %}
-</body>
-</html>
+{% block content %}
+<h1 class="page-title">Select a Room</h1>
+
+<div class="manage-room-wrapper">    
+    <div class="manage-room-container">
+        <form method="POST">
+            <table>
+                <p>Group ID: {{ group_id }}</p>
+                <thead>
+                    <tr>
+                        <th>Room Number</th>
+                        <th>Category</th>
+                        <th>Price</th>
+                        <th>Available Beds</th>
+                        <th>Total Beds</th>
+                        <th>Select</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for room in available_rooms %}
+                    <tr>
+                        <td>{{ room['number'] }}</td>
+                        <td>{{ room['category'] }}</td>
+                        <td>RM{{ room['price'] }}</td>
+                        <td>{{ room['available_beds'] }}</td>
+                        <td>{{ room['total_beds'] }}</td>
+                        <td>
+                            <input type="radio" name="room_number" value="{{ room['number'] }}" required>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+                <button type="submit" class="select-room">Select Room</button>
+        </form>
+
+        {% if mode == 'individual' %}
+        <p class="note">Note: You can select a room with multiple beds. Other users may book the remaining beds later.</p>
+        {% endif %}
+
+        {% if mode == 'group' %}
+        <p class="note">Note: You can select a room with more beds than your group size if desired.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

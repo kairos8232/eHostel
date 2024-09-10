@@ -10,27 +10,22 @@
 </head>
 <body>
     <header>
-        <div class="heading"><img src="static/images/Multimedia_University_logo.png" alt="Multimedia University" style="width: 150px; height: 50px;" class="logo" ></div>
+        <div class="heading"><img src="/static/images/Multimedia_University_logo.png" alt="Multimedia University" style="width: 150px; height: 50px;" class="logo" ></div>
         <nav class="nav">
             <div class="divider"></div>
             <a href="{{ url_for('home') }}">Home</a>
-            <a href="{{ url_for('select_trimester') }}">Room</a>   
+            <a href="{{ url_for('room_setting') }}">Room</a>   
             <a href="{{ url_for('home') }}">Services</a>
-            <a href="#">Contact</a>
+            <a href="{{ url_for('home') }}">Contact</a>
         </nav>
 
         <div class="user-form-group">
-            <img src="/static/images/anime-default-pfp-5.jpg" class="user-pic" onclick="togglemenu()">
+            <img src="{{ image_url }}" class="user-pic" onclick="togglemenu()">
     
                 <div class="sub-menu-wrap" id="sub-menu-wrap">
                     <div class="sub-menu">
-                        <div class="user-info">
-                            <img src="/static/images/anime-default-pfp-5.jpg">
-                            <h1>User Name</h1>
-                        </div>
-                        <hr>
     
-                    <a href="{{ url_for('Profile') }}" class="sub-menu-link">
+                    <a href="{{ url_for('profile') }}" class="sub-menu-link">
                         <img src="/static/images/account.png">
                         <p>Edit Profile</p>
                         <span></span>
@@ -58,8 +53,6 @@
                 }
             </script> 
     </header>
-</body>
-</html>
 
 {% block content %}
 
