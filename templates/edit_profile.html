@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/edit_profile-style.css') }}">
+{% endblock %}
+
+{% block content %}
+    <h1 class="page-title">Edit Student Profile</h1>
+    <form action="{{ url_for('edit_profile') }}" method="POST" enctype="multipart/form-data">
+    <div class="container">
+        <div class="profile-header">
+            <img src="{{ image_url }}" class="profile-image" alt="Profile Image">
+            <div class="profile-info">
+                <h1>{{ name }}</h1>
+                <h3>{{ student_id }}</h3>
+            </div>
+            <input type="file" id="profile_pic" name="profile_pic">
+        </div>
+            <div class="profile-content">
+                <h2>Gender</h2>
+                <p>{{ gender }}</p>
+                <h2>Faculty</h2>
+                <p>{{ faculty }}</p>
+                <h2>Email</h2>
+                <input type="email" id="email" name="email" value="{{ email }}" required>
+            </div>
+            <div class="button-container">
+                <button type="submit">Save Changes</button>
+            </div>
+        </form>
+    </div>
+{% endblock %}

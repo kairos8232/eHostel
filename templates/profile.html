@@ -1,74 +1,34 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Profile</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="..\static\css\profile-style.css">
-</head>
 {% extends 'base.html' %}
 
-{% block content %}
-
-
-<body>
-    <div class="container">
-        <div class="profile-header">
-            <img src="{{ image_url }}" class="profile-image">
-            <div class="profile-info">
-                <h1 class="name">{{ name }}</h1>
-                <button id="edit-button" class="edit-button">Edit</button>
-            </div>
-        </div>
-        <div class="profile-content" id="profile-display">
-
-            <h2>Gender</h2>
-            <p id="gender-display">{{ gender }}</p>
-
-            <!--<h2>Contact</h2>
-            <p id="contact-display">{{ contact }}</p>-->
-            
-            <h2>Email</h2>
-            <p id="email-display">{{ email }}</p>
-            
-            <h2>Biography</h2>
-            <p id="biography">{{ biography }}</p>
-        </div>
-        <form id="edit-form" method="post" enctype="multipart/form-data" style="display: none;">
-            <!-- <input type="text" name="name" placeholder="Name" value="{{ name }}"> -->
-            <select name="gender" required="" placeholder="Gender">{{ gender }}
-                <option value="" disabled selected>Select Gender</option>
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-            </select> 
-            <!-- <textarea name="contact" placeholder="Contact Number">{{ contact }}</textarea> -->
-            <textarea name="email" placeholder="Email">{{ email }}</textarea>
-            <textarea name="biography" placeholder="Biography">{{ biography }}</textarea>
-            <input type="file" name="image" accept="image/*">
-            <div class="form-buttons">
-                <input type="submit" value="Update Profile">
-                <button type="button" id="cancel-button">Cancel</button>
-            </div>
-        </form>
-
-    </div>
-    
-    <script>
-        document.getElementById('edit-button').addEventListener('click', function() {
-            document.getElementById('edit-form').style.display = 'block';
-            document.getElementById('profile-display').style.display = 'none';
-            this.style.display = 'none';
-        });
-
-        document.getElementById('cancel-button').addEventListener('click', function() {
-            document.getElementById('edit-form').style.display = 'none';
-            document.getElementById('profile-display').style.display = 'block';
-            document.getElementById('edit-button').style.display = 'block';
-        });
-    </script>
-</body>
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/profile-style.css') }}">
 {% endblock %}
-</html>
+
+{% block content %}
+    <h1 class="page-title">Student Profile</h1>
+    <div class="container">
+        {% if status == 'success' %}
+            <p class="status-message">Password changed successfully!</p>
+        {% endif %}
+        <div class="profile-header">
+            <img src="{{ image_url }}" class="profile-image" alt="Profile Image">
+            <div class="profile-info">
+                <h1>{{ name }}</h1>
+                <h3>{{ student_id }}</h3>
+            </div>
+        </div>
+        <div class="profile-content">
+            <h2>Gender</h2>
+            <p>{{ gender }}</p>
+            <h2>Faculty</h2>
+            <p>{{ faculty }}</p>
+            <h2>Email</h2>
+            <p>{{ email }}</p>
+        </div>
+        <div class="button-container">
+            <a href="{{ url_for('edit_profile') }}" class="btn">Edit Profile</a> 
+            <a href="{{ url_for('change_password') }}" class="btn">Change Password</a>
+        </div>
+    </div>
+
+{% endblock %}
