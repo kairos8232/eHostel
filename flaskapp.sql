@@ -30,8 +30,28 @@ CREATE TABLE IF NOT EXISTS `admin` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Dumping data for table flaskapp.admin: ~1 rows (approximately)
+DELETE FROM `admin`;
 INSERT INTO `admin` (`id`, `name`, `password`) VALUES
 	(1, 'AdminUser', 'adminpass');
+
+-- Dumping structure for table flaskapp.announcement
+DROP TABLE IF EXISTS `announcement`;
+CREATE TABLE IF NOT EXISTS `announcement` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `title` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
+  `context` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=45 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+
+-- Dumping data for table flaskapp.announcement: ~6 rows (approximately)
+DELETE FROM `announcement`;
+INSERT INTO `announcement` (`id`, `title`, `context`) VALUES
+	(39, 'How do I organize a paragraph?', 'There are many different ways to organize a paragraph. The organization you choose will depend on the controlling idea of the paragraph. Below are a few possibilities for organization, with links to brief examples:\r\n\r\nNarration: Tell a story. Go chronologically, from start to finish. (See an example.)\r\nDescription: Provide specific details about what something looks, smells, tastes, sounds, or feels like. Organize spatially, in order of appearance, or by topic. (See an example.)\r\nProcess: Explain how something works, step by step. Perhaps follow a sequence—first, second, third. (See an example.)\r\nClassification: Separate into groups or explain the various parts of a topic. (See an example.)\r\nIllustration: Give examples and explain how those examples support your point. (See an example in the 5-step process '),
+	(40, 'Lorem', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec interdum aliquam nulla, dapibus scelerisque orci auctor at. Mauris id rhoncus orci. Nunc ac porttitor orci. Sed arcu ex, eleifend nec dapibus a, pharetra at sapien. Aenean ultrices tincidunt arcu sed vehicula. Nulla ac erat lorem. Proin eget ipsum consectetur, bibendum nisi ut, placerat ante. In hac habitasse platea dictumst. Nam eu nisl lectus. Nullam pretium erat diam, quis bibendum nisi dapibus at. Nulla facilisi. Aliquam vel dignissim lorem.'),
+	(41, '2', '2'),
+	(42, 'wdcd', 'dscs'),
+	(43, 'wdcd', 'dscs'),
+	(44, 'asdasd', 'sdsadasd');
 
 -- Dumping structure for table flaskapp.beds
 DROP TABLE IF EXISTS `beds`;
@@ -91,9 +111,14 @@ CREATE TABLE IF NOT EXISTS `booking` (
   CONSTRAINT `FK_booking_rooms` FOREIGN KEY (`room_no`) REFERENCES `rooms` (`number`),
   CONSTRAINT `FK_booking_trimester` FOREIGN KEY (`trimester_id`) REFERENCES `trimester` (`id`),
   CONSTRAINT `FK_booking_users` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=88 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
--- Dumping data for table flaskapp.booking: ~0 rows (approximately)
+) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+
+-- Dumping data for table flaskapp.booking: ~2 rows (approximately)
+DELETE FROM `booking`;
+INSERT INTO `booking` (`booking_no`, `user_id`, `trimester_id`, `group_individual`, `group_id`, `hostel_id`, `room_no`, `cost`, `bed_number`) VALUES
+	(19, 1, 2310, 0, NULL, 1, 101, 100.00, 'A'),
+	(20, 1, 2310, 0, NULL, 2, 203, 210.00, 'A');
 
 -- Dumping structure for table flaskapp.groups
 DROP TABLE IF EXISTS `groups`;
@@ -104,9 +129,13 @@ CREATE TABLE IF NOT EXISTS `groups` (
   PRIMARY KEY (`group_id`),
   KEY `leader_id` (`leader_id`),
   CONSTRAINT `groups_ibfk_1` FOREIGN KEY (`leader_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=35 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
--- Dumping data for table flaskapp.groups: ~0 rows (approximately)
+-- Dumping data for table flaskapp.groups: ~2 rows (approximately)
+DELETE FROM `groups`;
+INSERT INTO `groups` (`group_id`, `leader_id`, `trimester`) VALUES
+	(32, 2, '2310'),
+	(34, 123, '2310');
 
 -- Dumping structure for table flaskapp.group_members
 DROP TABLE IF EXISTS `group_members`;
@@ -119,9 +148,16 @@ CREATE TABLE IF NOT EXISTS `group_members` (
   KEY `user_id` (`user_id`),
   CONSTRAINT `group_members_ibfk_1` FOREIGN KEY (`group_id`) REFERENCES `groups` (`group_id`),
   CONSTRAINT `group_members_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
--- Dumping data for table flaskapp.group_members: ~0 rows (approximately)
+) ENGINE=InnoDB AUTO_INCREMENT=62 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+
+-- Dumping data for table flaskapp.group_members: ~4 rows (approximately)
+DELETE FROM `group_members`;
+INSERT INTO `group_members` (`id`, `group_id`, `user_id`) VALUES
+	(55, 32, 1),
+	(57, 32, 2),
+	(58, 32, 3),
+	(61, 34, 123);
 
 -- Dumping structure for table flaskapp.hostel
 DROP TABLE IF EXISTS `hostel`;
@@ -186,44 +222,45 @@ CREATE TABLE IF NOT EXISTS `trimester` (
   `term` int NOT NULL,
   `name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2317 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
--- Dumping data for table flaskapp.trimester: ~1 rows (approximately)
+-- Dumping data for table flaskapp.trimester: ~3 rows (approximately)
 INSERT INTO `trimester` (`id`, `term`, `name`) VALUES
-	(1, 2310, 'Trimester March/April 2024');
+	(1, 2310, 'Trimester March/April 2024'),
+	(2, 2320, 'Trimester July/August 2024'),
+	(3, 2330, 'Trimester Oct/Nov 2024');
 
 -- Dumping structure for table flaskapp.users
 DROP TABLE IF EXISTS `users`;
 CREATE TABLE IF NOT EXISTS `users` (
   `id` int NOT NULL,
   `name` varchar(100) DEFAULT NULL,
+  `gender` enum('Male','Female') CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `email` varchar(50) NOT NULL,
   `password` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `faculty` varchar(100) DEFAULT NULL,
-  `gender` enum('Male','Female') CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `faculty` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
   `profile_pic` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
-  `biography` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Dumping data for table flaskapp.users: ~16 rows (approximately)
-INSERT INTO `users` (`id`, `name`, `email`, `password`, `faculty`, `gender`, `profile_pic`, `biography`) VALUES
-	(1, NULL, '1@example.com', '$2b$12$JM.1cbG9FfxI25htADx53.6uJ95x28nFq1ze0Qz/v4m/gpy1cqhkm', NULL, 'Male', NULL, NULL),
-	(2, 'Jane Smith', 'user2@example.com', 'password2', 'Science', 'Female', '', ''),
-	(3, 'Bob Johnson', 'user3@example.com', 'password3', 'Arts', 'Male', '', ''),
-	(4, 'Alice Cooper', 'alice.cooper@example.com', 'password4', 'Business', 'Female', '', ''),
-	(5, 'David Miller', 'david.miller@example.com', 'password5', 'Mathematics', 'Male', '', ''),
-	(6, 'Emma Watson', 'emma.watson@example.com', 'password6', 'Computer Science', 'Female', '', ''),
-	(7, 'Liam Nelson', 'liam.nelson@example.com', 'password7', 'Physics', 'Male', '', ''),
-	(8, 'Sophia Lee', 'sophia.lee@example.com', 'password8', 'Biology', 'Female', '', ''),
-	(9, 'Noah Brown', 'noah.brown@example.com', 'password9', 'History', 'Male', '', ''),
-	(10, 'Olivia Martin', 'olivia.martin@example.com', 'password10', 'Chemistry', 'Female', '', ''),
-	(11, 'William Davis', 'william.davis@example.com', 'password11', 'Engineering', 'Male', '', ''),
-	(12, 'Isabella Garcia', 'isabella.garcia@example.com', 'password12', 'Psychology', 'Female', '', ''),
-	(13, 'James Wilson', 'james.wilson@example.com', 'password13', 'Philosophy', 'Male', '', ''),
-	(14, 'Charlotte Martinez', 'charlotte.martinez@example.com', 'password14', 'Art', 'Female', '', ''),
-	(15, 'Michael Anderson', 'michael.anderson@example.com', 'password15', 'Business', 'Male', '', ''),
-	(16, 'WAKABAKA', 'userNick@example.com', 'password1', 'Engineering', 'Male', '', '');
+INSERT INTO `users` (`id`, `name`, `gender`, `email`, `password`, `faculty`, `profile_pic`) VALUES
+	(1, 'John Wick', 'Male', '1@example.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi', 'Computing', ''),
+	(2, 'Jane Smith', 'Female', 'user2@example.com', 'password2', 'Science', ''),
+	(3, 'Bob Johnson', 'Male', 'user3@example.com', '$2b$12$JM.1cbG9FfxI25htADx53.6uJ95x28nFq1ze0Qz/v4m/gpy1cqhkm', 'Arts', ''),
+	(4, 'Alice Cooper', 'Female', 'alice.cooper@example.com', 'password4', 'Business', ''),
+	(5, 'David Miller', 'Male', 'david.miller@example.com', 'password5', 'Mathematics', ''),
+	(6, 'Emma Watson', 'Female', 'emma.watson@example.com', 'password6', 'Computer Science', ''),
+	(7, 'Liam Nelson', 'Male', 'liam.nelson@example.com', 'password7', 'Physics', ''),
+	(8, 'Sophia Lee', 'Female', 'sophia.lee@example.com', 'password8', 'Biology', ''),
+	(9, 'Noah Brown', 'Male', 'noah.brown@example.com', 'password9', 'History', ''),
+	(10, 'Olivia Martin', 'Female', 'olivia.martin@example.com', 'password10', 'Chemistry', ''),
+	(11, 'William Davis', 'Male', 'william.davis@example.com', 'password11', 'Engineering', ''),
+	(12, 'Isabella Garcia', 'Female', 'isabella.garcia@example.com', 'password12', 'Psychology', ''),
+	(13, 'James Wilson', 'Male', 'james.wilson@example.com', 'password13', 'Philosophy', ''),
+	(14, 'Charlotte Martinez', 'Female', 'charlotte.martinez@example.com', 'password14', 'Art', ''),
+	(15, 'Michael Anderson', 'Male', 'michael.anderson@example.com', 'password15', 'Business', ''),
+	(16, 'WAKABAKA', 'Male', 'userNick@example.com', 'password1', 'Engineering', '');
 
 /*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;

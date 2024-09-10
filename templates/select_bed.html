@@ -9,14 +9,6 @@
 
 <div class="manage-bed-wrapper">
     <h2>Room {{ selected_room }}</h2>
-
-    <!-- Debug information -->
-    <div style="background-color: #ffeeaa; padding: 10px; margin-bottom: 20px;">
-        <p>Mode: {{ mode }}</p>
-        <p>Group Members: {{ group_members }}</p>
-        <p>Assigned Users: {{ assigned_users }}</p>
-    </div>
-
     <form method="POST">
         <div class="bed-selection-container">
             {% for bed in beds %}
