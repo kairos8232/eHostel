@@ -24,8 +24,8 @@ mysql = MySQL(main)
 def Index():
     return render_template('index.html')
 
-@main.route('/student', methods=['POST', 'GET'])
-def student():
+@main.route('/student_login', methods=['POST', 'GET'])
+def student_login():
     if request.method == 'POST':
         userDetails = request.form
         id = userDetails['id']
@@ -37,7 +37,7 @@ def student():
             session['loggedin']= True
             session['id']= record[0]
             session['password'] = record[3]
-            return redirect(url_for('Home'))
+            return redirect(url_for('home'))
         else:
             msg='Incorrect username/password. Try again!'
             return render_template('index.html', msg = msg)   
@@ -45,14 +45,14 @@ def student():
     return render_template('s-login.html')
 
 @main.route('/admin')
-def admin():
+def admin_login():
     return render_template('a-login.html')
 
 @main.route("/home")
 def home():
     announcement_id = session.get('id')
     if not announcement_id:
-        return redirect(url_for('Login'))
+        return redirect(url_for('student_login'))
 
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     cur.execute("SELECT * FROM announcement ORDER BY id DESC")
@@ -111,11 +111,8 @@ def SignUp():
 def Profile():
     user_id = session.get('id')
     
-    if not user_id:
-        return redirect(url_for('login'))
-    
+
     if request.method == 'POST':
-        name = request.form['name']
         gender = request.form['gender']
         email = request.form['email']
         biography = request.form['biography']
@@ -150,14 +147,14 @@ def Profile():
         }
         return render_template('profile.html', **user_profile)
     else:
-        return redirect(url_for('Home'))
+        return redirect(url_for('home'))
 
 # Room Setting
 @main.route('/room_setting')
 def room_setting():
     user_id = session.get('id')
     if not user_id:
-        return redirect(url_for('Login'))
+        return redirect(url_for('student_login'))
 
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     cur.execute("""
@@ -199,7 +196,7 @@ def post():
 def select_trimester():
     user_id = session.get('id')
     if not user_id:
-        return redirect(url_for('Login'))
+        return redirect(url_for('student_login'))
     
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     cur.execute("SELECT * FROM trimester")
@@ -224,7 +221,7 @@ def edit_trimester():
         cur.execute("INSERT INTO trimester(name, term) VALUES(%s  , %s)", (trimesters, term))
         mysql.connection.commit()
         cur.close()
-        return redirect(url_for('Home'))
+        return redirect(url_for('home'))
     return render_template('admin_trimester.html')
 
 
@@ -232,7 +229,7 @@ def edit_trimester():
 @main.route('/choose_mode', methods=['GET', 'POST'])
 def choose_mode():
     if 'loggedin' not in session:
-        return redirect(url_for('Login'))
+        return redirect(url_for('student_login'))
     
     if 'trimester' not in session:
         return redirect(url_for('select_trimester'))
@@ -269,7 +266,7 @@ def group_page():
     user_id = session.get('id')
     
     if not user_id:
-        return redirect(url_for('Login'))
+        return redirect(url_for('student_login'))
 
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     cur.execute("SELECT * FROM `groups` WHERE leader_id = %s", (user_id,))
@@ -299,7 +296,7 @@ def group_page():
 def manage_group(group_id):
     user_id = session.get('id')
     if not user_id:
-        return redirect(url_for('Login'))
+        return redirect(url_for('student_login'))
 
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     cur.execute("SELECT * FROM `groups` WHERE group_id = %s AND leader_id = %s", (group_id, user_id))
@@ -355,7 +352,7 @@ def manage_group(group_id):
 def leave_group(group_id):
     user_id = session.get('id')
     if not user_id:
-        return redirect(url_for('Login'))
+        return redirect(url_for('student_login'))
 
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     
@@ -388,7 +385,7 @@ def leave_group(group_id):
 def select_hostel(mode):
     user_id = session.get('id')
     if not user_id:
-        return redirect(url_for('Login'))
+        return redirect(url_for('student_login'))
 
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     
@@ -415,7 +412,7 @@ def select_hostel(mode):
 def select_room_type(mode, hostel_id):
     user_id = session.get('id')
     if not user_id:
-        return redirect(url_for('Login'))
+        return redirect(url_for('student_login'))
 
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
 
@@ -458,7 +455,7 @@ def select_room_type(mode, hostel_id):
 def select_bed(mode, hostel_id, room_type):
     user_id = session.get('id')
     if not user_id:
-        return redirect(url_for('Login'))
+        return redirect(url_for('student_login'))
 
     selected_room = request.args.get('selected_room')
     if not selected_room:
@@ -531,7 +528,7 @@ def select_bed(mode, hostel_id, room_type):
 def booking_summary(mode, hostel_id, room_type, room_number, bed_ids, user_ids):
     user_id = session.get('id')
     if not user_id:
-        return redirect(url_for('Login'))
+        return redirect(url_for('student_login'))
 
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     cur.execute("SELECT * FROM rooms WHERE number = %s", (room_number,))
@@ -598,7 +595,7 @@ def booking_summary(mode, hostel_id, room_type, room_number, bed_ids, user_ids):
 def invite_member(group_id):
     user_id = session.get('id')
     if not user_id:
-        return redirect(url_for('Login'))
+        return redirect(url_for('student_login'))
 
     new_member_id = request.form['user_id']
 
@@ -634,7 +631,7 @@ def invite_member(group_id):
 def transfer_leadership(group_id, new_leader_id):
     user_id = session.get('id')
     if not user_id:
-        return redirect(url_for('Login'))
+        return redirect(url_for('student_login'))
 
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     
@@ -664,7 +661,7 @@ def transfer_leadership(group_id, new_leader_id):
 def remove_member(group_id, member_id):
     user_id = session.get('id')
     if not user_id:
-        return redirect(url_for('Login'))
+        return redirect(url_for('student_login'))
 
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     cur.execute("SELECT * FROM `groups` WHERE group_id = %s AND leader_id = %s", (group_id, user_id))
@@ -683,7 +680,7 @@ def remove_member(group_id, member_id):
 def disband_group(group_id):
     user_id = session.get('id')
     if not user_id:
-        return redirect(url_for('Login'))
+        return redirect(url_for('student_login'))
 
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     cur.execute("SELECT * FROM `groups` WHERE group_id = %s AND leader_id = %s", (group_id, user_id))
@@ -703,7 +700,7 @@ def disband_group(group_id):
 def feedback():
     user_id = session.get('id')
     if not user_id:
-        return redirect(url_for('Login'))
+        return redirect(url_for('student_login'))
 
     feedback_text = request.form['feedback']
     # Save feedback to the database
@@ -719,7 +716,7 @@ def feedback():
 def request_room_change():
     user_id = session.get('id')
     if not user_id:
-        return redirect(url_for('Login'))
+        return redirect(url_for('student_login'))
 
     room_number = session.get('room_number')
     # Process room change request
