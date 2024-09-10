@@ -1,27 +1,42 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Select Bed</title>
-</head>
-<body>
-    <h2>Select Beds for Room {{ selected_room }}</h2>
+{% extends 'base.html' %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/select_bed-style.css') }}">
+{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Select Bed</h1>
+
+<div class="manage-bed-wrapper">
+    <h2>Room {{ selected_room }}</h2>
+
+    <!-- Debug information -->
+    <div style="background-color: #ffeeaa; padding: 10px; margin-bottom: 20px;">
+        <p>Mode: {{ mode }}</p>
+        <p>Group Members: {{ group_members }}</p>
+        <p>Assigned Users: {{ assigned_users }}</p>
+    </div>
+
     <form method="POST">
-        {% for bed in beds %}
-        <div>
-            <h3>Bed {{ bed['bed_letter'] }}</h3>
-            <select name="user_for_bed_{{ bed['id'] }}">
-                <option value="">Select a user</option>
-                {% for member in group_members %}
+        <div class="bed-selection-container">
+            {% for bed in beds %}
+            <div class="bed-selection">
+                <h3>Bed {{ bed['bed_letter'] }}</h3>
+                <select name="user_for_bed_{{ bed.id }}">
+                    <option value="">Select a user</option>
+                    {% for member in group_members %}
                     {% if member['id']|string not in assigned_users %}
-                        <option value="{{ member['id'] }}">{{ member['name'] }} ({{ member['email'] }})</option>
+                    <option value="{{ member['id'] }}">{{ member['name'] }} ({{ member['email'] }})</option>
                     {% endif %}
-                {% endfor %}
-            </select>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endfor %}
         </div>
-        {% endfor %}
+
         <button type="submit">Confirm Bed Assignments</button>
     </form>
-</body>
-</html>
+</div>
+
+
+{% endblock %}

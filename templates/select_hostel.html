@@ -1,24 +1,20 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Select Hostel</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-</head>
-<body>
+{% extends 'base.html' %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/select_hostel-style.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="container">
     <h1>Select Hostel</h1>
-    <form action="{{ url_for('select_hostel', mode=mode) }}" method="POST">
+    <form method="POST">
         <label for="hostel">Choose a Hostel:</label>
-        <select name="hostel" id="hostel" required>
-            <!-- Dynamically populate hostel list -->
-            <option value="1">Hostel 1</option>
-            <option value="2">Hostel 2</option>
-            <option value="3">Hostel 3</option>
-            <!-- Add more hostels here -->
-        </select><br><br>
-        
+        <select name="hostel" id="hostel">
+            {% for hostel in hostels %}
+                <option value="{{ hostel.id }}">{{ hostel.name }} ({{ hostel.gender }} only)</option>
+            {% endfor %}
+        </select>
         <button type="submit">Continue</button>
     </form>
-</body>
-</html>
+</div>
+{% endblock %}

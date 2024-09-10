@@ -1,0 +1,83 @@
+/* Page title styling */
+.page-title {
+    font-size: 2em;
+    color: #ffffff;
+    margin-bottom: 20px;
+    font-weight: bold;
+    text-align: center;
+    margin-top: 50px;
+}
+
+/* Wrapper for bed selection content */
+.manage-bed-wrapper {
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    margin: 0 auto;
+    max-width: fit-content; /* Adjust the wrapper size to the content */
+    width: 100%; /* Ensure wrapper does not exceed 100% of the screen width */
+}
+
+/* Flex container for bed selections */
+.bed-selection-container {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap; /* Allows wrapping if there are too many beds to fit in one row */
+    justify-content: center; /* Centers the bed-selection boxes within the container */
+}
+
+/* Styling for each bed selection section */
+.bed-selection {
+    width: 250px; /* Fixed width for each bed selection */
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+}
+
+.bed-selection h3 {
+    font-size: 1.2em;
+    color: #555;
+    margin-bottom: 10px;
+}
+
+label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: #555;
+    text-align: center;
+}
+
+.bed-selection select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 1em;
+}
+
+/* Button styling */
+button {
+    background-color: #007bff;
+    color: #ffffff;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+    display: block;
+    margin: 30px auto 0; /* Centers the button horizontally */
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+.confirm-button {
+    padding: 12px 25px;
+    font-size: 1em;
+}
+
