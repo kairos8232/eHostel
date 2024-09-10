@@ -20,17 +20,12 @@
         </nav>
 
         <div class="user-form-group">
-            <img src="/static/images/anime-default-pfp-5.jpg" class="user-pic" onclick="togglemenu()">
+            <img src="{{ image_url }}" class="user-pic" onclick="togglemenu()">
     
                 <div class="sub-menu-wrap" id="sub-menu-wrap">
                     <div class="sub-menu">
-                        <div class="user-info">
-                            <img src="/static/images/anime-default-pfp-5.jpg">
-                            <h1>User Name</h1>
-                        </div>
-                        <hr>
     
-                    <a href="{{ url_for('Profile') }}" class="sub-menu-link">
+                    <a href="{{ url_for('profile') }}" class="sub-menu-link">
                         <img src="/static/images/account.png">
                         <p>Edit Profile</p>
                         <span></span>
@@ -58,8 +53,6 @@
                 }
             </script> 
     </header>
-</body>
-</html>
 
 {% block content %}
 

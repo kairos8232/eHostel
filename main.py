@@ -21,7 +21,7 @@ mysql = MySQL(main)
 
 
 @main.route('/')
-def Index():
+def index():
     return render_template('index.html')
 
 @main.route('/student_login', methods=['POST', 'GET'])
@@ -71,7 +71,7 @@ def home():
     return render_template('home.html', announcement=current_announcement, has_next=total_announcements > 1)
 
 @main.route('/signup', methods=['POST', 'GET'])
-def SignUp():
+def signup():
     if request.method == 'POST':
         userDetails = request.form
         id = userDetails['id']
@@ -86,68 +86,143 @@ def SignUp():
         return redirect(url_for('home'))
     return render_template('signup.html')
 
+# Login route
+@main.route('/login', methods=['POST', 'GET'])
+def login():
+    if request.method == 'POST':
+        userDetails = request.form
+        id = userDetails['id']
+        password = userDetails['password']
+        cur = mysql.connection.cursor()
+        cur.execute('SELECT * FROM users WHERE id=%s', (id,))
+        record = cur.fetchone()
+        if record and bcrypt.check_password_hash(record[4] , password):
+            session['loggedin']= True
+            session['id']= record[0]
+            session['password'] = record[3]
+            session['profile_pic'] = record[6] if record[6] else url_for('static', filename='default_profile_pic.jpg')
+            return redirect(url_for('home'))
+        else:
+            msg='Incorrect username/password. Try again!'
+            return render_template('index.html', msg = msg)   
 
-# @main.route('/login', methods=['POST', 'GET'])
-# def Login():
-#     if request.method == 'POST':
-#         userDetails = request.form
-#         id = userDetails['id']
-#         password = userDetails['password']
-#         cur = mysql.connection.cursor()
-#         cur.execute('SELECT * FROM users WHERE id=%s', (id,))
-#         record = cur.fetchone()
-#         if record and bcrypt.check_password_hash(record[3] , password):
-#             session['loggedin']= True
-#             session['id']= record[0]
-#             session['password'] = record[3]
-#             return redirect(url_for('home'))
-#         else:
-#             msg='Incorrect username/password. Try again!'
-#             return render_template('index.html', msg = msg)   
+    return render_template('signin.html')
 
-#     return render_template('signin.html')
+@main.route('/home')
+def home():
+    user_id = session.get('id')
+    if not user_id:
+        return redirect(url_for('login'))
+
+    return render_template('home.html')
 
 @main.route('/profile', methods=['GET', 'POST'])
-def Profile():
+def profile():
+    user_id = session.get('id')
+   
+    if not user_id:
+        return redirect(url_for('login'))
+    
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT * FROM users WHERE id = %s", (user_id,))
+    user = cur.fetchone()
+    
+    if not user:
+        session.pop('id', None)
+        cur.close()
+        return redirect(url_for('login'))
+    
+    status = request.args.get('status')
+
+    return render_template('profile.html',
+        name=user[1],
+        student_id=user[0],
+        gender=user[2],
+        email=user[3],
+        faculty=user[5],
+        image_url=user[6] or url_for('static', filename='default_profile.jpg'),
+        url_for=url_for,
+        status=status
+    )
+
+# Edit Profile
+@main.route('/edit_profile', methods=['GET', 'POST'])
+def edit_profile():
     user_id = session.get('id')
     
-
+    if not user_id:
+        return redirect(url_for('student_login'))
+    
     if request.method == 'POST':
-        gender = request.form['gender']
         email = request.form['email']
-        biography = request.form['biography']
-        profile_pic = request.files['image']
-        
+        profile_pic = request.files.get('profile_pic')
+
         if profile_pic:
             profile_pic_path = os.path.join(main.config['UPLOAD_FOLDER'], profile_pic.filename)
             profile_pic.save(profile_pic_path)
+            profile_pic_url = url_for('static', filename=f"uploads/{profile_pic.filename}")
         else:
-            profile_pic_path = None
+            profile_pic_url = None
 
-        cur = mysql.connection.cursor()
         cur.execute("""
-            UPDATE users SET gender=%s, email=%s,  profile_pic=%s, biography=%s
+            UPDATE users SET email=%s, profile_pic=%s
             WHERE id=%s
-            """, (gender, email, profile_pic_path, biography, user_id))
+            """, (email, profile_pic_url, user_id))
         mysql.connection.commit()
-        cur.close()
-        return redirect(url_for('Profile'))
+        return redirect(url_for('profile'))
 
     cur = mysql.connection.cursor()
-    cur.execute("SELECT * FROM users WHERE id=%s", [user_id])
+    cur.execute("SELECT name, id, gender, faculty, email, profile_pic FROM users WHERE id=%s", [user_id])
     user_data = cur.fetchone()
     cur.close()
 
     if user_data:
         user_profile = {
-            'gender': user_data[2],
-            'email': user_data[1],
-            'image_url': url_for('static', filename=f"uploads/{user_data[4]}"),
-            'biography': user_data[5]
+            'name': user_data['name'],
+            'student_id': user_data['id'],
+            'gender': user_data['gender'],
+            'faculty': user_data['faculty'],
+            'email': user_data['email'],
+            'image_url': user_data['profile_pic'] if user_data['profile_pic'] else url_for('static', filename='default_profile_pic.jpg')
         }
-        return render_template('profile.html', **user_profile)
+        return render_template('edit_profile.html', **user_profile)
     else:
         return redirect(url_for('home'))
+
+# Change Password Route
+@main.route('/change_password', methods=['GET', 'POST'])
+def change_password():
+    user_id = session.get('id')
+    
+    if not user_id:
+        return redirect(url_for('login'))
+
+    if request.method == 'POST':
+        current_password = request.form['current_password']
+        new_password = request.form['new_password']
+        confirm_password = request.form['confirm_password']
+
+        cur = mysql.connection.cursor()
+        cur.execute("SELECT password FROM users WHERE id=%s", [user_id])
+        user_data = cur.fetchone()
+        cur.close()
+
+        if user_data and bcrypt.check_password_hash(user_data[0], current_password):
+            if new_password == confirm_password:
+                hashed_password = bcrypt.generate_password_hash(new_password).decode('utf-8')
+                cur = mysql.connection.cursor()
+                cur.execute("UPDATE users SET password=%s WHERE id=%s", (hashed_password, user_id))
+                mysql.connection.commit()
+                cur.close()
+                return redirect(url_for('profile', status='success'))
+            else:
+                return redirect(url_for('change_password', error='Passwords do not match.'))
+        else:
+            return redirect(url_for('change_password', error='Current password is incorrect.'))
+
+    error = request.args.get('error')
+    status = request.args.get('status')
+    return render_template('change_password.html', error=error, status=status)
 
 # Room Setting
 @main.route('/room_setting')
@@ -205,7 +280,7 @@ def select_trimester():
 
     if request.method == 'POST':
         selected_trimester = request.form.get('trimester')
-        session['trimester'] = selected_trimester
+        session['trimester_id'] = selected_trimester
         return redirect(url_for('choose_mode'))
 
     return render_template('select_trimester.html', trimesters=trimesters)
@@ -231,13 +306,13 @@ def choose_mode():
     if 'loggedin' not in session:
         return redirect(url_for('student_login'))
     
-    if 'trimester' not in session:
+    if 'trimester_id' not in session:
         return redirect(url_for('select_trimester'))
-
+    
     user_id = session.get('id')
+
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
 
-    
     cur.execute("SELECT group_id FROM group_members WHERE user_id = %s", (user_id,))
     user_group = cur.fetchone()
     
@@ -287,6 +362,7 @@ def group_page():
             cur.execute("INSERT INTO group_members(group_id, user_id) VALUES(%s, %s)", (group_id, user_id))
             mysql.connection.commit()
             cur.close()
+            session['group_id'] = group_id
             return redirect(url_for('manage_group', group_id=group_id))
 
     return render_template('group_page.html')
@@ -416,6 +492,8 @@ def select_room_type(mode, hostel_id):
 
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
 
+    group_id = session.get('group_id')
+
     if mode == 'individual':
         cur.execute("""
             SELECT r.*, COUNT(b.id) as total_beds, 
@@ -448,7 +526,7 @@ def select_room_type(mode, hostel_id):
             return redirect(url_for('select_bed', mode=mode, hostel_id=hostel_id, room_type=available_rooms[0]['category'], selected_room=selected_room))
 
     cur.close()
-    return render_template('select_room_type.html', mode=mode, hostel_id=hostel_id, available_rooms=available_rooms)
+    return render_template('select_room_type.html', mode=mode, hostel_id=hostel_id, available_rooms=available_rooms, group_id=group_id)
 
 # Select Bed Route
 @main.route('/select_bed/<mode>/<int:hostel_id>/<room_type>', methods=['GET', 'POST'])
@@ -490,9 +568,6 @@ def select_bed(mode, hostel_id, room_type):
         else:
             group_members = []
 
-        print(f"Mode: {mode}")
-        print(f"Group Members: {group_members}")  # Debug print
-
         assigned_users = []
 
         if request.method == 'POST':
@@ -509,15 +584,12 @@ def select_bed(mode, hostel_id, room_type):
                 return redirect(url_for('booking_summary', mode=mode, hostel_id=hostel_id, 
                                         room_type=room_type, room_number=selected_room, 
                                         bed_ids=bed_ids, user_ids=user_ids))
-
-        print(f"Assigned Users: {assigned_users}")  # Debug print
-
+            
         return render_template('select_bed.html', mode=mode, hostel_id=hostel_id, room_type=room_type, 
                                selected_room=selected_room, beds=available_beds, 
                                group_members=group_members, room_info=room_info, assigned_users=assigned_users)
 
     except Exception as e:
-        print(f"Error in select_bed: {str(e)}")  # Debug print
         return render_template('error.html', message=f"An error occurred: {str(e)}")
 
     finally:
@@ -624,6 +696,8 @@ def invite_member(group_id):
     mysql.connection.commit()
     cur.close()
 
+    session['group_id'] = group_id
+
     return redirect(url_for('manage_group', group_id=group_id))
 
 # Transfer Leadership
@@ -653,6 +727,8 @@ def transfer_leadership(group_id, new_leader_id):
 
     cur.close()
 
+    session['group_id'] = group_id
+
     # Redirect the user back to the manage_group page
     return redirect(url_for('manage_group', group_id=group_id))
 
@@ -673,6 +749,8 @@ def remove_member(group_id, member_id):
     mysql.connection.commit()
     cur.close()
 
+    session['group_id'] = group_id
+
     return redirect(url_for('manage_group', group_id=group_id))
 
 # Disband Group
@@ -682,6 +760,7 @@ def disband_group(group_id):
     if not user_id:
         return redirect(url_for('student_login'))
 
+    session.pop('group_id', None)
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     cur.execute("SELECT * FROM `groups` WHERE group_id = %s AND leader_id = %s", (group_id, user_id))
     group = cur.fetchone()
@@ -732,7 +811,7 @@ def request_room_change():
 def logout():
     session.pop('loggedin', None)
     session.pop('id', None)
-    return redirect(url_for('Index'))
+    return redirect(url_for('index'))
 
 if __name__ == "__main__":
     main.run(debug=True)

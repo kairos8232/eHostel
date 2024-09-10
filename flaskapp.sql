@@ -224,48 +224,43 @@ CREATE TABLE IF NOT EXISTS `trimester` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2317 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
--- Dumping data for table flaskapp.trimester: ~7 rows (approximately)
-DELETE FROM `trimester`;
-INSERT INTO `trimester` (`id`, `name`, `term`) VALUES
-	(2310, 'March', 2024),
-	(2311, 'October ', 2024),
-	(2312, 'August', 2024),
-	(2313, 'December', 2025),
-	(2314, 'a', 2323),
-	(2315, 'June', 2024),
-	(2316, 'qweqweqwe', 123123);
+-- Dumping data for table flaskapp.trimester: ~3 rows (approximately)
+INSERT INTO `trimester` (`id`, `term`, `name`) VALUES
+	(1, 2310, 'Trimester March/April 2024'),
+	(2, 2320, 'Trimester July/August 2024'),
+	(3, 2330, 'Trimester Oct/Nov 2024');
 
 -- Dumping structure for table flaskapp.users
 DROP TABLE IF EXISTS `users`;
 CREATE TABLE IF NOT EXISTS `users` (
   `id` int NOT NULL,
+  `name` varchar(100) DEFAULT NULL,
+  `gender` enum('Male','Female') CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `email` varchar(50) NOT NULL,
   `password` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `faculty` varchar(100) DEFAULT NULL,
-  `gender` enum('Male','Female') CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `faculty` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
   `profile_pic` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
-  `biography` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Dumping data for table flaskapp.users: ~16 rows (approximately)
-INSERT INTO `users` (`id`, `name`, `email`, `password`, `faculty`, `gender`, `profile_pic`, `biography`) VALUES
-	(1, NULL, '1@example.com', '$2b$12$JM.1cbG9FfxI25htADx53.6uJ95x28nFq1ze0Qz/v4m/gpy1cqhkm', NULL, 'Male', NULL, NULL),
-	(2, 'Jane Smith', 'user2@example.com', 'password2', 'Science', 'Female', '', ''),
-	(3, 'Bob Johnson', 'user3@example.com', 'password3', 'Arts', 'Male', '', ''),
-	(4, 'Alice Cooper', 'alice.cooper@example.com', 'password4', 'Business', 'Female', '', ''),
-	(5, 'David Miller', 'david.miller@example.com', 'password5', 'Mathematics', 'Male', '', ''),
-	(6, 'Emma Watson', 'emma.watson@example.com', 'password6', 'Computer Science', 'Female', '', ''),
-	(7, 'Liam Nelson', 'liam.nelson@example.com', 'password7', 'Physics', 'Male', '', ''),
-	(8, 'Sophia Lee', 'sophia.lee@example.com', 'password8', 'Biology', 'Female', '', ''),
-	(9, 'Noah Brown', 'noah.brown@example.com', 'password9', 'History', 'Male', '', ''),
-	(10, 'Olivia Martin', 'olivia.martin@example.com', 'password10', 'Chemistry', 'Female', '', ''),
-	(11, 'William Davis', 'william.davis@example.com', 'password11', 'Engineering', 'Male', '', ''),
-	(12, 'Isabella Garcia', 'isabella.garcia@example.com', 'password12', 'Psychology', 'Female', '', ''),
-	(13, 'James Wilson', 'james.wilson@example.com', 'password13', 'Philosophy', 'Male', '', ''),
-	(14, 'Charlotte Martinez', 'charlotte.martinez@example.com', 'password14', 'Art', 'Female', '', ''),
-	(15, 'Michael Anderson', 'michael.anderson@example.com', 'password15', 'Business', 'Male', '', ''),
-	(16, 'WAKABAKA', 'userNick@example.com', 'password1', 'Engineering', 'Male', '', '');
+INSERT INTO `users` (`id`, `name`, `gender`, `email`, `password`, `faculty`, `profile_pic`) VALUES
+	(1, 'John Wick', 'Male', '1@example.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi', 'Computing', ''),
+	(2, 'Jane Smith', 'Female', 'user2@example.com', 'password2', 'Science', ''),
+	(3, 'Bob Johnson', 'Male', 'user3@example.com', '$2b$12$JM.1cbG9FfxI25htADx53.6uJ95x28nFq1ze0Qz/v4m/gpy1cqhkm', 'Arts', ''),
+	(4, 'Alice Cooper', 'Female', 'alice.cooper@example.com', 'password4', 'Business', ''),
+	(5, 'David Miller', 'Male', 'david.miller@example.com', 'password5', 'Mathematics', ''),
+	(6, 'Emma Watson', 'Female', 'emma.watson@example.com', 'password6', 'Computer Science', ''),
+	(7, 'Liam Nelson', 'Male', 'liam.nelson@example.com', 'password7', 'Physics', ''),
+	(8, 'Sophia Lee', 'Female', 'sophia.lee@example.com', 'password8', 'Biology', ''),
+	(9, 'Noah Brown', 'Male', 'noah.brown@example.com', 'password9', 'History', ''),
+	(10, 'Olivia Martin', 'Female', 'olivia.martin@example.com', 'password10', 'Chemistry', ''),
+	(11, 'William Davis', 'Male', 'william.davis@example.com', 'password11', 'Engineering', ''),
+	(12, 'Isabella Garcia', 'Female', 'isabella.garcia@example.com', 'password12', 'Psychology', ''),
+	(13, 'James Wilson', 'Male', 'james.wilson@example.com', 'password13', 'Philosophy', ''),
+	(14, 'Charlotte Martinez', 'Female', 'charlotte.martinez@example.com', 'password14', 'Art', ''),
+	(15, 'Michael Anderson', 'Male', 'michael.anderson@example.com', 'password15', 'Business', ''),
+	(16, 'WAKABAKA', 'Male', 'userNick@example.com', 'password1', 'Engineering', '');
 
 /*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;
