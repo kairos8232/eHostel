@@ -72,6 +72,19 @@ def home():
 
     return render_template('home.html')
 
+def get_profile_pic_url(user_id):
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    cur.execute("SELECT profile_pic FROM users WHERE id = %s", (user_id,))
+    user = cur.fetchone()
+    cur.close()
+    return user['profile_pic'] if user and user['profile_pic'] else url_for('static', filename='images/default_profile_pic.jpg')
+
+@main.context_processor
+def inject_profile_pic():
+    if 'id' in session:
+        return {'profile_pic_url': get_profile_pic_url(session['id'])}
+    return {}
+
 @main.route('/profile', methods=['GET', 'POST'])
 def profile():
     user_id = session.get('id')
@@ -96,7 +109,7 @@ def profile():
         gender=user[2],
         email=user[3],
         faculty=user[5],
-        image_url=user[6] or url_for('static', filename='default_profile.jpg'),
+        image_url=user[6] or url_for('static', filename='images/default_profile_pic.jpg'),
         url_for=url_for,
         status=status
     )
@@ -140,7 +153,7 @@ def edit_profile():
             'gender': user_data['gender'],
             'faculty': user_data['faculty'],
             'email': user_data['email'],
-            'image_url': user_data['profile_pic'] if user_data['profile_pic'] else url_for('static', filename='default_profile_pic.jpg')
+            'image_url': user_data['profile_pic'] if user_data['profile_pic'] else url_for('static', filename='images/default_profile_pic.jpg')
         }
         return render_template('edit_profile.html', **user_profile)
     else:
