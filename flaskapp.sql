@@ -25,33 +25,39 @@ DROP TABLE IF EXISTS `admin`;
 CREATE TABLE IF NOT EXISTS `admin` (
   `id` int NOT NULL,
   `name` varchar(50) NOT NULL,
-  `password` varchar(50) NOT NULL,
+  `email` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `password` varchar(250) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table flaskapp.admin: ~1 rows (approximately)
+-- Dumping data for table flaskapp.admin: ~3 rows (approximately)
 DELETE FROM `admin`;
-INSERT INTO `admin` (`id`, `name`, `password`) VALUES
-	(1, 'AdminUser', 'adminpass');
+INSERT INTO `admin` (`id`, `name`, `email`, `password`) VALUES
+	(1, '', 'AdminUser', 'adminpass'),
+	(2, '2', '2@gmail.com', '$2b$12$JOf9mQbRllsaIxnS5mbM1Ot.Iy6LB658XGvK7iZa8j307.hF9lJzW'),
+	(4, '4', '4@gmail.come', '$2b$12$JcnWMpg5p6yLwQ/mSzSa8eTRq81DZQdm7bGNpLZjXFPlmF0esFVs6'),
+	(5, '5', '5@gmail.com', '$2b$12$Bh0dX/UR2vZPfGhuLnEHZumXcaN968Bz0RR1MEFtbeXSRUw8vQ9tO'),
+	(11, '11', '11@gmail.come', '$2b$12$jIxxu7uar2uAUial7hRPQO8OvxIa1nxz0L7ZK386nzJqUV0Pv70ae'),
+	(21, '21', '21@ee', '$2b$12$xRPQOxgtZqYcx.cgOdXEvu7nvCfzcX6fp0jyerynu4FjQ7WrvxBQ.'),
+	(123, '123', '1111@gmail.com', '$2b$12$px/ugQJof3k/qP/WvbnXQeHesnj5GOd0glyY1dCr7WOrgXD2Ptg6u'),
+	(222, '222', '222@gmail.com', '$2b$12$dUvNvuYjLgkVP3ZfXAqQYeC39Xx61jF04y3CDKYMwfC1vmqqfQ0P6');
 
 -- Dumping structure for table flaskapp.announcement
 DROP TABLE IF EXISTS `announcement`;
 CREATE TABLE IF NOT EXISTS `announcement` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `title` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
-  `context` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci,
+  `title` varchar(200) COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
+  `context` text COLLATE utf8mb4_unicode_520_ci,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=45 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
--- Dumping data for table flaskapp.announcement: ~6 rows (approximately)
+-- Dumping data for table flaskapp.announcement: ~0 rows (approximately)
 DELETE FROM `announcement`;
 INSERT INTO `announcement` (`id`, `title`, `context`) VALUES
-	(39, 'How do I organize a paragraph?', 'There are many different ways to organize a paragraph. The organization you choose will depend on the controlling idea of the paragraph. Below are a few possibilities for organization, with links to brief examples:\r\n\r\nNarration: Tell a story. Go chronologically, from start to finish. (See an example.)\r\nDescription: Provide specific details about what something looks, smells, tastes, sounds, or feels like. Organize spatially, in order of appearance, or by topic. (See an example.)\r\nProcess: Explain how something works, step by step. Perhaps follow a sequence—first, second, third. (See an example.)\r\nClassification: Separate into groups or explain the various parts of a topic. (See an example.)\r\nIllustration: Give examples and explain how those examples support your point. (See an example in the 5-step process '),
-	(40, 'Lorem', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec interdum aliquam nulla, dapibus scelerisque orci auctor at. Mauris id rhoncus orci. Nunc ac porttitor orci. Sed arcu ex, eleifend nec dapibus a, pharetra at sapien. Aenean ultrices tincidunt arcu sed vehicula. Nulla ac erat lorem. Proin eget ipsum consectetur, bibendum nisi ut, placerat ante. In hac habitasse platea dictumst. Nam eu nisl lectus. Nullam pretium erat diam, quis bibendum nisi dapibus at. Nulla facilisi. Aliquam vel dignissim lorem.'),
-	(41, '2', '2'),
-	(42, 'wdcd', 'dscs'),
-	(43, 'wdcd', 'dscs'),
-	(44, 'asdasd', 'sdsadasd');
+	(1, '"Neque porro quisquam est qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit..."', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam non molestie eros. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Vivamus viverra, neque id condimentum consequat, mauris purus auctor magna, at lacinia nulla nisi eu turpis. Maecenas posuere metus velit, eget bibendum diam fermentum at. Nullam egestas tellus risus, fermentum posuere urna egestas non. Morbi sagittis leo nunc, at porta leo accumsan in. Pellentesque vel tristique nulla. Quisque consectetur vestibulum commodo. Etiam vel congue diam. Nunc tincidunt diam eu nunc dictum, et vestibulum dui vestibulum. Pellentesque eu justo eu neque euismod tincidunt.\r\n\r\nProin faucibus fringilla tempus. Donec vehicula neque et nibh ultrices aliquam. Donec non pretium neque. Ut maximus eros nec egestas fringilla. Nulla sed facilisis turpis. Proin viverra risus id lectus rhoncus lobortis. Fusce ut nulla in odio gravida convallis. Quisque tristique nunc non mauris pellentesque dictum. Sed sit amet lorem est. Nam porta dictum congue. Vestibulum sed venenatis diam, rutrum vulputate ipsum. Nullam nisl nunc, cursus et orci quis, dignissim laoreet est. In hac habitasse platea dictumst. Quisque volutpat sit amet nisl ac rutrum. Ut molestie, ligula in egestas convallis, lacus erat condimentum nulla, in dictum tellus quam pulvinar sapien. Praesent orci ligula, aliquam vel finibus sed, scelerisque et orci.'),
+	(2, '"Neque porro quisquam est qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit..."', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam non molestie eros. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Vivamus viverra, neque id condimentum consequat, mauris purus auctor magna, at lacinia nulla nisi eu turpis. Maecenas posuere metus velit, eget bibendum diam fermentum at. Nullam egestas tellus risus, fermentum posuere urna egestas non. Morbi sagittis leo nunc, at porta leo accumsan in. Pellentesque vel tristique nulla. Quisque consectetur vestibulum commodo. Etiam vel congue diam. Nunc tincidunt diam eu nunc dictum, et vestibulum dui vestibulum. Pellentesque eu justo eu neque euismod tincidunt.\r\n\r\nProin faucibus fringilla tempus. Donec vehicula neque et nibh ultrices aliquam. Donec non pretium neque. Ut maximus eros nec egestas fringilla. Nulla sed facilisis turpis. Proin viverra risus id lectus rhoncus lobortis. Fusce ut nulla in odio gravida convallis. Quisque tristique nunc non mauris pellentesque dictum. Sed sit amet lorem est. Nam porta dictum congue. Vestibulum sed venenatis diam, rutrum vulputate ipsum. Nullam nisl nunc, cursus et orci quis, dignissim laoreet est. In hac habitasse platea dictumst. Quisque volutpat sit amet nisl ac rutrum. Ut molestie, ligula in egestas convallis, lacus erat condimentum nulla, in dictum tellus quam pulvinar sapien. Praesent orci '),
+	(3, 'zd', 'sdf'),
+	(4, 'sdfsdf', 'sfsdf');
 
 -- Dumping structure for table flaskapp.beds
 DROP TABLE IF EXISTS `beds`;
@@ -65,7 +71,8 @@ CREATE TABLE IF NOT EXISTS `beds` (
   CONSTRAINT `fk_beds_rooms` FOREIGN KEY (`room_number`) REFERENCES `rooms` (`number`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table flaskapp.beds: ~20 rows (approximately)
+-- Dumping data for table flaskapp.beds: ~16 rows (approximately)
+DELETE FROM `beds`;
 INSERT INTO `beds` (`id`, `room_number`, `bed_letter`, `status`) VALUES
 	(1, 101, 'A', 'Available'),
 	(2, 102, 'A', 'Available'),
@@ -111,14 +118,10 @@ CREATE TABLE IF NOT EXISTS `booking` (
   CONSTRAINT `FK_booking_rooms` FOREIGN KEY (`room_no`) REFERENCES `rooms` (`number`),
   CONSTRAINT `FK_booking_trimester` FOREIGN KEY (`trimester_id`) REFERENCES `trimester` (`id`),
   CONSTRAINT `FK_booking_users` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=93 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
-) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
-
--- Dumping data for table flaskapp.booking: ~2 rows (approximately)
+-- Dumping data for table flaskapp.booking: ~0 rows (approximately)
 DELETE FROM `booking`;
-INSERT INTO `booking` (`booking_no`, `user_id`, `trimester_id`, `group_individual`, `group_id`, `hostel_id`, `room_no`, `cost`, `bed_number`) VALUES
-	(19, 1, 2310, 0, NULL, 1, 101, 100.00, 'A'),
-	(20, 1, 2310, 0, NULL, 2, 203, 210.00, 'A');
 
 -- Dumping structure for table flaskapp.groups
 DROP TABLE IF EXISTS `groups`;
@@ -129,13 +132,10 @@ CREATE TABLE IF NOT EXISTS `groups` (
   PRIMARY KEY (`group_id`),
   KEY `leader_id` (`leader_id`),
   CONSTRAINT `groups_ibfk_1` FOREIGN KEY (`leader_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=35 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=31 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
--- Dumping data for table flaskapp.groups: ~2 rows (approximately)
+-- Dumping data for table flaskapp.groups: ~0 rows (approximately)
 DELETE FROM `groups`;
-INSERT INTO `groups` (`group_id`, `leader_id`, `trimester`) VALUES
-	(32, 2, '2310'),
-	(34, 123, '2310');
 
 -- Dumping structure for table flaskapp.group_members
 DROP TABLE IF EXISTS `group_members`;
@@ -148,16 +148,10 @@ CREATE TABLE IF NOT EXISTS `group_members` (
   KEY `user_id` (`user_id`),
   CONSTRAINT `group_members_ibfk_1` FOREIGN KEY (`group_id`) REFERENCES `groups` (`group_id`),
   CONSTRAINT `group_members_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=72 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
-) ENGINE=InnoDB AUTO_INCREMENT=62 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
-
--- Dumping data for table flaskapp.group_members: ~4 rows (approximately)
+-- Dumping data for table flaskapp.group_members: ~0 rows (approximately)
 DELETE FROM `group_members`;
-INSERT INTO `group_members` (`id`, `group_id`, `user_id`) VALUES
-	(55, 32, 1),
-	(57, 32, 2),
-	(58, 32, 3),
-	(61, 34, 123);
 
 -- Dumping structure for table flaskapp.hostel
 DROP TABLE IF EXISTS `hostel`;
@@ -169,6 +163,7 @@ CREATE TABLE IF NOT EXISTS `hostel` (
 ) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Dumping data for table flaskapp.hostel: ~4 rows (approximately)
+DELETE FROM `hostel`;
 INSERT INTO `hostel` (`id`, `name`, `gender`) VALUES
 	(1, 'Hostel A', 'Male'),
 	(2, 'Hostel B', 'Female'),
@@ -190,6 +185,7 @@ CREATE TABLE IF NOT EXISTS `rooms` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Dumping data for table flaskapp.rooms: ~23 rows (approximately)
+DELETE FROM `rooms`;
 INSERT INTO `rooms` (`number`, `hostel_id`, `category`, `capacity`, `status`, `price`) VALUES
 	(101, 1, 'Single', 1, 'Available', 100.00),
 	(102, 1, 'Double', 2, 'Available', 150.00),
@@ -222,9 +218,10 @@ CREATE TABLE IF NOT EXISTS `trimester` (
   `term` int NOT NULL,
   `name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2317 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
 -- Dumping data for table flaskapp.trimester: ~3 rows (approximately)
+DELETE FROM `trimester`;
 INSERT INTO `trimester` (`id`, `term`, `name`) VALUES
 	(1, 2310, 'Trimester March/April 2024'),
 	(2, 2320, 'Trimester July/August 2024'),
@@ -243,7 +240,8 @@ CREATE TABLE IF NOT EXISTS `users` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table flaskapp.users: ~16 rows (approximately)
+-- Dumping data for table flaskapp.users: ~18 rows (approximately)
+DELETE FROM `users`;
 INSERT INTO `users` (`id`, `name`, `gender`, `email`, `password`, `faculty`, `profile_pic`) VALUES
 	(1, 'John Wick', 'Male', '1@example.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi', 'Computing', ''),
 	(2, 'Jane Smith', 'Female', 'user2@example.com', 'password2', 'Science', ''),
@@ -260,7 +258,9 @@ INSERT INTO `users` (`id`, `name`, `gender`, `email`, `password`, `faculty`, `pr
 	(13, 'James Wilson', 'Male', 'james.wilson@example.com', 'password13', 'Philosophy', ''),
 	(14, 'Charlotte Martinez', 'Female', 'charlotte.martinez@example.com', 'password14', 'Art', ''),
 	(15, 'Michael Anderson', 'Male', 'michael.anderson@example.com', 'password15', 'Business', ''),
-	(16, 'WAKABAKA', 'Male', 'userNick@example.com', 'password1', 'Engineering', '');
+	(16, 'WAKABAKA', 'Male', 'userNick@example.com', 'password1', 'Engineering', ''),
+	(111, NULL, 'Male', '1@sample.com', '$2b$12$UxNpvG4rGzjdPVd2LFfI8eaUW1JVKspVfeC8w7Zh9HikITqO31A4y', NULL, NULL),
+	(4444, NULL, 'Male', '4444@gmail.com', '$2b$12$tYbW4Cg7mhobKPxJseUW8uyWMmTR0FR/rpj.ifSJakj/SmZIZoQOq', NULL, NULL);
 
 /*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;

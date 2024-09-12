@@ -1,5 +1,5 @@
 mysql_host: 'localhost'
 mysql_user: 'root'
-mysql_password: 'LyL@1249'
+mysql_password: 'w051218020427 '
 mysql_db: 'flaskapp'
 mysql_profile_pic: 'static/uploads'
