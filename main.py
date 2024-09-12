@@ -51,18 +51,22 @@ def admin_login():
         id = userDetails['id']
         password = userDetails['password']
         cur = mysql.connection.cursor()
-        cur.execute('SELECT * FROM users WHERE id=%s', (id,))
+        cur.execute('SELECT * FROM admin WHERE id=%s', (id,))
         record = cur.fetchone()
-        if record and bcrypt.check_password_hash(record[4] , password):
+        if record and bcrypt.check_password_hash(record[3] , password):
             session['loggedin']= True
             session['id']= record[0]
-            session['password'] = record[4]
-            return redirect(url_for('home'))
+            session['password'] = record[3]
+            return redirect(url_for('admin_home'))
         else:
             msg='Incorrect username/password. Try again!'
             return render_template('index.html', msg = msg)   
 
     return render_template('a-login.html')
+
+@main.route("/admin_home")
+def admin_home():
+    return render_template('admin_base.html')
 
 @main.route("/home")
 def home():
@@ -163,18 +167,18 @@ def edit_profile():
         return redirect(url_for('profile'))
 
     cur = mysql.connection.cursor()
-    cur.execute("SELECT name, id, gender, faculty, email, profile_pic FROM users WHERE id=%s", [user_id])
+    cur.execute("SELECT * FROM users WHERE name, id, gender, faculty, email, profile_pic FROM users WHERE id=%s", [user_id])
     user_data = cur.fetchone()
     cur.close()
 
     if user_data:
         user_profile = {
-            'name': user_data['name'],
-            'student_id': user_data['id'],
-            'gender': user_data['gender'],
-            'faculty': user_data['faculty'],
-            'email': user_data['email'],
-            'image_url': user_data['profile_pic'] if user_data['profile_pic'] else url_for('static', filename='default_profile_pic.jpg')
+            'name'== user_data['name'],
+            'student_id'== user_data['id'],
+            'gender'== user_data['gender'],
+            'faculty'== user_data['faculty'],
+            'email'== user_data['email'],
+            'image_url'== user_data['profile_pic'] if user_data['profile_pic'] else url_for('static', filename='default_profile_pic.jpg')
         }
         return render_template('edit_profile.html', **user_profile)
     else:
@@ -287,7 +291,7 @@ def edit_trimester():
         cur.execute("INSERT INTO trimester(name, term) VALUES(%s  , %s)", (trimesters, term))
         mysql.connection.commit()
         cur.close()
-        return redirect(url_for('home'))
+        return redirect(url_for('admin_home'))
     return render_template('admin_trimester.html')
 
 
