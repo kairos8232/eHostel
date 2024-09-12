@@ -19,6 +19,19 @@ main.secret_key = 'terrychin'
 bcrypt = Bcrypt(main)
 mysql = MySQL(main)
 
+# Get image url, to ensure every route catch the profile picture correctly
+@main.context_processor
+def inject_profile_pic():
+    if 'id' in session:
+        return {'profile_pic_url': get_profile_pic_url(session['id'])}
+    return {}
+
+def get_profile_pic_url(user_id):
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    cur.execute("SELECT profile_pic FROM users WHERE id = %s", (user_id,))
+    user = cur.fetchone()
+    cur.close()
+    return user['profile_pic'] if user and user['profile_pic'] else url_for('static', filename='images/default_profile_pic.jpg')
 
 @main.route('/')
 def index():
@@ -44,7 +57,7 @@ def student_login():
         
     return render_template('s-login.html')
 
-@main.route('/admin')
+@main.route('/admin', methods=['POST', 'GET'])
 def admin_login():
     if request.method == 'POST':
         userDetails = request.form
@@ -94,7 +107,7 @@ def home():
 def admin():
         return render_template('admin_page.html')
 
-
+# Admin Signup Route
 @main.route('/signup', methods=['POST', 'GET'])
 def signup():
     if request.method == 'POST':
@@ -111,6 +124,7 @@ def signup():
         return redirect(url_for('admin'))
     return render_template('signup.html')
 
+# Student Profile Route
 @main.route('/profile', methods=['GET', 'POST'])
 def profile():
     user_id = session.get('id')
@@ -135,7 +149,7 @@ def profile():
         gender=user[2],
         email=user[3],
         faculty=user[5],
-        image_url=user[6] or url_for('static', filename='default_profile.jpg'),
+        image_url=user[6] or url_for('static', filename='images/default_profile_pic.jpg'),
         url_for=url_for,
         status=status
     )
@@ -146,7 +160,9 @@ def edit_profile():
     user_id = session.get('id')
     
     if not user_id:
-        return redirect(url_for('student_login'))
+        return redirect(url_for('login'))
+    
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     
     if request.method == 'POST':
         email = request.form['email']
@@ -166,20 +182,20 @@ def edit_profile():
         mysql.connection.commit()
         return redirect(url_for('profile'))
 
-    cur = mysql.connection.cursor()
-    cur.execute("SELECT * FROM users WHERE name, id, gender, faculty, email, profile_pic FROM users WHERE id=%s", [user_id])
+    cur.execute("SELECT name, id, gender, faculty, email, profile_pic FROM users WHERE id=%s", [user_id])
     user_data = cur.fetchone()
     cur.close()
 
     if user_data:
         user_profile = {
-            'name'== user_data['name'],
-            'student_id'== user_data['id'],
-            'gender'== user_data['gender'],
-            'faculty'== user_data['faculty'],
-            'email'== user_data['email'],
-            'image_url'== user_data['profile_pic'] if user_data['profile_pic'] else url_for('static', filename='default_profile_pic.jpg')
+            'name': user_data['name'],
+            'student_id': user_data['id'],
+            'gender': user_data['gender'],
+            'faculty': user_data['faculty'],
+            'email': user_data['email'],
+            'image_url': user_data['profile_pic'] if user_data['profile_pic'] else url_for('static', filename='images/default_profile_pic.jpg')
         }
+
         return render_template('edit_profile.html', **user_profile)
     else:
         return redirect(url_for('home'))
@@ -243,10 +259,10 @@ def room_setting():
         return redirect(url_for('select_trimester'))
 
     return render_template('room_setting.html', booking=booking)
-    
+
+# Post Annoucement Route
 @main.route('/post', methods=['GET', 'POST'])
 def post():
-
     if request.method == 'POST':
         userDetails = request.form
         title = userDetails['title']
@@ -259,8 +275,6 @@ def post():
   
     return render_template('post_announcement.html')
     
-
-
 # Select Trimester Route
 @main.route('/select_trimester', methods=['GET', 'POST'])
 def select_trimester():
@@ -280,7 +294,7 @@ def select_trimester():
 
     return render_template('select_trimester.html', trimesters=trimesters)
 
-
+# Admin Edit Trimester
 @main.route('/edit_admin_trimester', methods=['GET', 'POST'])
 def edit_trimester():
     if request.method == 'POST':
@@ -293,7 +307,6 @@ def edit_trimester():
         cur.close()
         return redirect(url_for('admin_home'))
     return render_template('admin_trimester.html')
-
 
 # Mode selection route (Individual or Group)
 @main.route('/choose_mode', methods=['GET', 'POST'])
@@ -547,7 +560,6 @@ def select_bed(mode, hostel_id, room_type):
 
         group_id = session.get('group_id')
         
-        # Always fetch the most up-to-date information from the database
         if mode == 'group' and group_id:
             cur.execute("""
                 SELECT users.id, users.name, users.email 

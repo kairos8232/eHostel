@@ -35,14 +35,21 @@ header {
 }
 
 .nav a:hover {
-    background: rgba(0,0,0,0.2);
+    background: 
+    rgba(0,0,0,0.2);
 }
+.user-form-group {
+    display: flex;
+    align-items: center;
+}
+
 .user-form-group a {
     color: white;
     text-decoration: none;
     font-weight: 600;
     font-size: 18px;
 }
+
 .user-pic{
     width: 50px;
     border: solid;
