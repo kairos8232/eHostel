@@ -166,19 +166,32 @@ def edit_profile():
         mysql.connection.commit()
         return redirect(url_for('profile'))
 
+<<<<<<< HEAD
     cur = mysql.connection.cursor()
     cur.execute("SELECT * FROM users WHERE name, id, gender, faculty, email, profile_pic FROM users WHERE id=%s", [user_id])
+=======
+    cur.execute("SELECT name, id, gender, faculty, email, profile_pic FROM users WHERE id=%s", [user_id])
+>>>>>>> 26052607863f94e1f28e1eaf45d3673df09e64c8
     user_data = cur.fetchone()
     cur.close()
 
     if user_data:
         user_profile = {
+<<<<<<< HEAD
             'name'== user_data['name'],
             'student_id'== user_data['id'],
             'gender'== user_data['gender'],
             'faculty'== user_data['faculty'],
             'email'== user_data['email'],
             'image_url'== user_data['profile_pic'] if user_data['profile_pic'] else url_for('static', filename='default_profile_pic.jpg')
+=======
+            'name': user_data['name'],
+            'student_id': user_data['id'],
+            'gender': user_data['gender'],
+            'faculty': user_data['faculty'],
+            'email': user_data['email'],
+            'image_url': user_data['profile_pic'] if user_data['profile_pic'] else url_for('static', filename='images/default_profile_pic.jpg')
+>>>>>>> 26052607863f94e1f28e1eaf45d3673df09e64c8
         }
         return render_template('edit_profile.html', **user_profile)
     else:
