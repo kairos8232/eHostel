@@ -809,6 +809,91 @@ def request_room_change():
 
     return redirect(url_for('room_status'))
 
+# Survey Start Route
+@main.route('/survey', methods=['GET', 'POST'])
+def survey():
+    if 'id' not in session:
+        return redirect(url_for('login'))
+
+    user_id = session['id']
+    cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    
+    # Check if the user has already completed the survey
+    cursor.execute("SELECT survey_completed FROM users WHERE id = %s", (user_id,))
+    user = cursor.fetchone()
+    
+    if user['survey_completed'] == 1:
+        return render_template('survey_completed.html')
+
+    if request.method == 'POST':
+        # Get the first section
+        cursor.execute("SELECT id FROM ques_sections ORDER BY id ASC LIMIT 1")
+        first_section = cursor.fetchone()
+        if first_section:
+            return redirect(url_for('rate_questions', section_id=first_section['id']))
+    
+    return render_template('survey_start.html')
+
+# Answer Survey Route
+@main.route('/rate/<int:section_id>', methods=['GET', 'POST'])
+def survey_questions(section_id):
+    if 'id' not in session:
+        return redirect(url_for('login'))
+
+    cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
+    # Get all questions for the current section
+    cursor.execute("SELECT * FROM questions WHERE section_id = %s", (section_id,))
+    questions = cursor.fetchall()
+
+    # Get section name
+    cursor.execute("SELECT name FROM ques_sections WHERE id = %s", (section_id,))
+    section = cursor.fetchone()
+    section_name = section['name'] if section else "Unknown Section"
+
+    # Check if this is the last section
+    cursor.execute("SELECT id FROM ques_sections WHERE id > %s ORDER BY id ASC LIMIT 1", (section_id,))
+    next_section = cursor.fetchone()
+    is_last_section = next_section is None
+
+    if request.method == 'POST':
+        # Store ratings for all questions in the section
+        for question in questions:
+            rating = request.form.get(f'rating_{question["id"]}')
+            if rating:
+                cursor.execute("""
+                    INSERT INTO user_ratings (user_id, question_id, rating) 
+                    VALUES (%s, %s, %s) 
+                    ON DUPLICATE KEY UPDATE rating = %s
+                """, (session['id'], question['id'], rating, rating))
+        mysql.connection.commit()
+
+        if is_last_section:
+            return redirect(url_for('save_survey'))
+        else:
+            return redirect(url_for('survey_questions', section_id=next_section['id']))
+
+    return render_template('survey_questions.html', 
+                           questions=questions, 
+                           section_name=section_name,
+                           section_id=section_id,
+                           is_last_section=is_last_section)
+
+# Done Survey Route
+@main.route('/survey_done')
+def save_survey():
+    if 'id' not in session:
+        return redirect(url_for('login'))
+
+    user_id = session['id']
+    cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    
+    # Mark the survey as completed for this user
+    cursor.execute("UPDATE users SET survey_completed = 1 WHERE id = %s", (user_id,))
+    mysql.connection.commit()
+    
+    return render_template('survey_success.html')
+
 # Logout Route
 @main.route('/logout')
 def logout():

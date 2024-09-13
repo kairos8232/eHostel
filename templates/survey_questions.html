@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ section_name }}</title>
+</head>
+<body>
+    <h1>{{ section_name }}</h1>
+
+    <form method="POST">
+        {% for question in questions %}
+        <div>
+            <p>{{ question['text'] }}</p>
+            {% for i in range(question['min_rating'], question['max_rating'] + 1) %}
+            <label>
+                <input type="radio" name="rating_{{ question['id'] }}" value="{{ i }}" required>
+                {{ i }}
+            </label>
+            {% endfor %}
+        </div>
+        {% endfor %}
+
+        <button type="submit">
+            {% if is_last_section %}
+                Submit
+            {% else %}
+                Next Section
+            {% endif %}
+        </button>
+    </form>
+</body>
+</html>
