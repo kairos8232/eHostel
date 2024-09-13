@@ -298,6 +298,36 @@ def edit_trimester():
         return redirect(url_for('admin_home'))
     return render_template('admin_trimester.html')
 
+@main.route('/add_student', methods=['GET', 'POST'])
+def add_student():
+    user_id = session.get('id')
+    if not user_id:
+        return redirect(url_for('student_login'))
+    
+    if request.method == 'POST':
+        userDetails = request.form
+        student_id = userDetails['id']
+        name = userDetails['name']
+        gender = userDetails['gender']
+        email = userDetails['email']
+        passowrd = userDetails['password']
+        cur = mysql.connection.cursor()
+        cur.execute("INSERT INTO trimester(id, name, gender, email, password, faculty) VALUES(%s, %s, %s, %s, %s, %s)", (student_id, name, gender, email, passowrd))
+        mysql.connection.commit()
+        cur.close()
+        return redirect(url_for('add_student'))
+    
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    cur.execute("SELECT * FROM users")
+    student = cur.fetchall()
+    cur.close()
+
+    if request.method == 'GET':
+        selected_trimester = request.form.get('student')
+        session['student_id'] = selected_trimester
+        return redirect(url_for('choose_mode'))
+    return render_template('add_student.html')
+
 
 # Mode selection route (Individual or Group)
 @main.route('/choose_mode', methods=['GET', 'POST'])
