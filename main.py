@@ -44,7 +44,7 @@ def student_login():
         
     return render_template('s-login.html')
 
-@main.route('/admin')
+@main.route('/admin', methods=['POST', 'GET'])
 def admin_login():
     if request.method == 'POST':
         userDetails = request.form
@@ -94,6 +94,9 @@ def home():
 def admin():
         return render_template('admin_page.html')
 
+@main.route("/add_student")
+def add_student():
+        return render_template('add_student.html')
 
 @main.route('/signup', methods=['POST', 'GET'])
 def signup():
@@ -148,6 +151,8 @@ def edit_profile():
     if not user_id:
         return redirect(url_for('student_login'))
     
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    
     if request.method == 'POST':
         email = request.form['email']
         profile_pic = request.files.get('profile_pic')
@@ -166,32 +171,18 @@ def edit_profile():
         mysql.connection.commit()
         return redirect(url_for('profile'))
 
-<<<<<<< HEAD
-    cur = mysql.connection.cursor()
-    cur.execute("SELECT * FROM users WHERE name, id, gender, faculty, email, profile_pic FROM users WHERE id=%s", [user_id])
-=======
     cur.execute("SELECT name, id, gender, faculty, email, profile_pic FROM users WHERE id=%s", [user_id])
->>>>>>> 26052607863f94e1f28e1eaf45d3673df09e64c8
     user_data = cur.fetchone()
     cur.close()
 
     if user_data:
         user_profile = {
-<<<<<<< HEAD
-            'name'== user_data['name'],
-            'student_id'== user_data['id'],
-            'gender'== user_data['gender'],
-            'faculty'== user_data['faculty'],
-            'email'== user_data['email'],
-            'image_url'== user_data['profile_pic'] if user_data['profile_pic'] else url_for('static', filename='default_profile_pic.jpg')
-=======
             'name': user_data['name'],
             'student_id': user_data['id'],
             'gender': user_data['gender'],
             'faculty': user_data['faculty'],
             'email': user_data['email'],
             'image_url': user_data['profile_pic'] if user_data['profile_pic'] else url_for('static', filename='images/default_profile_pic.jpg')
->>>>>>> 26052607863f94e1f28e1eaf45d3673df09e64c8
         }
         return render_template('edit_profile.html', **user_profile)
     else:
