@@ -35,6 +35,14 @@ def get_profile_pic_url(user_id):
     cur.close()
     return user['profile_pic'] if user and user['profile_pic'] else url_for('static', filename='images/default_profile_pic.jpg')
 
+# Comparision between User and User
+def calculate_similarity(ratings1, ratings2):
+    v1 = np.array(ratings1)    # Convert ratings to numpy arrays
+    v2 = np.array(ratings2)
+    
+    similarity = (1 - cosine(v1, v2))*100     # Calculate cosine similarity
+    return similarity
+
 @main.route('/')
 def index():
     return render_template('index.html')
@@ -374,8 +382,7 @@ def group_page():
 
     return render_template('group_page.html')
 
-
-# Manage Group route with student filtering
+# Manage Group route with student filtering and suggested roommate
 @main.route('/manage_group/<int:group_id>', methods=['GET', 'POST'])
 def manage_group(group_id):
     user_id = session.get('id')
@@ -386,14 +393,12 @@ def manage_group(group_id):
     cur.execute("SELECT * FROM `groups` WHERE group_id = %s AND leader_id = %s", (group_id, user_id))
     group = cur.fetchone()
 
-    # Check if the user is a member of the group, regardless of whether they are the leader or not
     cur.execute("SELECT users.id, users.email FROM users JOIN group_members ON users.id = group_members.user_id WHERE group_members.group_id = %s AND group_members.user_id = %s", (group_id, user_id))
     is_group_member = cur.fetchone()
 
     if not group and not is_group_member:
         return redirect(url_for('group_page'))
 
-    # Get group information
     cur.execute("SELECT * FROM `groups` WHERE group_id = %s", (group_id,))
     group = cur.fetchone()
 
@@ -403,11 +408,9 @@ def manage_group(group_id):
 
     is_leader = group['leader_id'] == user_id
 
-    # Get the leader's gender
     cur.execute("SELECT gender FROM users WHERE id = %s", (group['leader_id'],))
     leader_gender = cur.fetchone()['gender']
 
-    # Fetch all group members with additional information
     cur.execute("""
         SELECT users.id, users.email, users.name, users.faculty, users.gender,
                CASE WHEN users.id = groups.leader_id THEN 1 ELSE 0 END as is_leader
@@ -420,12 +423,63 @@ def manage_group(group_id):
 
     students = None
     if request.method == 'POST':
-        filter_student_id = request.form.get('filter_student_id')
-        if filter_student_id:
-            cur.execute("SELECT id, email, name, faculty, gender FROM users WHERE id = %s AND gender = %s AND id NOT IN (SELECT user_id FROM group_members WHERE group_id = %s)", (filter_student_id, leader_gender, group_id))
-            students = cur.fetchall()
-        else:
+        if 'suggest_roommates' in request.form:
+            # Get the current user's ratings
+            cur.execute("SELECT rating FROM user_ratings WHERE user_id = %s ORDER BY question_id", (user_id,))
+            user_ratings = [rating['rating'] for rating in cur.fetchall()]
+
+            # Get all other users of the same gender who are not in the group
+            cur.execute("""
+                SELECT id, name, faculty, gender
+                FROM users
+                WHERE gender = %s AND id != %s AND id NOT IN (
+                    SELECT user_id FROM group_members WHERE group_id = %s
+                )
+            """, (leader_gender, user_id, group_id))
+            potential_roommates = cur.fetchall()
+
+            # Calculate similarity for each potential roommate
             students = []
+            for roommate in potential_roommates:
+                cur.execute("SELECT rating FROM user_ratings WHERE user_id = %s ORDER BY question_id", (roommate['id'],))
+                roommate_ratings = [rating['rating'] for rating in cur.fetchall()]
+                
+                if len(user_ratings) == len(roommate_ratings):
+                    similarity = calculate_similarity(user_ratings, roommate_ratings)
+                    roommate['similarity'] = round(similarity, 2)  # Round to 2 decimal places
+                    students.append(roommate)
+
+            # Sort by similarity (highest first) and take top 10
+            students = sorted(students, key=lambda x: x['similarity'], reverse=True)[:10]
+            print(students)  # Print the list of students and their similarity values
+
+        elif 'filter_student_id' in request.form:
+            filter_student_id = request.form.get('filter_student_id')
+            if filter_student_id:
+                cur.execute("""
+                    SELECT id, name, faculty, gender
+                    FROM users
+                    WHERE id = %s AND gender = %s AND id NOT IN (
+                        SELECT user_id FROM group_members WHERE group_id = %s
+                    )
+                """, (filter_student_id, leader_gender, group_id))
+                students = cur.fetchall()
+
+                if students:
+                    # Calculate similarity for the found student
+                    cur.execute("SELECT rating FROM user_ratings WHERE user_id = %s ORDER BY question_id", (user_id,))
+                    user_ratings = [rating['rating'] for rating in cur.fetchall()]
+
+                    cur.execute("SELECT rating FROM user_ratings WHERE user_id = %s ORDER BY question_id", (students[0]['id'],))
+                    student_ratings = [rating['rating'] for rating in cur.fetchall()]
+
+                    if len(user_ratings) == len(student_ratings):
+                        similarity = calculate_similarity(user_ratings, student_ratings)
+                        students[0]['similarity'] = round(similarity, 2)  # Round to 2 decimal places
+                    else:
+                        students[0]['similarity'] = 0
+            else:
+                students = []
 
     cur.close()
 

@@ -22,16 +22,16 @@
             </div>
             <table>
                 <tr>
+                    <th>Student ID</th>
                     <th>Name</th>
-                    <th>Email</th>
                     <th>Faculty</th>
                     <th>Role</th>
                     <th>Actions</th>
                 </tr>
                 {% for member in members %}
                 <tr>
+                    <td>{{ member['id'] }}</td>
                     <td>{{ member['name'] }}</td>
-                    <td>{{ member['email'] }}</td>
                     <td>{{ member['faculty'] }}</td>
                     <td>{% if member['is_leader'] %}Leader{% else %}Member{% endif %}</td>
                     <td>
@@ -61,6 +61,10 @@
                     <input type="text" name="filter_student_id" placeholder="Enter Student ID">
                     <button type="submit">Search</button>
                 </form>
+                <form action="{{ url_for('manage_group', group_id=group_id) }}" method="POST">
+                    <input type="hidden" name="suggest_roommates">
+                    <button type="submit">Suggested Roommates</button>
+                </form>
             </div>
             
                 {% if request.method == 'POST' and students is not none %}
@@ -70,16 +74,16 @@
                             <tr>
                                 <th>Student ID</th>
                                 <th>Name</th>
-                                <th>Email</th>
                                 <th>Faculty</th>
+                                <th>Similarity</th>
                                 <th>Action</th>
                             </tr>
                             {% for student in students %}
                             <tr>
                                 <td>{{ student['id'] }}</td>
                                 <td>{{ student['name'] }}</td>
-                                <td>{{ student['email'] }}</td>
                                 <td>{{ student['faculty'] }}</td>
+                                <td>{{ student['similarity'] }}%</td>
                                 <td>
                                     <form action="{{ url_for('invite_member', group_id=group_id) }}" method="post">
                                         <input type="hidden" name="user_id" value="{{ student['id'] }}">

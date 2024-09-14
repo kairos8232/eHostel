@@ -1,23 +1,28 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ section_name }}</title>
-</head>
-<body>
+{% extends 'base.html' %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/survey_questions-style.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="container">
     <h1>{{ section_name }}</h1>
 
     <form method="POST">
         {% for question in questions %}
-        <div>
+        <div class="question-block">
             <p>{{ question['text'] }}</p>
-            {% for i in range(question['min_rating'], question['max_rating'] + 1) %}
-            <label>
-                <input type="radio" name="rating_{{ question['id'] }}" value="{{ i }}" required>
-                {{ i }}
-            </label>
-            {% endfor %}
+            <div class="rating-container">
+                <span class="rating-label">Disagree</span>
+                <div class="rating-options">
+                    {% for i in range(question['min_rating'], question['max_rating'] + 1) %}
+                    <label class="radio-label">
+                        <input type="radio" name="rating_{{ question['id'] }}" value="{{ i }}" required>
+                    </label>
+                    {% endfor %}
+                </div>
+                <span class="rating-label">Agree</span>
+            </div>
         </div>
         {% endfor %}
 
@@ -29,5 +34,5 @@
             {% endif %}
         </button>
     </form>
-</body>
-</html>
+</div>
+{% endblock %}
