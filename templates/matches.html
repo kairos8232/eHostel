@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matches</title>
+</head>
+<body>
+
+    <h1>Your Top Matches</h1>
+
+    {% if matches %}
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Gender</th>
+                    <th>Faculty</th>
+                    <th>Similarity Score</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for match, similarity in matches %}
+                <tr>
+                    <td>{{ match[1] }}</td>  <!-- Name -->
+                    <td>{{ match[2] }}</td>  <!-- Gender -->
+                    <td>{{ match[3] }}</td>  <!-- Faculty -->
+                    <td>{{ "%.2f"|format(similarity) }}%</td> <!-- Similarity Score -->
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No matches found.</p>
+    {% endif %}
+
+</body>
+</html>

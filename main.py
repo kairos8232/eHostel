@@ -6,6 +6,8 @@ from flask_bcrypt import Bcrypt
 import os
 from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user
 import hashlib
+from scipy.spatial.distance import cosine
+import numpy as np
 
 main = Flask(__name__)
 
@@ -345,7 +347,7 @@ def group_page():
     user_id = session.get('id')
     
     if not user_id:
-        return redirect(url_for('student_login'))
+        return redirect(url_for('login'))
 
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     cur.execute("SELECT * FROM `groups` WHERE leader_id = %s", (user_id,))
@@ -358,9 +360,10 @@ def group_page():
     if request.method == 'POST':
         group_action = request.form['group_action']
         if group_action == 'create':
-            selected_trimester = session.get('trimester')
+            selected_trimester = session.get('trimester_id')
+
             cur = mysql.connection.cursor()
-            cur.execute("INSERT INTO `groups`(leader_id, trimester) VALUES(%s, %s)", (user_id, selected_trimester))
+            cur.execute("INSERT INTO `groups`(leader_id, trimester_id) VALUES(%s, %s)", (user_id, selected_trimester))
             mysql.connection.commit()
             group_id = cur.lastrowid
             cur.execute("INSERT INTO group_members(group_id, user_id) VALUES(%s, %s)", (group_id, user_id))
@@ -370,6 +373,7 @@ def group_page():
             return redirect(url_for('manage_group', group_id=group_id))
 
     return render_template('group_page.html')
+
 
 # Manage Group route with student filtering
 @main.route('/manage_group/<int:group_id>', methods=['GET', 'POST'])
@@ -830,7 +834,7 @@ def survey():
         cursor.execute("SELECT id FROM ques_sections ORDER BY id ASC LIMIT 1")
         first_section = cursor.fetchone()
         if first_section:
-            return redirect(url_for('rate_questions', section_id=first_section['id']))
+            return redirect(url_for('survey_questions', section_id=first_section['id']))
     
     return render_template('survey_start.html')
 
@@ -893,6 +897,53 @@ def save_survey():
     mysql.connection.commit()
     
     return render_template('survey_success.html')
+
+# Get User Ratings
+def get_user_ratings(user_id):
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT rating FROM user_ratings WHERE user_id = %s ORDER BY question_id", (user_id,))
+    ratings = cur.fetchall()
+    cur.close()
+    return [rating[0] for rating in ratings]
+
+# Comparision between User and User
+def calculate_similarity(ratings1, ratings2):
+    v1 = np.array(ratings1)    # Convert ratings to numpy arrays
+    v2 = np.array(ratings2)
+    
+    similarity = (1 - cosine(v1, v2))*100     # Calculate cosine similarity
+    return similarity
+
+# Show the comparison
+@main.route('/find_matches')
+def find_matches():
+    user_id = session['id']  # For testing, replace with session['id'] in production
+    
+    cur = mysql.connection.cursor()
+    
+    user_ratings = get_user_ratings(user_id)
+    if not user_ratings:
+        cur.close()
+        return "Please complete the survey first", 400
+    
+    cur.execute("SELECT id, name, gender, faculty FROM users WHERE id != %s AND survey_completed = 1", (user_id,))
+    all_users = cur.fetchall()
+    
+    matches = []
+    for user in all_users:
+        user_ratings = get_user_ratings(user[0])
+        if len(user_ratings) == len(user_ratings):
+            similarity = calculate_similarity(user_ratings, user_ratings)
+            matches.append((user, similarity))
+    
+    cur.close()
+    
+    if not matches:
+        return "No matches found", 404
+    
+    top_matches = sorted(matches, key=lambda x: x[1], reverse=True)[:10]
+    
+    return render_template('matches.html', matches=top_matches)
 
 # Logout Route
 @main.route('/logout')

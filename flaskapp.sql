@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS `admin` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table flaskapp.admin: ~0 rows (approximately)
+-- Dumping data for table flaskapp.admin: ~1 rows (approximately)
 INSERT INTO `admin` (`id`, `name`, `password`) VALUES
 	(1, 'AdminUser', 'adminpass');
 
@@ -109,7 +109,7 @@ CREATE TABLE IF NOT EXISTS `booking` (
   CONSTRAINT `FK_booking_rooms` FOREIGN KEY (`room_no`) REFERENCES `rooms` (`number`),
   CONSTRAINT `FK_booking_trimester` FOREIGN KEY (`trimester_id`) REFERENCES `trimester` (`id`),
   CONSTRAINT `FK_booking_users` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=93 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
 -- Dumping data for table flaskapp.booking: ~0 rows (approximately)
 
@@ -118,12 +118,15 @@ DROP TABLE IF EXISTS `groups`;
 CREATE TABLE IF NOT EXISTS `groups` (
   `group_id` int NOT NULL AUTO_INCREMENT,
   `leader_id` int NOT NULL,
+  `trimester` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
   PRIMARY KEY (`group_id`),
   KEY `leader_id` (`leader_id`),
   CONSTRAINT `groups_ibfk_1` FOREIGN KEY (`leader_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=35 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=30 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
 -- Dumping data for table flaskapp.groups: ~0 rows (approximately)
+INSERT INTO `groups` (`group_id`, `leader_id`, `trimester`) VALUES
+	(31, 1, NULL);
 
 -- Dumping structure for table flaskapp.group_members
 DROP TABLE IF EXISTS `group_members`;
@@ -134,11 +137,13 @@ CREATE TABLE IF NOT EXISTS `group_members` (
   PRIMARY KEY (`id`),
   KEY `group_id` (`group_id`),
   KEY `user_id` (`user_id`),
-  CONSTRAINT `group_members_ibfk_1` FOREIGN KEY (`group_id`) REFERENCES `groups` (`group_id`),
+  CONSTRAINT `FK_group_members_groups` FOREIGN KEY (`id`) REFERENCES `groups` (`group_id`),
   CONSTRAINT `group_members_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=62 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=74 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
 -- Dumping data for table flaskapp.group_members: ~0 rows (approximately)
+INSERT INTO `group_members` (`id`, `group_id`, `user_id`) VALUES
+	(72, 31, 1);
 
 -- Dumping structure for table flaskapp.hostel
 DROP TABLE IF EXISTS `hostel`;
@@ -169,7 +174,7 @@ CREATE TABLE IF NOT EXISTS `questions` (
   CONSTRAINT `FK_questions_ques_sections` FOREIGN KEY (`section_id`) REFERENCES `ques_sections` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=31 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
--- Dumping data for table flaskapp.questions: ~29 rows (approximately)
+-- Dumping data for table flaskapp.questions: ~30 rows (approximately)
 INSERT INTO `questions` (`id`, `section_id`, `text`, `min_rating`, `max_rating`) VALUES
 	(1, 1, 'I prefer a quiet environment when studying.', 1, 5),
 	(2, 1, 'I usually study early in the morning.', 1, 5),
@@ -291,21 +296,21 @@ CREATE TABLE IF NOT EXISTS `users` (
 -- Dumping data for table flaskapp.users: ~16 rows (approximately)
 INSERT INTO `users` (`id`, `name`, `gender`, `email`, `password`, `faculty`, `profile_pic`, `survey_completed`) VALUES
 	(1, 'John Wick', 'Male', '1@www.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi', 'Computing', '/static/uploads/IMG_9520.JPG', 1),
-	(2, 'Jane Smith', 'Female', 'user2@example.com', 'password2', 'Science', '', 0),
+	(2, 'Jane Smith', 'Female', 'user2@example.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi', 'Science', '', 0),
 	(3, 'Bob Johnson', 'Male', 'user3@example.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi', 'Arts', '', 1),
-	(4, 'Alice Cooper', 'Female', 'alice.cooper@example.com', 'password4', 'Business', '', 0),
-	(5, 'David Miller', 'Male', 'david.miller@example.com', 'password5', 'Mathematics', '', 0),
-	(6, 'Emma Watson', 'Female', 'emma.watson@example.com', 'password6', 'Computer Science', '', 0),
-	(7, 'Liam Nelson', 'Male', 'liam.nelson@example.com', 'password7', 'Physics', '', 0),
-	(8, 'Sophia Lee', 'Female', 'sophia.lee@example.com', 'password8', 'Biology', '', 0),
-	(9, 'Noah Brown', 'Male', 'noah.brown@example.com', 'password9', 'History', '', 0),
-	(10, 'Olivia Martin', 'Female', 'olivia.martin@example.com', 'password10', 'Chemistry', '', 0),
-	(11, 'William Davis', 'Male', 'william.davis@example.com', 'password11', 'Engineering', '', 0),
-	(12, 'Isabella Garcia', 'Female', 'isabella.garcia@example.com', 'password12', 'Psychology', '', 0),
-	(13, 'James Wilson', 'Male', 'james.wilson@example.com', 'password13', 'Philosophy', '', 0),
-	(14, 'Charlotte Martinez', 'Female', 'charlotte.martinez@example.com', 'password14', 'Art', '', 0),
-	(15, 'Michael Anderson', 'Male', 'michael.anderson@example.com', 'password15', 'Business', '', 0),
-	(16, 'WAKABAKA', 'Male', 'userNick@example.com', 'password1', 'Engineering', '', 0);
+	(4, 'Alice Cooper', 'Female', 'alice.cooper@example.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi', 'Business', '', 1),
+	(5, 'David Miller', 'Male', 'david.miller@example.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi', 'Mathematics', '', 1),
+	(6, 'Emma Watson', 'Female', 'emma.watson@example.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi', 'Computer Science', '', 1),
+	(7, 'Liam Nelson', 'Male', 'liam.nelson@example.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi', 'Physics', '', 0),
+	(8, 'Sophia Lee', 'Female', 'sophia.lee@example.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi', 'Biology', '', 1),
+	(9, 'Noah Brown', 'Male', 'noah.brown@example.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi', 'History', '', 0),
+	(10, 'Olivia Martin', 'Female', 'olivia.martin@example.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi', 'Chemistry', '', 0),
+	(11, 'William Davis', 'Male', 'william.davis@example.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi', 'Engineering', '', 0),
+	(12, 'Isabella Garcia', 'Female', 'isabella.garcia@example.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi', 'Psychology', '', 0),
+	(13, 'James Wilson', 'Male', 'james.wilson@example.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi', 'Philosophy', '', 0),
+	(14, 'Charlotte Martinez', 'Female', 'charlotte.martinez@example.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi', 'Art', '', 0),
+	(15, 'Michael Anderson', 'Male', 'michael.anderson@example.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi', 'Business', '', 0),
+	(16, 'WAKABAKA', 'Male', 'userNick@example.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi', 'Engineering', '', 0);
 
 -- Dumping structure for table flaskapp.user_ratings
 DROP TABLE IF EXISTS `user_ratings`;
@@ -317,9 +322,9 @@ CREATE TABLE IF NOT EXISTS `user_ratings` (
   PRIMARY KEY (`rating_id`),
   KEY `question_id` (`question_id`),
   CONSTRAINT `user_ratings_ibfk_1` FOREIGN KEY (`question_id`) REFERENCES `questions` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=71 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=191 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
--- Dumping data for table flaskapp.user_ratings: ~70 rows (approximately)
+-- Dumping data for table flaskapp.user_ratings: ~190 rows (approximately)
 INSERT INTO `user_ratings` (`rating_id`, `user_id`, `question_id`, `rating`) VALUES
 	(1, 1, 1, 2),
 	(2, 1, 2, 4),
@@ -390,7 +395,127 @@ INSERT INTO `user_ratings` (`rating_id`, `user_id`, `question_id`, `rating`) VAL
 	(67, 3, 27, 4),
 	(68, 3, 28, 3),
 	(69, 3, 29, 4),
-	(70, 3, 30, 4);
+	(70, 3, 30, 4),
+	(71, 4, 1, 5),
+	(72, 4, 2, 5),
+	(73, 4, 3, 5),
+	(74, 4, 4, 5),
+	(75, 4, 5, 5),
+	(76, 4, 6, 5),
+	(77, 4, 7, 4),
+	(78, 4, 8, 5),
+	(79, 4, 9, 4),
+	(80, 4, 10, 5),
+	(81, 4, 11, 5),
+	(82, 4, 12, 4),
+	(83, 4, 13, 5),
+	(84, 4, 14, 4),
+	(85, 4, 15, 5),
+	(86, 4, 16, 5),
+	(87, 4, 17, 4),
+	(88, 4, 18, 5),
+	(89, 4, 19, 4),
+	(90, 4, 20, 5),
+	(91, 4, 21, 5),
+	(92, 4, 22, 4),
+	(93, 4, 23, 5),
+	(94, 4, 24, 4),
+	(95, 4, 25, 5),
+	(96, 4, 26, 5),
+	(97, 4, 27, 4),
+	(98, 4, 28, 5),
+	(99, 4, 29, 4),
+	(100, 4, 30, 5),
+	(101, 5, 1, 4),
+	(102, 5, 2, 4),
+	(103, 5, 3, 4),
+	(104, 5, 4, 4),
+	(105, 5, 5, 4),
+	(106, 5, 6, 4),
+	(107, 5, 7, 5),
+	(108, 5, 8, 4),
+	(109, 5, 9, 5),
+	(110, 5, 10, 4),
+	(111, 5, 11, 4),
+	(112, 5, 12, 5),
+	(113, 5, 13, 4),
+	(114, 5, 14, 5),
+	(115, 5, 15, 4),
+	(116, 5, 16, 4),
+	(117, 5, 17, 5),
+	(118, 5, 18, 4),
+	(119, 5, 19, 5),
+	(120, 5, 20, 4),
+	(121, 5, 21, 4),
+	(122, 5, 22, 5),
+	(123, 5, 23, 4),
+	(124, 5, 24, 5),
+	(125, 5, 25, 4),
+	(126, 5, 26, 4),
+	(127, 5, 27, 5),
+	(128, 5, 28, 4),
+	(129, 5, 29, 5),
+	(130, 5, 30, 4),
+	(131, 6, 1, 5),
+	(132, 6, 2, 5),
+	(133, 6, 3, 5),
+	(134, 6, 4, 5),
+	(135, 6, 5, 5),
+	(136, 6, 6, 5),
+	(137, 6, 7, 5),
+	(138, 6, 8, 5),
+	(139, 6, 9, 5),
+	(140, 6, 10, 5),
+	(141, 6, 11, 5),
+	(142, 6, 12, 5),
+	(143, 6, 13, 5),
+	(144, 6, 14, 5),
+	(145, 6, 15, 5),
+	(146, 6, 16, 5),
+	(147, 6, 17, 5),
+	(148, 6, 18, 5),
+	(149, 6, 19, 5),
+	(150, 6, 20, 5),
+	(151, 6, 21, 5),
+	(152, 6, 22, 5),
+	(153, 6, 23, 5),
+	(154, 6, 24, 5),
+	(155, 6, 25, 5),
+	(156, 6, 26, 5),
+	(157, 6, 27, 5),
+	(158, 6, 28, 5),
+	(159, 6, 29, 5),
+	(160, 6, 30, 5),
+	(161, 8, 1, 5),
+	(162, 8, 2, 5),
+	(163, 8, 3, 5),
+	(164, 8, 4, 5),
+	(165, 8, 5, 5),
+	(166, 8, 6, 5),
+	(167, 8, 7, 5),
+	(168, 8, 8, 5),
+	(169, 8, 9, 5),
+	(170, 8, 10, 5),
+	(171, 8, 11, 5),
+	(172, 8, 12, 5),
+	(173, 8, 13, 5),
+	(174, 8, 14, 5),
+	(175, 8, 15, 5),
+	(176, 8, 16, 5),
+	(177, 8, 17, 5),
+	(178, 8, 18, 5),
+	(179, 8, 19, 5),
+	(180, 8, 20, 5),
+	(181, 8, 21, 5),
+	(182, 8, 22, 5),
+	(183, 8, 23, 5),
+	(184, 8, 24, 5),
+	(185, 8, 25, 5),
+	(186, 8, 26, 5),
+	(187, 8, 27, 5),
+	(188, 8, 28, 5),
+	(189, 8, 29, 5),
+	(190, 8, 30, 5);
 
 /*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;
