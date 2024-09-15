@@ -89,11 +89,22 @@ def admin_login():
 
 @main.route("/home")
 def home():
-    announcement_id = session.get('id')
-    if not announcement_id:
+    user_id = session.get('id')
+    if not user_id:
         return redirect(url_for('student_login'))
 
+    # Fetch any pending invitations for this user
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    cur.execute("""
+        SELECT invitations.invitation_id, `groups`.name AS group_name, users.name AS leader_name
+        FROM invitations
+        JOIN `groups` ON invitations.group_id = `groups`.group_id
+        JOIN users ON invitations.inviter_id = users.id
+        WHERE invitee_id = %s AND status = 'pending'
+    """, (user_id,))
+    invitation = cur.fetchone()
+
+    # Fetch announcements
     cur.execute("SELECT * FROM announcement ORDER BY id DESC")
     announcements = cur.fetchall()
     cur.close()
@@ -107,7 +118,7 @@ def home():
 
     current_announcement = announcements[current_index] if announcements else None
 
-    return render_template('home.html', announcement=current_announcement, has_next=total_announcements > 1)
+    return render_template('home.html', announcement=current_announcement, has_next=total_announcements > 1, invitation=invitation)
 
 @main.route("/admin_page")
 def admin():
@@ -518,6 +529,77 @@ def leave_group(group_id):
 
     return redirect(url_for('choose_mode'))
 
+# Invite Member Route
+@main.route('/invite_user/<int:group_id>/<int:invitee_id>', methods=['POST'])
+def invite_user(group_id, invitee_id):
+    user_id = session.get('id')  # User A (group leader) who is sending the invite
+    if not user_id:
+        return redirect(url_for('student_login'))
+
+    # Insert the invitation into the 'invitations' table
+    cur = mysql.connection.cursor()
+    cur.execute("""
+        INSERT INTO invitations (group_id, inviter_id, invitee_id, status)
+        VALUES (%s, %s, %s, 'pending')
+    """, (group_id, user_id, invitee_id))
+    mysql.connection.commit()
+    cur.close()
+
+    return redirect(url_for('manage_group', group_id=group_id))
+
+# Accept the invitation
+@main.route('/accept_invite/<int:invitation_id>', methods=['POST'])
+def accept_invite(invitation_id):
+    
+    user_id = session.get('id')  # User B (invitee)
+    if not user_id:
+        return redirect(url_for('student_login'))
+    
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
+    # Update invitation status to 'accepted'
+    cur.execute("""
+        UPDATE invitations
+        SET status = 'accepted'
+        WHERE invitation_id = %s AND invitee_id = %s
+    """, (invitation_id, user_id))
+
+    # Fetch the group_id from the invitation
+    cur.execute("SELECT group_id FROM invitations WHERE invitation_id = %s", (invitation_id,))
+    group = cur.fetchone()
+
+    # Add the user to the group members
+    cur.execute("""
+        INSERT INTO group_members (group_id, user_id)
+        VALUES (%s, %s)
+    """, (group['group_id'], user_id))
+
+    mysql.connection.commit()
+    cur.close()
+
+    return redirect(url_for('manage_group', group_id=group['group_id']))
+
+# Decline the invitation
+@main.route('/decline_invite/<int:invitation_id>', methods=['POST'])
+def decline_invite(invitation_id):
+    user_id = session.get('id')  # User B (invitee)
+    if not user_id:
+        return redirect(url_for('student_login'))
+
+    cur = mysql.connection.cursor()
+
+    # Update invitation status to 'declined'
+    cur.execute("""
+        UPDATE invitations
+        SET status = 'declined'
+        WHERE invitation_id = %s AND invitee_id = %s
+    """, (invitation_id, user_id))
+
+    mysql.connection.commit()
+    cur.close()
+
+    return redirect(url_for('home'))
+
 # Select Hostel Route
 @main.route('/select_hostel/<mode>', methods=['GET', 'POST'])
 def select_hostel(mode):
@@ -723,44 +805,6 @@ def booking_summary(mode, hostel_id, room_type, room_number, bed_ids, user_ids):
 
     return render_template('booking_summary.html', booking_details=booking_details, mode=mode, hostel_id=hostel_id, room_type=room_type, room_number=room_number, bed_ids=bed_ids)
 
-# Invite Member Route
-@main.route('/invite_member/<int:group_id>', methods=['POST'])
-def invite_member(group_id):
-    user_id = session.get('id')
-    if not user_id:
-        return redirect(url_for('student_login'))
-
-    new_member_id = request.form['user_id']
-
-    # Check if the user exists
-    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    cur.execute("SELECT * FROM users WHERE id = %s", (new_member_id,))
-    new_member = cur.fetchone()
-
-    # Check if the new member's gender matches the leader's gender
-    cur.execute("SELECT gender FROM users WHERE id = %s", (user_id,))
-    leader_gender = cur.fetchone()['gender']
-
-    if not new_member:
-        return render_template('error.html', message="User does not exist.")
-    
-    if new_member['gender'] != leader_gender:
-        return render_template('error.html', message="You can only invite members of the same gender.")
-
-    # Check if the user is already in the group
-    cur.execute("SELECT * FROM group_members WHERE group_id = %s AND user_id = %s", (group_id, new_member_id))
-    if cur.fetchone():
-        return render_template('error.html', message="This user is already a member of your group.")
-
-    # Add the user to the group
-    cur.execute("INSERT INTO group_members(group_id, user_id) VALUES(%s, %s)", (group_id, new_member_id))
-    mysql.connection.commit()
-    cur.close()
-
-    session['group_id'] = group_id
-
-    return redirect(url_for('manage_group', group_id=group_id))
-
 # Transfer Leadership
 @main.route('/transfer_leadership/<int:group_id>/<int:new_leader_id>', methods=['POST'])
 def transfer_leadership(group_id, new_leader_id):
@@ -828,6 +872,7 @@ def disband_group(group_id):
     if not group:
         return render_template('error.html', message="You are not the leader of this group.")
 
+    cur.execute("DELETE FROM invitations WHERE group_id = %s", (group_id,))
     cur.execute("DELETE FROM group_members WHERE group_id = %s", (group_id,))
     cur.execute("DELETE FROM `groups` WHERE group_id = %s", (group_id,))
     mysql.connection.commit()
@@ -959,45 +1004,6 @@ def get_user_ratings(user_id):
     ratings = cur.fetchall()
     cur.close()
     return [rating[0] for rating in ratings]
-
-# Comparision between User and User
-def calculate_similarity(ratings1, ratings2):
-    v1 = np.array(ratings1)    # Convert ratings to numpy arrays
-    v2 = np.array(ratings2)
-    
-    similarity = (1 - cosine(v1, v2))*100     # Calculate cosine similarity
-    return similarity
-
-# Show the comparison
-@main.route('/find_matches')
-def find_matches():
-    user_id = session['id']  # For testing, replace with session['id'] in production
-    
-    cur = mysql.connection.cursor()
-    
-    user_ratings = get_user_ratings(user_id)
-    if not user_ratings:
-        cur.close()
-        return "Please complete the survey first", 400
-    
-    cur.execute("SELECT id, name, gender, faculty FROM users WHERE id != %s AND survey_completed = 1", (user_id,))
-    all_users = cur.fetchall()
-    
-    matches = []
-    for user in all_users:
-        user_ratings = get_user_ratings(user[0])
-        if len(user_ratings) == len(user_ratings):
-            similarity = calculate_similarity(user_ratings, user_ratings)
-            matches.append((user, similarity))
-    
-    cur.close()
-    
-    if not matches:
-        return "No matches found", 404
-    
-    top_matches = sorted(matches, key=lambda x: x[1], reverse=True)[:10]
-    
-    return render_template('matches.html', matches=top_matches)
 
 # Logout Route
 @main.route('/logout')
