@@ -470,10 +470,11 @@ def manage_group(group_id):
                 cur.execute("""
                     SELECT id, name, faculty, gender
                     FROM users
-                    WHERE id = %s AND gender = %s AND id NOT IN (
-                        SELECT user_id FROM group_members WHERE group_id = %s
+                    WHERE id = %s AND gender = %s AND id != %s
+                    AND id NOT IN (
+                        SELECT user_id FROM group_members
                     )
-                """, (filter_student_id, leader_gender, group_id))
+                """, (filter_student_id, leader_gender, user_id))
                 students = cur.fetchall()
 
                 if students:
