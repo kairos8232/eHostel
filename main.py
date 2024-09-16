@@ -94,10 +94,6 @@ def home():
 def admin():
         return render_template('admin_page.html')
 
-@main.route("/add_student")
-def add_student():
-        return render_template('add_student.html')
-
 @main.route('/signup', methods=['POST', 'GET'])
 def signup():
     if request.method == 'POST':
@@ -119,7 +115,7 @@ def profile():
     user_id = session.get('id')
    
     if not user_id:
-        return redirect(url_for('login'))
+        return redirect(url_for('student_login'))
     
     cur = mysql.connection.cursor()
     cur.execute("SELECT * FROM users WHERE id = %s", (user_id,))
@@ -300,33 +296,31 @@ def edit_trimester():
 
 @main.route('/add_student', methods=['GET', 'POST'])
 def add_student():
-    user_id = session.get('id')
-    if not user_id:
-        return redirect(url_for('student_login'))
+    admin_id = session.get('id')
+    if not admin_id:
+        return redirect(url_for('admin_login'))
     
     if request.method == 'POST':
         userDetails = request.form
-        student_id = userDetails['id']
+        id = userDetails['id']
         name = userDetails['name']
         gender = userDetails['gender']
         email = userDetails['email']
-        passowrd = userDetails['password']
+        password = userDetails['password']
+        faculty = userDetails['faculty']
+        hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
         cur = mysql.connection.cursor()
-        cur.execute("INSERT INTO trimester(id, name, gender, email, password, faculty) VALUES(%s, %s, %s, %s, %s, %s)", (student_id, name, gender, email, passowrd))
+        cur.execute("INSERT INTO users(id, name, gender, email, password, faculty) VALUES(%s, %s, %s, %s, %s, %s)", (id, name, gender, email, hashed_password, faculty))
         mysql.connection.commit()
         cur.close()
-        return redirect(url_for('add_student'))
-    
+        flash('Student added successfully!')
+
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     cur.execute("SELECT * FROM users")
-    student = cur.fetchall()
+    students = cur.fetchall()
     cur.close()
 
-    if request.method == 'GET':
-        selected_trimester = request.form.get('student')
-        session['student_id'] = selected_trimester
-        return redirect(url_for('choose_mode'))
-    return render_template('add_student.html')
+    return render_template('add_student.html', students=students)
 
 
 # Mode selection route (Individual or Group)

@@ -17,50 +17,19 @@
                         <th>Gender</th>
                         <th>Email</th>
                         <th>Faculty</th>
-                        <th>Password</th>
                     </tr>
                 </thead>
                 <tbody>
+                    {% for student in students %}
                     <tr>
-                        <td>1</td>
-                        <td>Ali</td>
-                        <td>Male</td>
-                        <td>ali@gmail.com</td>
-                        <td>FCI</td>
-                        <td>123</td>
+                        <td>{{student.id}}</td>
+                        <td>{{student.name}}</td>
+                        <td>{{student.gender}}</td>
+                        <td>{{student.email}}</td>
+                        <td>{{student.faculty}}</td>
                     </tr>
-                    <tr>
-                        <td>1</td>
-                        <td>Ali</td>
-                        <td>Male</td>
-                        <td>ali@gmail.com</td>
-                        <td>FCI</td>
-                        <td>123</td>
-                    </tr>
-                    <tr>
-                        <td>1</td>
-                        <td>Ali</td>
-                        <td>Male</td>
-                        <td>ali@gmail.com</td>
-                        <td>FCI</td>
-                        <td>123</td>
-                    </tr>
-                    <tr>
-                        <td>1</td>
-                        <td>Ali</td>
-                        <td>Male</td>
-                        <td>ali@gmail.com</td>
-                        <td>FCI</td>
-                        <td>123</td>
-                    </tr>
-                    <tr>
-                        <td>1231101200</td>
-                        <td>Teryr chin yaw awdawdas</td>
-                        <td>Male</td>
-                        <td>alasdasdai@gmail.com</td>
-                        <td>FCI</td>
-                        <td>123asdasdda</td>
-                    </tr>
+                    {% endfor %}
+                    
                     <!-- Add more rows here -->
                 </tbody>
                 <tfoot>
@@ -77,8 +46,8 @@
         <div class="student-form" id="studentForm">
             <form action="/add_student" method="POST">
                 <div class="form-group">
-                    <label for="student_id">ID:</label>
-                    <input type="text" id="student_id" name="student_id" required>
+                    <label for="id">ID:</label>
+                    <input type="text" id="id" name="id" required>
                 </div>
                 <div class="form-group">
                     <label for="name">Name:</label>
