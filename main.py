@@ -223,6 +223,10 @@ def change_password():
     status = request.args.get('status')
     return render_template('change_password.html', error=error, status=status)
 
+@main.route("/chatbox")
+def chatbox():
+        return render_template('chatbox.html')
+
 # Room Setting
 @main.route('/room_setting')
 def room_setting():

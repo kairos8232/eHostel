@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/chatbox.css') }}">
+{% endblock %}
+
+{% block content %}
+    <title>Group Chatbox</title>
+<body>
+    <div class="chat-container">
+        <div class="messages" id="chatMessages"></div>
+        <form id="chatForm">
+            <input type="hidden" name="group_id" value="{{ group_id }}">
+            <input type="text" id="messageInput" placeholder="Enter your message" required>
+            <button type="submit">Send</button>
+        </form>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
+        var socket = io();
+
+        socket.on('connect', function() {
+            socket.emit('join', {group_id: '{{ group_id }}'});
+        });
+
+        socket.on('new_message', function(data) {
+            const chatMessages = document.getElementById('chatMessages');
+            chatMessages.innerHTML += `<div><strong>${data.username}</strong>: ${data.message}</div>`;
+        });
+
+        document.getElementById('chatForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            var message = document.getElementById('messageInput').value;
+            var group_id = document.querySelector('input[name="group_id"]').value;
+            fetch('/send_message', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: new URLSearchParams({
+                    'message': message,
+                    'group_id': group_id
+                })
+            });
+            document.getElementById('messageInput').value = '';
+        });
+
+        socket.on('status', function(data) {
+            const chatMessages = document.getElementById('chatMessages');
+            chatMessages.innerHTML += `<div>${data.msg}</div>`;
+        });
+    </script>
+</body>
+{% endblock %}
