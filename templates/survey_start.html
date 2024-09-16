@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/survey_all-style.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>Rating Survey</h1>
+    <div class="wrapper">
+        <p class="description">
+            This survey can only be completed once. Your responses will be used to find a suitable roommate for you. Please take your time and answer honestly.
+        </p>
+        <form method="post">
+            <input type="hidden" name="action" value="next">
+            <button type="submit">Start Survey</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

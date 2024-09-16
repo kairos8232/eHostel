@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/survey_questions-style.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>{{ section_name }}</h1>
+
+    <form method="POST">
+        {% for question in questions %}
+        <div class="question-block">
+            <p>{{ question['text'] }}</p>
+            <div class="rating-container">
+                <span class="rating-label">Disagree</span>
+                <div class="rating-options">
+                    {% for i in range(question['min_rating'], question['max_rating'] + 1) %}
+                    <label class="radio-label">
+                        <input type="radio" name="rating_{{ question['id'] }}" value="{{ i }}" required>
+                    </label>
+                    {% endfor %}
+                </div>
+                <span class="rating-label">Agree</span>
+            </div>
+        </div>
+        {% endfor %}
+
+        <button type="submit">
+            {% if is_last_section %}
+                Submit
+            {% else %}
+                Next Section
+            {% endif %}
+        </button>
+    </form>
+</div>
+{% endblock %}
