@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Room</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/romm_add-style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+
+    <div class="manage-group-wrapper">
+
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="menu-item inactive" id="addBtn" onclick="location.href='{{ url_for('add_room') }}';">
+                <i class="fas fa-plus"></i>
+            </div>
+        </div>
+        <div class="menu-item inactive" id="editBtn" onclick="location.href='{{ url_for('manage_rooms') }}';">
+            <i class="fas fa-edit"></i>
+        </div>
+    
+        <div class="content">
+            <h2>Manage Rooms</h2>
+    
+            <!-- Status message area -->
+            {% if status_message %}
+            <div class="status-message {% if 'Error' in status_message %}error{% else %}success{% endif %}">
+                {{ status_message }}
+            </div>
+            {% endif %}
+    
+            <!-- Filter by Hostel -->
+            <form method="POST" action="{{ url_for('manage_rooms') }}">
+                <label for="hostel_id">Filter by Hostel:</label>
+                <select id="hostel_id" name="hostel_id" onchange="this.form.submit()">
+                    <option value="">All Hostels</option>
+                    {% for hostel in hostels %}
+                    <option value="{{ hostel.id }}" {% if hostel.id == selected_hostel_id %}selected{% endif %}>
+                        {{ hostel.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </form>
+    
+            <!-- Table of Rooms -->
+            <table>
+                <thead>
+                    <tr>
+                        <th>Room Number</th>
+                        <th>Hostel</th>
+                        <th>Category</th>
+                        <th>Capacity</th>
+                        <th>Price</th>
+                        <th>Status</th>
+                        <th>Options</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for room in rooms %}
+                    <tr>
+                        <td>{{ room.number }}</td>
+                        <td>{{ room.hostel_name }}</td> <!-- Display the hostel name -->
+                        <td>{{ room.category }}</td>
+                        <td>{{ room.capacity }}</td>
+                        <td>{{ room.price }}</td>
+                        <td>{{ room.status }}</td>
+                        <td>
+                            <a href="{{ url_for('edit_room', room_number=room.number) }}">Edit</a> | 
+                            <form method="POST" action="{{ url_for('delete_room', room_number=room.number) }}" onsubmit="return confirm('Are you sure you want to delete this room?');">
+                                <button type="submit">Delete Room</button>
+                              </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

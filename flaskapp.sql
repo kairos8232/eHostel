@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS `admin` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table flaskapp.admin: ~1 rows (approximately)
+-- Dumping data for table flaskapp.admin: ~0 rows (approximately)
 INSERT INTO `admin` (`id`, `name`, `password`) VALUES
 	(1, 'AdminUser', 'adminpass');
 
@@ -125,12 +125,12 @@ CREATE TABLE IF NOT EXISTS `groups` (
   KEY `FK_groups_trimester` (`trimester_id`),
   CONSTRAINT `FK_groups_trimester` FOREIGN KEY (`trimester_id`) REFERENCES `trimester` (`id`),
   CONSTRAINT `groups_ibfk_1` FOREIGN KEY (`leader_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=44 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=49 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
 -- Dumping data for table flaskapp.groups: ~2 rows (approximately)
 INSERT INTO `groups` (`group_id`, `leader_id`, `trimester_id`, `name`) VALUES
-	(45, 1, 1, NULL),
-	(46, 3, 1, NULL);
+	(47, 1, 1, NULL),
+	(48, 3, 1, NULL);
 
 -- Dumping structure for table flaskapp.group_members
 DROP TABLE IF EXISTS `group_members`;
@@ -143,12 +143,13 @@ CREATE TABLE IF NOT EXISTS `group_members` (
   KEY `user_id` (`user_id`),
   CONSTRAINT `group_members_ibfk_1` FOREIGN KEY (`group_id`) REFERENCES `groups` (`group_id`),
   CONSTRAINT `group_members_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=100 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=112 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
 -- Dumping data for table flaskapp.group_members: ~2 rows (approximately)
 INSERT INTO `group_members` (`id`, `group_id`, `user_id`) VALUES
-	(104, 45, 1),
-	(105, 46, 3);
+	(109, 47, 1),
+	(110, 48, 3),
+	(111, 48, 5);
 
 -- Dumping structure for table flaskapp.hostel
 DROP TABLE IF EXISTS `hostel`;
@@ -182,9 +183,11 @@ CREATE TABLE IF NOT EXISTS `invitations` (
   CONSTRAINT `FK_invitations_groups` FOREIGN KEY (`group_id`) REFERENCES `groups` (`group_id`) ON DELETE CASCADE,
   CONSTRAINT `FK_invitations_users` FOREIGN KEY (`inviter_id`) REFERENCES `users` (`id`),
   CONSTRAINT `FK_invitations_users_2` FOREIGN KEY (`invitee_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
 -- Dumping data for table flaskapp.invitations: ~0 rows (approximately)
+INSERT INTO `invitations` (`invitation_id`, `group_id`, `inviter_id`, `invitee_id`, `status`, `invitation_date`) VALUES
+	(14, 48, 3, 5, 'accepted', '2024-09-15 18:50:34');
 
 -- Dumping structure for table flaskapp.questions
 DROP TABLE IF EXISTS `questions`;
@@ -199,7 +202,7 @@ CREATE TABLE IF NOT EXISTS `questions` (
   CONSTRAINT `FK_questions_ques_sections` FOREIGN KEY (`section_id`) REFERENCES `ques_sections` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=31 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
--- Dumping data for table flaskapp.questions: ~30 rows (approximately)
+-- Dumping data for table flaskapp.questions: ~29 rows (approximately)
 INSERT INTO `questions` (`id`, `section_id`, `text`, `min_rating`, `max_rating`) VALUES
 	(1, 1, 'I prefer a quiet environment when studying.', 1, 5),
 	(2, 1, 'I usually study early in the morning.', 1, 5),
@@ -254,7 +257,7 @@ DROP TABLE IF EXISTS `rooms`;
 CREATE TABLE IF NOT EXISTS `rooms` (
   `number` int NOT NULL,
   `hostel_id` int NOT NULL,
-  `category` varchar(20) NOT NULL,
+  `category` enum('Single','Double','Triple') CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `capacity` int NOT NULL,
   `status` varchar(20) NOT NULL DEFAULT 'Available',
   `price` decimal(10,2) NOT NULL,

@@ -1006,6 +1006,198 @@ def get_user_ratings(user_id):
     cur.close()
     return [rating[0] for rating in ratings]
 
+# Add room route
+@main.route('/add-room', methods=['GET', 'POST'])
+def add_room():
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
+    cur.execute("SELECT id, name, gender FROM hostel")
+    hostels = cur.fetchall()
+
+    status_message = None  # Initialize status message variable
+
+    if request.method == 'POST':
+        number = request.form['number']
+        hostel_id = request.form['hostel_id']
+        category = request.form['category']
+        price = request.form['price']
+        status = 'Available'
+
+        # Determine the capacity and corresponding bed letters based on the category
+        if category == 'Single':
+            capacity = 1
+            beds = ['A']
+        elif category == 'Double':
+            capacity = 2
+            beds = ['A', 'B']
+        elif category == 'Triple':
+            capacity = 3
+            beds = ['A', 'B', 'C']
+
+        # Check if the room number already exists
+        cur.execute("SELECT * FROM rooms WHERE number = %s AND hostel_id = %s", (number, hostel_id))
+        existing_room = cur.fetchone()
+
+        if existing_room:
+            status_message = f"Room number {number} already exists in this hostel."
+        else:
+            try:
+                # Insert new room into the database
+                cur.execute('''
+                    INSERT INTO rooms (number, hostel_id, category, capacity, price, status)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                ''', (number, hostel_id, category, capacity, price, status))
+
+                # Create beds for the room
+                for bed in beds:
+                    cur.execute('''
+                        INSERT INTO beds (room_number, bed_letter, status)
+                        VALUES (%s, %s, %s)
+                    ''', (number, bed, 'Available'))
+
+                mysql.connection.commit()
+                status_message = 'Room and beds added successfully!'
+            except mysql.connect.Error as err:
+                mysql.connection.rollback()
+                status_message = f"Error: {err}"
+            finally:
+                cur.close()
+
+            return redirect(url_for('add_room'))
+
+    # Render template and pass hostels and status_message to the form
+    return render_template('room_add.html', hostels=hostels, status_message=status_message)
+
+@main.route('/edit-room/<int:room_number>', methods=['GET', 'POST'])
+def edit_room(room_number):
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
+    # Fetch room details based on the room number
+    cur.execute("SELECT * FROM rooms WHERE number = %s", (room_number,))
+    room = cur.fetchone()
+
+    if not room:
+        flash("Room not found", "error")
+        return redirect(url_for('rooms'))
+
+    # Fetch all hostels for the dropdown
+    cur.execute("SELECT id, name, gender FROM hostel")
+    hostels = cur.fetchall()
+
+    if request.method == 'POST':
+        new_number = request.form['number']
+        hostel_id = request.form['hostel_id']
+        category = request.form['category']
+        price = request.form['price']
+        status = 'Available'
+
+        # Determine the capacity based on the category
+        capacity = {'Single': 1, 'Double': 2, 'Triple': 3}[category]
+
+        # Check if the new room number already exists (if it's different from the current number)
+        if int(new_number) != room_number:
+            cur.execute("SELECT * FROM rooms WHERE number = %s", (new_number,))
+            existing_room = cur.fetchone()
+            if existing_room:
+                flash(f"Room number {new_number} already exists.", "error")
+                return render_template('room_edit.html', room=room, hostels=hostels)
+
+        try:
+            # Update room details in the database
+            cur.execute('''
+                UPDATE rooms 
+                SET number = %s, hostel_id = %s, category = %s, capacity = %s, price = %s, status = %s
+                WHERE number = %s
+            ''', (new_number, hostel_id, category, capacity, price, status, room_number))
+
+            # Update beds
+            cur.execute("UPDATE beds SET room_number = %s WHERE room_number = %s", (new_number, room_number))
+
+            # Adjust the number of beds if the category has changed
+            cur.execute("SELECT COUNT(*) as bed_count FROM beds WHERE room_number = %s", (new_number,))
+            current_beds = cur.fetchone()['bed_count']
+
+            if current_beds < capacity:
+                for i in range(current_beds, capacity):
+                    bed_letter = chr(65 + i)  # A, B, C
+                    cur.execute('''
+                        INSERT INTO beds (room_number, bed_letter, status)
+                        VALUES (%s, %s, 'Available')
+                    ''', (new_number, bed_letter))
+            elif current_beds > capacity:
+                cur.execute("DELETE FROM beds WHERE room_number = %s ORDER BY bed_letter DESC LIMIT %s", 
+                            (new_number, current_beds - capacity))
+
+            mysql.connection.commit()
+            flash('Room and beds updated successfully!', 'success')
+            return redirect(url_for('edit_room', room_number=new_number))
+        except MySQLdb.Error as err:
+            mysql.connection.rollback()
+            flash(f"Error: {err}", "error")
+
+    cur.close()
+    return render_template('room_edit.html', room=room, hostels=hostels)
+
+
+@main.route('/manage-rooms', methods=['GET', 'POST'])
+def manage_rooms():
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
+    # Fetch all hostels for the filter dropdown
+    cur.execute("SELECT id, name FROM hostel")
+    hostels = cur.fetchall()
+
+    # Fetch rooms based on the selected hostel filter
+    selected_hostel_id = request.form.get('hostel_id') if request.method == 'POST' else None
+
+    if selected_hostel_id:
+        # If a hostel is selected, filter rooms by hostel_id
+        cur.execute('''SELECT rooms.*, hostel.name as hostel_name 
+                       FROM rooms 
+                       JOIN hostel ON rooms.hostel_id = hostel.id 
+                       WHERE rooms.hostel_id = %s''', (selected_hostel_id,))
+    else:
+        # If no hostel is selected, fetch all rooms
+        cur.execute('''SELECT rooms.*, hostel.name as hostel_name 
+                       FROM rooms 
+                       JOIN hostel ON rooms.hostel_id = hostel.id''')
+
+    rooms = cur.fetchall()
+    cur.close()
+
+    # Render the template with rooms and hostels
+    return render_template('room_manage.html', rooms=rooms, hostels=hostels, selected_hostel_id=selected_hostel_id)
+
+@main.route('/delete-room/<int:room_number>', methods=['POST'])
+def delete_room(room_number):
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
+    try:
+        # Check if the room exists
+        cur.execute('SELECT * FROM rooms WHERE number = %s', (room_number,))
+        room = cur.fetchone()
+        
+        if not room:
+            flash(f'Room {room_number} not found.', 'error')
+            return redirect(url_for('manage_rooms'))
+
+        # Delete associated beds first
+        cur.execute('DELETE FROM beds WHERE room_number = %s', (room_number,))
+        
+        # Now delete the room
+        cur.execute('DELETE FROM rooms WHERE number = %s', (room_number,))
+        
+        mysql.connection.commit()
+        flash(f'Room {room_number} and associated beds deleted successfully!', 'success')
+    except MySQLdb.Error as err:
+        mysql.connection.rollback()
+        flash(f"Error deleting room: {err}", 'error')
+    finally:
+        cur.close()
+
+    return redirect(url_for('manage_rooms'))
+
+
 # Logout Route
 @main.route('/logout')
 def logout():
