@@ -270,12 +270,30 @@ def room_setting():
         LIMIT 1
     """, (user_id,))
     booking = cur.fetchone()
+    
+    # Fetch the status of the latest room change request
+    cur.execute("""
+        SELECT status
+        FROM room_change_requests
+        WHERE user_id = %s
+        ORDER BY request_id DESC
+        LIMIT 1
+    """, (user_id,))
+    request_status = cur.fetchone()
+    
     cur.close()
 
     if not booking:
         return redirect(url_for('select_trimester'))
 
-    return render_template('room_setting.html', booking=booking)
+    status_message = None
+    if request_status:
+        if request_status['status'] == 'approved':
+            status_message = "Room changed successfully"
+        elif request_status['status'] == 'rejected':
+            status_message = "Room change request rejected by admin"
+
+    return render_template('room_setting.html', booking=booking, status_message=status_message)
 
 # Post Annoucement Route
 @main.route('/post', methods=['GET', 'POST'])
@@ -1138,7 +1156,6 @@ def edit_room(room_number):
     cur.close()
     return render_template('room_edit.html', room=room, hostels=hostels)
 
-
 @main.route('/manage-rooms', methods=['GET', 'POST'])
 def manage_rooms():
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
@@ -1197,6 +1214,146 @@ def delete_room(room_number):
 
     return redirect(url_for('manage_rooms'))
 
+@main.route('/request_room_change', methods=['POST'])
+def request_room_change():
+    user_id = session.get('id')
+    if not user_id:
+        return redirect(url_for('student_login'))
+
+    reason = request.form.get('reason')
+    
+    cur = mysql.connection.cursor()
+    cur.execute("""
+        INSERT INTO room_change_requests (user_id, reason, status)
+        VALUES (%s, %s, 'pending')
+    """, (user_id, reason))
+    mysql.connection.commit()
+    cur.close()
+    
+    flash('Your room change request has been submitted.', 'success')
+    return redirect(url_for('room_setting'))
+
+@main.route('/admin/room_change_requests', methods=['GET', 'POST'])
+def admin_room_change_requests():
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
+    if request.method == 'POST':
+        request_id = request.form.get('request_id')
+        action = request.form.get('action')
+        
+        if action == 'approve':
+            new_room_no = request.form.get('new_room_no')
+            new_bed_letter = request.form.get('new_bed_letter')
+            
+            # Verify if the room and bed are still available
+            cur.execute("""
+                SELECT COUNT(*) as count
+                FROM rooms r
+                JOIN beds b ON r.number = b.room_number
+                WHERE r.number = %s AND b.bed_letter = %s 
+                AND (r.status = 'Available' OR r.status = 'Partially Occupied') AND b.status = 'Available'
+            """, (new_room_no, new_bed_letter))
+            result = cur.fetchone()
+            
+            if result['count'] > 0:
+                # Get the current room and bed of the user
+                cur.execute("""
+                    SELECT room_no, bed_number
+                    FROM booking
+                    WHERE user_id = (SELECT user_id FROM room_change_requests WHERE request_id = %s)
+                    ORDER BY booking_no DESC
+                    LIMIT 1
+                """, (request_id,))
+                current_booking = cur.fetchone()
+                
+                # Update the booking
+                cur.execute("""
+                UPDATE booking
+                SET room_no = %s, bed_number = %s
+                WHERE user_id = (SELECT user_id FROM (SELECT user_id FROM room_change_requests WHERE request_id = %s) AS temp)
+                AND booking_no = (SELECT MAX(booking_no) FROM (SELECT * FROM booking) AS b WHERE user_id = (SELECT user_id FROM room_change_requests WHERE request_id = %s));
+                """, (new_room_no, new_bed_letter, request_id, request_id))
+                
+                # Update the new room and bed status
+                cur.execute("UPDATE beds SET status = 'Occupied' WHERE room_number = %s AND bed_letter = %s", (new_room_no, new_bed_letter))
+                
+                # Update the old room and bed status
+                cur.execute("UPDATE beds SET status = 'Available' WHERE room_number = %s AND bed_letter = %s", (current_booking['room_no'], current_booking['bed_number']))
+                
+                # Update room statuses
+                update_room_status(cur, new_room_no)
+                update_room_status(cur, current_booking['room_no'])
+                
+                # Update the request status
+                cur.execute("UPDATE room_change_requests SET status = 'approved' WHERE request_id = %s", (request_id,))
+                
+                flash('Room change request approved successfully.', 'success')
+            else:
+                flash('The selected room or bed is no longer available. Please try again.', 'error')
+        
+        elif action == 'reject':
+            # Update the request status
+            cur.execute("UPDATE room_change_requests SET status = 'rejected' WHERE request_id = %s", (request_id,))
+            flash('Room change request rejected.', 'success')
+        
+        mysql.connection.commit()
+
+    # Fetch pending room change requests
+    cur.execute("""
+        SELECT rcr.*, u.name, u.email, b.room_no, b.bed_number, h.name as hostel_name, h.id as hostel_id
+        FROM room_change_requests rcr
+        JOIN users u ON rcr.user_id = u.id
+        JOIN booking b ON u.id = b.user_id
+        JOIN hostel h ON b.hostel_id = h.id
+        WHERE rcr.status = 'pending'
+        ORDER BY rcr.request_id DESC
+    """)
+    requests = cur.fetchall()
+    
+    # Fetch available rooms
+    cur.execute("""
+        SELECT r.number, r.hostel_id, h.name as hostel_name
+        FROM rooms r
+        JOIN hostel h ON r.hostel_id = h.id
+        WHERE r.status IN ('Available', 'Partially Occupied')
+        ORDER BY h.name, r.number
+    """)
+    available_rooms = cur.fetchall()
+    
+    # Fetch available beds for each available room
+    available_beds = {}
+    for room in available_rooms:
+        cur.execute("""
+            SELECT bed_letter
+            FROM beds
+            WHERE room_number = %s AND status = 'Available'
+            ORDER BY bed_letter
+        """, (room['number'],))
+        available_beds[room['number']] = [bed['bed_letter'] for bed in cur.fetchall()]
+    
+    cur.close()
+    
+    return render_template('admin_room_change_requests.html', 
+                           requests=requests, 
+                           available_rooms=available_rooms, 
+                           available_beds=available_beds)
+
+def update_room_status(cur, room_number):
+    cur.execute("""
+        SELECT COUNT(*) as total, SUM(CASE WHEN status = 'Occupied' THEN 1 ELSE 0 END) as occupied
+        FROM beds
+        WHERE room_number = %s
+    """, (room_number,))
+    bed_status = cur.fetchone()
+    
+    if bed_status['occupied'] == 0:
+        new_status = 'Available'
+    elif bed_status['occupied'] == bed_status['total']:
+        new_status = 'Occupied'
+    else:
+        new_status = 'Partially Occupied'
+    
+    cur.execute("UPDATE rooms SET status = %s WHERE number = %s", (new_status, room_number))
 
 # Logout Route
 @main.route('/logout')

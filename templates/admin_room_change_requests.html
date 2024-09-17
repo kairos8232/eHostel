@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Room Change Requests</title>
+</head>
+<body>
+    <h1>Room Change Requests</h1>
+    
+    {% if requests %}
+        {% for request in requests %}
+        <div class="request-card">
+            <h2>Request #{{ request.request_id }}</h2>
+            <p><strong>Student ID:</strong> {{ request.user_id }}</p>
+            <p><strong>Name:</strong> {{ request.name }}</p>
+            <p><strong>Email:</strong> {{ request.email }}</p>
+            <p><strong>Current Room:</strong> {{ request.room_no }}</p>
+            <p><strong>Current Bed:</strong> {{ request.bed_number }}</p>
+            <p><strong>Hostel:</strong> {{ request.hostel_name }}</p>
+            <p><strong>Reason:</strong> {{ request.reason }}</p>
+
+            <button class="approve-btn" data-request-id="{{ request.request_id }}">Approve</button>
+            <button class="reject-btn" data-request-id="{{ request.request_id }}">Reject</button>
+
+            <form class="assign-room-form" style="display: none;" action="{{ url_for('admin_room_change_requests') }}" method="post">
+                <input type="hidden" name="request_id" value="{{ request.request_id }}">
+                <input type="hidden" name="action" value="approve">
+                
+                <label for="new_room_no">New Room:</label>
+                <select name="new_room_no" id="new_room_no" required>
+                    <option value="">Select a room</option>
+                    {% for room in available_rooms %}
+                        {% if room.hostel_id == request.hostel_id %}
+                            <option value="{{ room.number }}">{{ room.number }} ({{ room.hostel_name }})</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+
+                <label for="new_bed_letter">New Bed:</label>
+                <select name="new_bed_letter" id="new_bed_letter" required>
+                    <option value="">Select a bed</option>
+                </select>
+
+                <button type="submit">Assign Room and Approve</button>
+                <button type="button" class="cancel-btn">Cancel</button>
+            </form>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="no-requests-message">
+            <h2>No Pending Room Change Requests</h2>
+            <p>There are currently no pending room change requests to process.</p>
+        </div>
+    {% endif %}
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle 'Approve' button click
+        document.querySelectorAll('.approve-btn').forEach(function(approveBtn) {
+            approveBtn.addEventListener('click', function() {
+                const requestCard = approveBtn.closest('.request-card');
+                const form = requestCard.querySelector('.assign-room-form');
+                const rejectBtn = requestCard.querySelector('.reject-btn');
+
+                form.style.display = 'block';  // Show the form
+                approveBtn.style.display = 'none';  // Hide the approve button
+                rejectBtn.style.display = 'none';  // Hide the reject button
+            });
+        });
+
+        // Handle 'Cancel' button click
+        document.querySelectorAll('.cancel-btn').forEach(function(cancelBtn) {
+            cancelBtn.addEventListener('click', function() {
+                const form = cancelBtn.closest('.assign-room-form');
+                const requestCard = form.closest('.request-card');
+                const approveBtn = requestCard.querySelector('.approve-btn');
+                const rejectBtn = requestCard.querySelector('.reject-btn');
+
+                form.style.display = 'none';  // Hide the form
+                approveBtn.style.display = 'inline';  // Show the approve button
+                rejectBtn.style.display = 'inline';  // Show the reject button
+            });
+        });
+
+        // Handle 'Reject' button click
+        document.querySelectorAll('.reject-btn').forEach(function(rejectBtn) {
+            rejectBtn.addEventListener('click', function() {
+                const requestId = rejectBtn.getAttribute('data-request-id');
+                if (confirm('Are you sure you want to reject this request?')) {
+                    fetch("{{ url_for('request_room_change') }}", {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            request_id: requestId,
+                            action: 'reject'
+                        })
+                    }).then(function(response) {
+                        if (response.ok) {
+                            location.reload();  // Reload the page upon success
+                        }
+                    });
+                }
+            });
+        });
+
+        // Handle room change to populate available beds
+        document.querySelectorAll('#new_room_no').forEach(function(roomSelect) {
+            roomSelect.addEventListener('change', function() {
+                const roomNumber = roomSelect.value;
+                const bedSelect = roomSelect.closest('form').querySelector('#new_bed_letter');
+                bedSelect.innerHTML = '<option value="">Select a bed</option>';  // Reset bed options
+                
+                if (roomNumber) {
+                    const availableBeds = {{ available_beds | tojson }};
+                    availableBeds[roomNumber].forEach(function(bed) {
+                        const option = document.createElement('option');
+                        option.value = bed;
+                        option.textContent = bed;
+                        bedSelect.appendChild(option);
+                    });
+                }
+            });
+        });
+    });
+    </script>
+</body>
+</html>

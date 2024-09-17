@@ -1,51 +1,36 @@
-{% extends "base.html" %}
+<!-- {% extends "base.html" %}
+{% block content %} -->
 
-{% block styles %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/room_setting-style.css') }}">
-{% endblock %}
-
-{% block content %}
 <div class="page-container">
     <h1>Room Setting</h1>
+
     <p><strong>Hostel:</strong> {{ booking.hostel_name }}</p>
     <p><strong>Room Number:</strong> {{ booking.room_no }}</p>
     <p><strong>Room Type:</strong> {{ booking.room_type }}</p>
     <p><strong>Bed Number:</strong> {{ booking.bed_number }}</p>
+
+    {% if status_message %}
+        <div class="alert alert-info">{{ status_message }}</div>
+    {% endif %}
+
     <div class="buttons">
-        <button onclick="showFeedbackForm()">Give Feedback</button>
-        <button onclick="showChangeRoomForm()">Request Room Change</button>
+        <button onclick="showRoomChangeForm()">Request Room Change</button>
     </div>
-    <div id="feedbackForm" style="display: none;">
-        <h3>Feedback Form</h3>
-        <form action="{{ url_for('feedback') }}" method="post">
-            <label for="name">Your Name:</label>
-            <input type="text" id="name" name="name" required><br><br>
-            <label for="feedback">Your Feedback:</label>
-            <textarea id="feedback" name="feedback" required></textarea><br><br>
-            <input type="submit" value="Submit Feedback">
-        </form>
-    </div>
+
     <div id="changeRoomForm" style="display: none;">
         <h3>Room Change Request</h3>
         <form action="{{ url_for('request_room_change') }}" method="post">
-            <label for="name">Your Name:</label>
-            <input type="text" id="name" name="name" required><br><br>
-            <label for="reason">Reason for Room Change:</label>
-            <textarea id="reason" name="reason" required></textarea><br><br>
+            <label for="reason">Reason for Room Change:</label><br>
+            <textarea id="reason" name="reason" rows="4" cols="50" required></textarea><br><br>
             <input type="submit" value="Submit Request">
         </form>
     </div>
 </div>
 
 <script>
-    function showFeedbackForm() {
-        document.getElementById('feedbackForm').style.display = 'block';
-        document.getElementById('changeRoomForm').style.display = 'none';
-    }
-
-    function showChangeRoomForm() {
-        document.getElementById('changeRoomForm').style.display = 'block';
-        document.getElementById('feedbackForm').style.display = 'none';
-    }
+function showRoomChangeForm() {
+    document.getElementById('changeRoomForm').style.display = 'block';
+}
 </script>
-{% endblock %}
+
+<!-- {% endblock %} -->
