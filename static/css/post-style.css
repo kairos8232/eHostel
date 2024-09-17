@@ -6,7 +6,7 @@
     border-radius: 8px;
     padding: 20px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    margin-top: 10%;
+    margin-top: 5%;
 }
 
 h2 {
@@ -34,6 +34,16 @@ p {
 
 #edit-form textarea {
     width: 750px;
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    resize: vertical;
+}
+
+#edit-form .contexta{
+    width: 750px;
+    height: 200px;
     padding: 10px;
     margin-bottom: 10px;
     border: 1px solid #ddd;
