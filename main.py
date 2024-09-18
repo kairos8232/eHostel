@@ -1,11 +1,10 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from flask_mysqldb import MySQL
+from functools import wraps
 import MySQLdb.cursors
 import yaml
 from flask_bcrypt import Bcrypt
 import os
-from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user
-import hashlib
 from scipy.spatial.distance import cosine
 import numpy as np
 
@@ -20,6 +19,29 @@ main.config['UPLOAD_FOLDER'] = db['mysql_profile_pic']
 main.secret_key = 'terrychin'
 bcrypt = Bcrypt(main)
 mysql = MySQL(main)
+
+# Check Admin Role
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get('is_admin', False):
+            flash('Access denied. Admin privileges required.', 'error')
+            return redirect(url_for('home'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+# Check Student Role
+def student_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if session.get('is_admin', False):
+            flash('Access denied. This area is for students only.', 'error')
+            return redirect(url_for('admin_dashboard'))
+        if not session.get('loggedin', False):
+            flash('Please log in to access this page.', 'error')
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
 
 # Get image url, to ensure every route catch the profile picture correctly
 @main.context_processor
@@ -84,6 +106,8 @@ def login():
     
     return render_template('login.html')
 
+#########################################STUDENT#############################################
+
 #Student Home
 @main.route("/student")
 def home():
@@ -117,28 +141,6 @@ def home():
     current_announcement = announcements[current_index] if announcements else None
 
     return render_template('home.html', announcement=current_announcement, has_next=total_announcements > 1, invitation=invitation)
-
-# Admin Home
-@main.route("/admin")
-def admin():
-        return render_template('admin_page.html')
-
-# Admin Signup Route (Implement to the Admin System)
-@main.route('/signup', methods=['POST', 'GET'])
-def signup():
-    if request.method == 'POST':
-        userDetails = request.form
-        id = userDetails['id']
-        name = userDetails['name']
-        email = userDetails['email']
-        password = userDetails['password']
-        hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
-        cur = mysql.connection.cursor()
-        cur.execute("INSERT INTO admin(id, name, email, password) VALUES(%s, %s, %s, %s)", (id, name, email, hashed_password))
-        mysql.connection.commit()
-        cur.close()
-        return redirect(url_for('admin'))
-    return render_template('signup.html')
 
 # Student Profile Route
 @main.route('/student/profile', methods=['GET', 'POST'])
@@ -293,21 +295,6 @@ def room_setting():
             status_message = "Room change request rejected by admin"
 
     return render_template('room_setting.html', booking=booking, status_message=status_message)
-
-# Post Annoucement Route
-@main.route('/admin/post_annoucement', methods=['GET', 'POST'])
-def post():
-    if request.method == 'POST':
-        userDetails = request.form
-        title = userDetails['title']
-        context = userDetails['context']
-        cur = mysql.connection.cursor()
-        cur.execute("INSERT INTO announcement(title, context) VALUES(%s  , %s)", (title, context))
-        mysql.connection.commit()
-        cur.close()
-        return redirect(url_for('home'))
-  
-    return render_template('post_announcement.html')
     
 # Select Trimester Route
 @main.route('/student/select_trimester', methods=['GET', 'POST'])
@@ -327,20 +314,6 @@ def select_trimester():
         return redirect(url_for('choose_mode'))
 
     return render_template('select_trimester.html', trimesters=trimesters)
-
-# Admin Edit Trimester
-@main.route('/admin/edit_trimester', methods=['GET', 'POST'])
-def edit_trimester():
-    if request.method == 'POST':
-        userDetails = request.form
-        trimesters = userDetails['semester']
-        term = userDetails['term']
-        cur = mysql.connection.cursor()
-        cur.execute("INSERT INTO trimester(name, term) VALUES(%s  , %s)", (trimesters, term))
-        mysql.connection.commit()
-        cur.close()
-        return redirect(url_for('home'))
-    return render_template('admin_trimester.html')
 
 # Mode selection route (Individual or Group)
 @main.route('/student/choose_mode', methods=['GET', 'POST'])
@@ -566,7 +539,7 @@ def invite_user(group_id, invitee_id):
     return redirect(url_for('manage_group', group_id=group_id))
 
 # Accept the invitation
-@main.route('/accept_invite/<int:invitation_id>', methods=['POST'])
+@main.route('/student/accept_invite/<int:invitation_id>', methods=['POST'])
 def accept_invite(invitation_id):
     
     user_id = session.get('id')  # User B (invitee)
@@ -1008,8 +981,85 @@ def get_user_ratings(user_id):
     cur.close()
     return [rating[0] for rating in ratings]
 
+# Student Request Room Change
+@main.route('/student/request_room_change', methods=['POST'])
+def request_room_change():
+    user_id = session.get('id')
+    if not user_id:
+        return redirect(url_for('student_login'))
+
+    reason = request.form.get('reason')
+    
+    cur = mysql.connection.cursor()
+    cur.execute("""
+        INSERT INTO room_change_requests (user_id, reason, status)
+        VALUES (%s, %s, 'pending')
+    """, (user_id, reason))
+    mysql.connection.commit()
+    cur.close()
+    
+    flash('Your room change request has been submitted.', 'success')
+    return redirect(url_for('room_setting'))
+
+#########################################ADMIN#############################################
+
+# Admin Home
+@main.route("/admin")
+@admin_required
+def admin():
+        return render_template('admin_page.html')
+
+# Admin Signup Route (Implement to the Admin System) #########################################ADMIN#############################################
+@main.route('/signup', methods=['POST', 'GET'])
+def signup():
+    if request.method == 'POST':
+        userDetails = request.form
+        id = userDetails['id']
+        name = userDetails['name']
+        email = userDetails['email']
+        password = userDetails['password']
+        hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+        cur = mysql.connection.cursor()
+        cur.execute("INSERT INTO admin(id, name, email, password) VALUES(%s, %s, %s, %s)", (id, name, email, hashed_password))
+        mysql.connection.commit()
+        cur.close()
+        return redirect(url_for('admin'))
+    return render_template('signup.html')
+
+# Post Annoucement Route
+@main.route('/admin/post_annoucement', methods=['GET', 'POST'])
+@admin_required
+def post():
+    if request.method == 'POST':
+        userDetails = request.form
+        title = userDetails['title']
+        context = userDetails['context']
+        cur = mysql.connection.cursor()
+        cur.execute("INSERT INTO announcement(title, context) VALUES(%s  , %s)", (title, context))
+        mysql.connection.commit()
+        cur.close()
+        return redirect(url_for('home'))
+  
+    return render_template('post_announcement.html')
+
+# Admin Edit Trimester
+@main.route('/admin/edit_trimester', methods=['GET', 'POST'])
+@admin_required
+def edit_trimester():
+    if request.method == 'POST':
+        userDetails = request.form
+        trimesters = userDetails['semester']
+        term = userDetails['term']
+        cur = mysql.connection.cursor()
+        cur.execute("INSERT INTO trimester(name, term) VALUES(%s  , %s)", (trimesters, term))
+        mysql.connection.commit()
+        cur.close()
+        return redirect(url_for('home'))
+    return render_template('admin_trimester.html')
+
 # Add room route
 @main.route('/admin/add-room', methods=['GET', 'POST'])
+@admin_required
 def add_room():
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
 
@@ -1070,7 +1120,9 @@ def add_room():
     # Render template and pass hostels and status_message to the form
     return render_template('room_add.html', hostels=hostels, status_message=status_message)
 
+# Admin Edit Room
 @main.route('/admin/edit-room/<int:room_number>', methods=['GET', 'POST'])
+@admin_required
 def edit_room(room_number):
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
 
@@ -1140,7 +1192,9 @@ def edit_room(room_number):
     cur.close()
     return render_template('room_edit.html', room=room, hostels=hostels)
 
+# Admin Manage Rooms
 @main.route('/admin/manage-rooms', methods=['GET', 'POST'])
+@admin_required
 def manage_rooms():
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
 
@@ -1169,7 +1223,9 @@ def manage_rooms():
     # Render the template with rooms and hostels
     return render_template('room_manage.html', rooms=rooms, hostels=hostels, selected_hostel_id=selected_hostel_id)
 
+# Admin Delete Room
 @main.route('/admin/delete-room/<int:room_number>', methods=['POST'])
+@admin_required
 def delete_room(room_number):
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
 
@@ -1198,26 +1254,9 @@ def delete_room(room_number):
 
     return redirect(url_for('manage_rooms'))
 
-@main.route('/student/request_room_change', methods=['POST'])
-def request_room_change():
-    user_id = session.get('id')
-    if not user_id:
-        return redirect(url_for('student_login'))
-
-    reason = request.form.get('reason')
-    
-    cur = mysql.connection.cursor()
-    cur.execute("""
-        INSERT INTO room_change_requests (user_id, reason, status)
-        VALUES (%s, %s, 'pending')
-    """, (user_id, reason))
-    mysql.connection.commit()
-    cur.close()
-    
-    flash('Your room change request has been submitted.', 'success')
-    return redirect(url_for('room_setting'))
-
+# Admin Room Change Request Approval
 @main.route('/admin/room_change_requests', methods=['GET', 'POST'])
+@admin_required
 def admin_room_change_requests():
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
 
@@ -1344,6 +1383,7 @@ def update_room_status(cur, room_number):
 def logout():
     session.pop('loggedin', None)
     session.pop('id', None)
+    session.clear()
     return redirect(url_for('index'))
 
 if __name__ == "__main__":

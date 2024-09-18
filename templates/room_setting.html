@@ -1,4 +1,9 @@
 {% extends "base.html" %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/room_setting-style.css') }}">
+{% endblock %}
+
 {% block content %}
 
 <div class="page-container">
@@ -33,4 +38,4 @@ function showRoomChangeForm() {
 }
 </script>
 
-<!-- {% endblock %} -->
+{% endblock %}

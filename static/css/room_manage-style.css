@@ -1,0 +1,157 @@
+.manage-room-wrapper {
+    background-color: #ffffff;
+    max-width: 1200px;
+    border-radius: 15px;
+    margin: 20px auto;
+    padding: 30px;
+    box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.1);
+    display: flex;
+}
+
+/* Sidebar */
+.sidebar {
+    background-color: #1a1b2d;
+    padding: 20px;
+    width: 50px;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border-radius: 30px;
+    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 50px;
+    height: 50px;
+    margin-bottom: 20px;
+    background-color: transparent;
+    border-radius: 15px;
+    cursor: pointer;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.menu-item.active {
+    background-color: #ffffff;
+    color: #1a1b2d;
+}
+
+.menu-item.inactive {
+    color: #ffffff;
+}
+
+.menu-item i {
+    font-size: 24px;
+}
+
+.menu-item:hover {
+    background-color: #30334f;
+}
+
+.content {
+    flex-grow: 1;
+    padding-left: 30px;
+}
+
+h2 {
+    font-size: 28px;
+    margin-bottom: 20px;
+    color: #1a1b2d;
+}
+
+/* Form */
+form {
+    max-width: 800px;
+    margin-bottom: 30px;
+}
+
+label {
+    font-weight: bold;
+    margin-right: 10px;
+}
+
+select {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    width: 200px;
+    font-size: 16px;
+}
+
+button, .btn {
+    padding: 10px 20px;
+    background-color: #1a1b2d;
+    color: #ffffff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+button:hover {
+    background-color: #30334f;
+}
+
+.status-message {
+    padding: 10px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+}
+
+.status-message.success {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.status-message.error {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+/* Table */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 30px;
+}
+
+table thead {
+    background-color: #1a1b2d;
+    color: #ffffff;
+}
+
+table th, table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+table th {
+    font-weight: bold;
+}
+
+/* Edit and Delete button styles */
+table td .btn,
+table td button {
+    background-color: #1a1b2d;
+    color: #ffffff;
+    padding: 5px 10px;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    margin-right: 10px;
+}
+
+table td a:hover,
+table td button:hover {
+    background-color: #30334f;
+}
+
+table td form {
+    display: inline;
+}
