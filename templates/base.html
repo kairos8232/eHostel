@@ -10,50 +10,63 @@
 </head>
 <body>
     <header>
-        <div class="heading"><img src="/static/images/Multimedia_University_logo.png" alt="Multimedia University" style="width: 150px; height: 50px;" class="logo" ></div>
+        <div class="heading">
+            <img src="{{ url_for('static', filename='images/Multimedia_University_logo.png') }}" alt="Multimedia University" class="logo" style="width: 150px; height: 50px;">
+        </div>
         <nav class="nav">
             <div class="divider"></div>
-            <a href="{{ url_for('home') }}">Home</a>
-            <a href="{{ url_for('room_setting') }}">Room</a>   
-            <a href="{{ url_for('home') }}">Services</a>
-            <a href="{{ url_for('home') }}">Contact</a>
+            {% if session.get('is_admin', False) %}
+                <!-- Admin Navigation -->
+                <a href="{{ url_for('edit_trimester') }}">Edit Trimester</a>
+                <a href="{{ url_for('home') }}">Add Student</a>
+                <a href="{{ url_for('post') }}">Make Announcement</a>
+            {% else %}
+                <!-- Student Navigation -->
+                <a href="{{ url_for('home') }}">Home</a>
+                <a href="{{ url_for('room_setting') }}">Room</a>
+                <a href="{{ url_for('home') }}">Services</a>
+                <a href="{{ url_for('home') }}">Contact</a>
+            {% endif %}
         </nav>
 
+        {% if not session.get('is_admin', False) %}
         <div class="user-form-group">
-            <img src="{{ profile_pic_url }}" class="user-pic" onclick="togglemenu()">
-    
-                <div class="sub-menu-wrap" id="sub-menu-wrap">
-                    <div class="sub-menu">
-    
+            <img src="{{ profile_pic_url }}" alt="User" class="user-pic" onclick="togglemenu()">
+
+            <div id="sub-menu-wrap" class="sub-menu-wrap">
+                <div class="sub-menu">
                     <a href="{{ url_for('profile') }}" class="sub-menu-link">
-                        <img src="/static/images/account.png">
+                        <img src="{{ url_for('static', filename='images/account.png') }}" alt="Edit Profile">
                         <p>Edit Profile</p>
-                        <span></span>
                     </a>
-                   
                     <a href="#" class="sub-menu-link">
-                        <img src="/static/images/setting.png">
+                        <img src="{{ url_for('static', filename='images/setting.png') }}" alt="Settings">
                         <p>Settings</p>
-                        <span></span>
                     </a>
-    
                     <a href="{{ url_for('logout') }}" class="sub-menu-link">
-                        <img src="/static/images/logout.png">
+                        <img src="{{ url_for('static', filename='images/logout.png') }}" alt="Logout">
                         <p>Logout</p>
-                        <span></span>
                     </a>
-                    </div>
                 </div>
             </div>
-            <script>
-                let submenu = document.getElementById("sub-menu-wrap");
+        </div>
+        {% else %}
+        <div class="admin-logout">
+            <a href="{{ url_for('logout') }}">Logout</a>
+        </div>
+        {% endif %}
+    
+    <!-- Add your JavaScript links here -->
+    <script>
+        let submenu = document.getElementById("sub-menu-wrap");
         
-                function togglemenu(){
-                submenu.classList.toggle("open-menu");
-                }
-            </script> 
+        function togglemenu(){
+        submenu.classList.toggle("open-menu");
+        }
+    </script>
     </header>
-
+</body>
+</html>
 {% block content %}
 
 {% endblock %}

@@ -1,7 +1,8 @@
-<link rel="stylesheet" href="{{ url_for('static' , filename = 'css/admin-trimester.css' ) }}">
+{% extends 'base.html' %}
 
-</head>
-{% extends 'admin_base.html' %}
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static' , filename = 'css/admin-trimester.css' ) }}">
+{% endblock %}
 
 {% block content %}
 
@@ -15,5 +16,4 @@
             </form>
         </div>
     </div>
-</body>
 {% endblock %}

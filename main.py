@@ -47,47 +47,45 @@ def calculate_similarity(ratings1, ratings2):
 def index():
     return render_template('index.html')
 
-@main.route('/student_login', methods=['POST', 'GET'])
-def student_login():
+@main.route('/login', methods=['GET', 'POST'])
+def login():
     if request.method == 'POST':
         userDetails = request.form
         id = userDetails['id']
         password = userDetails['password']
-        cur = mysql.connection.cursor()
-        cur.execute('SELECT * FROM users WHERE id=%s', (id,))
-        record = cur.fetchone()
-        if record and bcrypt.check_password_hash(record[4] , password):
-            session['loggedin']= True
-            session['id']= record[0]
-            session['password'] = record[4]
-            return redirect(url_for('home'))
-        else:
-            msg='Incorrect username/password. Try again!'
-            return render_template('index.html', msg = msg)   
         
-    return render_template('s-login.html')
-
-@main.route('/admin', methods=['POST', 'GET'])
-def admin_login():
-    if request.method == 'POST':
-        userDetails = request.form
-        id = userDetails['id']
-        password = userDetails['password']
-        cur = mysql.connection.cursor()
+        # First, try to authenticate as an admin
+        cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        cur.execute('SELECT * FROM admin WHERE id=%s', (id,))
+        user = cur.fetchone()
+        
+        if user and bcrypt.check_password_hash(user['password'], password):
+            session['loggedin'] = True
+            session['id'] = user['id']
+            session['is_admin'] = True
+            cur.close()
+            return redirect(url_for('admin'))
+        
+        # If not an admin, try to authenticate as a student
         cur.execute('SELECT * FROM users WHERE id=%s', (id,))
-        record = cur.fetchone()
-        if record and bcrypt.check_password_hash(record[4] , password):
-            session['loggedin']= True
-            session['id']= record[0]
-            session['password'] = record[4]
+        user = cur.fetchone()
+        
+        if user and bcrypt.check_password_hash(user['password'], password):
+            session['loggedin'] = True
+            session['id'] = user['id']
+            session['is_admin'] = False
+            cur.close()
             return redirect(url_for('home'))
-        else:
-            msg='Incorrect username/password. Try again!'
-            return render_template('index.html', msg = msg)   
+        
+        # If authentication fails for both admin and student
+        cur.close()
+        flash('Incorrect username/password. Try again!', 'error')
+        return redirect(url_for('login'))
+    
+    return render_template('login.html')
 
-    return render_template('a-login.html')
-
-@main.route("/home")
+#Student Home
+@main.route("/student")
 def home():
     user_id = session.get('id')
     if not user_id:
@@ -120,11 +118,12 @@ def home():
 
     return render_template('home.html', announcement=current_announcement, has_next=total_announcements > 1, invitation=invitation)
 
-@main.route("/admin_page")
+# Admin Home
+@main.route("/admin")
 def admin():
         return render_template('admin_page.html')
 
-# Admin Signup Route
+# Admin Signup Route (Implement to the Admin System)
 @main.route('/signup', methods=['POST', 'GET'])
 def signup():
     if request.method == 'POST':
@@ -142,7 +141,7 @@ def signup():
     return render_template('signup.html')
 
 # Student Profile Route
-@main.route('/profile', methods=['GET', 'POST'])
+@main.route('/student/profile', methods=['GET', 'POST'])
 def profile():
     user_id = session.get('id')
    
@@ -172,7 +171,7 @@ def profile():
     )
 
 # Edit Profile
-@main.route('/edit_profile', methods=['GET', 'POST'])
+@main.route('/student/edit_profile', methods=['GET', 'POST'])
 def edit_profile():
     user_id = session.get('id')
     
@@ -218,7 +217,7 @@ def edit_profile():
         return redirect(url_for('home'))
 
 # Change Password Route
-@main.route('/change_password', methods=['GET', 'POST'])
+@main.route('/student/change_password', methods=['GET', 'POST'])
 def change_password():
     user_id = session.get('id')
     
@@ -253,7 +252,7 @@ def change_password():
     return render_template('change_password.html', error=error, status=status)
 
 # Room Setting
-@main.route('/room_setting')
+@main.route('/student/room_setting')
 def room_setting():
     user_id = session.get('id')
     if not user_id:
@@ -296,7 +295,7 @@ def room_setting():
     return render_template('room_setting.html', booking=booking, status_message=status_message)
 
 # Post Annoucement Route
-@main.route('/post', methods=['GET', 'POST'])
+@main.route('/admin/post_annoucement', methods=['GET', 'POST'])
 def post():
     if request.method == 'POST':
         userDetails = request.form
@@ -311,7 +310,7 @@ def post():
     return render_template('post_announcement.html')
     
 # Select Trimester Route
-@main.route('/select_trimester', methods=['GET', 'POST'])
+@main.route('/student/select_trimester', methods=['GET', 'POST'])
 def select_trimester():
     user_id = session.get('id')
     if not user_id:
@@ -330,7 +329,7 @@ def select_trimester():
     return render_template('select_trimester.html', trimesters=trimesters)
 
 # Admin Edit Trimester
-@main.route('/edit_admin_trimester', methods=['GET', 'POST'])
+@main.route('/admin/edit_trimester', methods=['GET', 'POST'])
 def edit_trimester():
     if request.method == 'POST':
         userDetails = request.form
@@ -344,7 +343,7 @@ def edit_trimester():
     return render_template('admin_trimester.html')
 
 # Mode selection route (Individual or Group)
-@main.route('/choose_mode', methods=['GET', 'POST'])
+@main.route('/student/choose_mode', methods=['GET', 'POST'])
 def choose_mode():
     if 'loggedin' not in session:
         return redirect(url_for('student_login'))
@@ -379,7 +378,7 @@ def choose_mode():
     return render_template('choose_mode.html')
 
 # Group page route (Create or Join Group)
-@main.route('/group', methods=['GET', 'POST'])
+@main.route('/student/group', methods=['GET', 'POST'])
 def group_page():
     user_id = session.get('id')
     
@@ -412,7 +411,7 @@ def group_page():
     return render_template('group_page.html')
 
 # Manage Group route with student filtering and suggested roommate
-@main.route('/manage_group/<int:group_id>', methods=['GET', 'POST'])
+@main.route('/student/manage_group/<int:group_id>', methods=['GET', 'POST'])
 def manage_group(group_id):
     user_id = session.get('id')
     if not user_id:
@@ -516,7 +515,7 @@ def manage_group(group_id):
     return render_template('manage_group.html', members=members, group_id=group_id, students=students, is_leader=is_leader, current_user_id=user_id, leader_gender=leader_gender)
 
 # Leave Group
-@main.route('/leave_group/<int:group_id>', methods=['POST'])
+@main.route('/student/leave_group/<int:group_id>', methods=['POST'])
 def leave_group(group_id):
     user_id = session.get('id')
     if not user_id:
@@ -549,7 +548,7 @@ def leave_group(group_id):
     return redirect(url_for('choose_mode'))
 
 # Invite Member Route
-@main.route('/invite_user/<int:group_id>/<int:invitee_id>', methods=['POST'])
+@main.route('/student/invite_user/<int:group_id>/<int:invitee_id>', methods=['POST'])
 def invite_user(group_id, invitee_id):
     user_id = session.get('id')  # User A (group leader) who is sending the invite
     if not user_id:
@@ -599,7 +598,7 @@ def accept_invite(invitation_id):
     return redirect(url_for('manage_group', group_id=group['group_id']))
 
 # Decline the invitation
-@main.route('/decline_invite/<int:invitation_id>', methods=['POST'])
+@main.route('/student/decline_invite/<int:invitation_id>', methods=['POST'])
 def decline_invite(invitation_id):
     user_id = session.get('id')  # User B (invitee)
     if not user_id:
@@ -620,7 +619,7 @@ def decline_invite(invitation_id):
     return redirect(url_for('home'))
 
 # Select Hostel Route
-@main.route('/select_hostel/<mode>', methods=['GET', 'POST'])
+@main.route('/student/select_hostel/<mode>', methods=['GET', 'POST'])
 def select_hostel(mode):
     user_id = session.get('id')
     if not user_id:
@@ -647,7 +646,7 @@ def select_hostel(mode):
     return render_template('select_hostel.html', mode=mode, hostels=hostels)
 
 # Select Room Type Route
-@main.route('/select_room_type/<mode>/<int:hostel_id>', methods=['GET', 'POST'])
+@main.route('/student/select_room_type/<mode>/<int:hostel_id>', methods=['GET', 'POST'])
 def select_room_type(mode, hostel_id):
     user_id = session.get('id')
     if not user_id:
@@ -692,7 +691,7 @@ def select_room_type(mode, hostel_id):
     return render_template('select_room_type.html', mode=mode, hostel_id=hostel_id, available_rooms=available_rooms, group_id=group_id)
 
 # Select Bed Route
-@main.route('/select_bed/<mode>/<int:hostel_id>/<room_type>', methods=['GET', 'POST'])
+@main.route('/student/select_bed/<mode>/<int:hostel_id>/<room_type>', methods=['GET', 'POST'])
 def select_bed(mode, hostel_id, room_type):
     user_id = session.get('id')
     if not user_id:
@@ -758,7 +757,7 @@ def select_bed(mode, hostel_id, room_type):
         cur.close()
 
 # Booking Confirmation
-@main.route('/booking_summary/<mode>/<int:hostel_id>/<room_type>/<int:room_number>/<bed_ids>/<user_ids>', methods=['GET', 'POST'])
+@main.route('/student/booking_summary/<mode>/<int:hostel_id>/<room_type>/<int:room_number>/<bed_ids>/<user_ids>', methods=['GET', 'POST'])
 def booking_summary(mode, hostel_id, room_type, room_number, bed_ids, user_ids):
     user_id = session.get('id')
     if not user_id:
@@ -825,7 +824,7 @@ def booking_summary(mode, hostel_id, room_type, room_number, bed_ids, user_ids):
     return render_template('booking_summary.html', booking_details=booking_details, mode=mode, hostel_id=hostel_id, room_type=room_type, room_number=room_number, bed_ids=bed_ids)
 
 # Transfer Leadership
-@main.route('/transfer_leadership/<int:group_id>/<int:new_leader_id>', methods=['POST'])
+@main.route('/student/transfer_leadership/<int:group_id>/<int:new_leader_id>', methods=['POST'])
 def transfer_leadership(group_id, new_leader_id):
     user_id = session.get('id')
     if not user_id:
@@ -857,7 +856,7 @@ def transfer_leadership(group_id, new_leader_id):
     return redirect(url_for('manage_group', group_id=group_id))
 
 # Remove Member
-@main.route('/remove_member/<int:group_id>/<int:member_id>', methods=['POST'])
+@main.route('/student/remove_member/<int:group_id>/<int:member_id>', methods=['POST'])
 def remove_member(group_id, member_id):
     user_id = session.get('id')
     if not user_id:
@@ -878,7 +877,7 @@ def remove_member(group_id, member_id):
     return redirect(url_for('manage_group', group_id=group_id))
 
 # Disband Group
-@main.route('/disband_group/<int:group_id>', methods=['POST'])
+@main.route('/student/disband_group/<int:group_id>', methods=['POST'])
 def disband_group(group_id):
     user_id = session.get('id')
     if not user_id:
@@ -900,7 +899,7 @@ def disband_group(group_id):
     return redirect(url_for('choose_mode'))
 
 # Feedback route
-@main.route('/feedback', methods=['POST'])
+@main.route('/student/feedback', methods=['POST'])
 def feedback():
     user_id = session.get('id')
     if not user_id:
@@ -915,26 +914,10 @@ def feedback():
 
     return redirect(url_for('room_status'))
 
-# Room change request route
-@main.route('/request_room_change', methods=['POST'])
-def request_room_change():
-    user_id = session.get('id')
-    if not user_id:
-        return redirect(url_for('student_login'))
-
-    room_number = session.get('room_number')
-    # Process room change request
-    cursor = mysql.connection.cursor()
-    cursor.execute("UPDATE booking SET status = 'Room Change Requested' WHERE usersid = %s AND roomno = %s", (user_id, room_number))
-    mysql.connection.commit()
-    cursor.close()
-
-    return redirect(url_for('room_status'))
-
 # Survey Start Route
-@main.route('/survey', methods=['GET', 'POST'])
+@main.route('/student/survey', methods=['GET', 'POST'])
 def survey():
-    if 'id' not in session:
+    if not user_id:
         return redirect(url_for('login'))
 
     user_id = session['id']
@@ -957,11 +940,12 @@ def survey():
     return render_template('survey_start.html')
 
 # Answer Survey Route
-@main.route('/rate/<int:section_id>', methods=['GET', 'POST'])
+@main.route('/student/rate/<int:section_id>', methods=['GET', 'POST'])
 def survey_questions(section_id):
-    if 'id' not in session:
+    if not user_id:
         return redirect(url_for('login'))
 
+    user_id = session['id']
     cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
 
     # Get all questions for the current section
@@ -1002,9 +986,9 @@ def survey_questions(section_id):
                            is_last_section=is_last_section)
 
 # Done Survey Route
-@main.route('/survey_done')
+@main.route('/student/survey_done')
 def save_survey():
-    if 'id' not in session:
+    if not user_id:
         return redirect(url_for('login'))
 
     user_id = session['id']
@@ -1025,7 +1009,7 @@ def get_user_ratings(user_id):
     return [rating[0] for rating in ratings]
 
 # Add room route
-@main.route('/add-room', methods=['GET', 'POST'])
+@main.route('/admin/add-room', methods=['GET', 'POST'])
 def add_room():
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
 
@@ -1086,7 +1070,7 @@ def add_room():
     # Render template and pass hostels and status_message to the form
     return render_template('room_add.html', hostels=hostels, status_message=status_message)
 
-@main.route('/edit-room/<int:room_number>', methods=['GET', 'POST'])
+@main.route('/admin/edit-room/<int:room_number>', methods=['GET', 'POST'])
 def edit_room(room_number):
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
 
@@ -1156,7 +1140,7 @@ def edit_room(room_number):
     cur.close()
     return render_template('room_edit.html', room=room, hostels=hostels)
 
-@main.route('/manage-rooms', methods=['GET', 'POST'])
+@main.route('/admin/manage-rooms', methods=['GET', 'POST'])
 def manage_rooms():
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
 
@@ -1185,7 +1169,7 @@ def manage_rooms():
     # Render the template with rooms and hostels
     return render_template('room_manage.html', rooms=rooms, hostels=hostels, selected_hostel_id=selected_hostel_id)
 
-@main.route('/delete-room/<int:room_number>', methods=['POST'])
+@main.route('/admin/delete-room/<int:room_number>', methods=['POST'])
 def delete_room(room_number):
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
 
@@ -1214,7 +1198,7 @@ def delete_room(room_number):
 
     return redirect(url_for('manage_rooms'))
 
-@main.route('/request_room_change', methods=['POST'])
+@main.route('/student/request_room_change', methods=['POST'])
 def request_room_change():
     user_id = session.get('id')
     if not user_id:
