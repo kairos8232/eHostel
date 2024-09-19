@@ -110,10 +110,9 @@ def login():
 
 #Student Home
 @main.route("/student")
+@student_required
 def home():
     user_id = session.get('id')
-    if not user_id:
-        return redirect(url_for('student_login'))
 
     # Fetch any pending invitations for this user
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
@@ -144,20 +143,13 @@ def home():
 
 # Student Profile Route
 @main.route('/student/profile', methods=['GET', 'POST'])
+@student_required
 def profile():
     user_id = session.get('id')
-   
-    if not user_id:
-        return redirect(url_for('login'))
     
     cur = mysql.connection.cursor()
     cur.execute("SELECT * FROM users WHERE id = %s", (user_id,))
     user = cur.fetchone()
-    
-    if not user:
-        session.pop('id', None)
-        cur.close()
-        return redirect(url_for('login'))
     
     status = request.args.get('status')
 
@@ -174,11 +166,9 @@ def profile():
 
 # Edit Profile
 @main.route('/student/edit_profile', methods=['GET', 'POST'])
+@student_required
 def edit_profile():
     user_id = session.get('id')
-    
-    if not user_id:
-        return redirect(url_for('login'))
     
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     
@@ -220,12 +210,10 @@ def edit_profile():
 
 # Change Password Route
 @main.route('/student/change_password', methods=['GET', 'POST'])
+@student_required
 def change_password():
     user_id = session.get('id')
     
-    if not user_id:
-        return redirect(url_for('login'))
-
     if request.method == 'POST':
         current_password = request.form['current_password']
         new_password = request.form['new_password']
@@ -255,10 +243,9 @@ def change_password():
 
 # Room Setting
 @main.route('/student/room_setting')
+@student_required
 def room_setting():
     user_id = session.get('id')
-    if not user_id:
-        return redirect(url_for('student_login'))
 
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     cur.execute("""
@@ -281,6 +268,16 @@ def room_setting():
         LIMIT 1
     """, (user_id,))
     request_status = cur.fetchone()
+
+    # Fetch pending swap requests for this user
+    cur.execute("""
+        SELECT rsr.*, u.name AS requester_name, b.room_no AS requester_room, b.bed_number AS requester_bed
+        FROM room_swap_requests rsr
+        JOIN users u ON rsr.user_id = u.id
+        JOIN booking b ON rsr.user_id = b.user_id
+        WHERE rsr.other_user_id = %s AND rsr.status = 'pending'
+    """, (user_id,))
+    pending_swaps = cur.fetchall()
     
     cur.close()
 
@@ -294,14 +291,12 @@ def room_setting():
         elif request_status['status'] == 'rejected':
             status_message = "Room change request rejected by admin"
 
-    return render_template('room_setting.html', booking=booking, status_message=status_message)
+    return render_template('room_setting.html', booking=booking, status_message=status_message, pending_swaps=pending_swaps)
     
 # Select Trimester Route
 @main.route('/student/select_trimester', methods=['GET', 'POST'])
+@student_required
 def select_trimester():
-    user_id = session.get('id')
-    if not user_id:
-        return redirect(url_for('student_login'))
     
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     cur.execute("SELECT * FROM trimester")
@@ -317,10 +312,8 @@ def select_trimester():
 
 # Mode selection route (Individual or Group)
 @main.route('/student/choose_mode', methods=['GET', 'POST'])
-def choose_mode():
-    if 'loggedin' not in session:
-        return redirect(url_for('student_login'))
-    
+@student_required
+def choose_mode():    
     if 'trimester_id' not in session:
         return redirect(url_for('select_trimester'))
     
@@ -352,11 +345,9 @@ def choose_mode():
 
 # Group page route (Create or Join Group)
 @main.route('/student/group', methods=['GET', 'POST'])
+@student_required
 def group_page():
     user_id = session.get('id')
-    
-    if not user_id:
-        return redirect(url_for('login'))
 
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     cur.execute("SELECT * FROM `groups` WHERE leader_id = %s", (user_id,))
@@ -385,10 +376,9 @@ def group_page():
 
 # Manage Group route with student filtering and suggested roommate
 @main.route('/student/manage_group/<int:group_id>', methods=['GET', 'POST'])
+@student_required
 def manage_group(group_id):
     user_id = session.get('id')
-    if not user_id:
-        return redirect(url_for('student_login'))
 
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     cur.execute("SELECT * FROM `groups` WHERE group_id = %s AND leader_id = %s", (group_id, user_id))
@@ -489,10 +479,9 @@ def manage_group(group_id):
 
 # Leave Group
 @main.route('/student/leave_group/<int:group_id>', methods=['POST'])
+@student_required
 def leave_group(group_id):
     user_id = session.get('id')
-    if not user_id:
-        return redirect(url_for('student_login'))
 
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     
@@ -522,13 +511,11 @@ def leave_group(group_id):
 
 # Invite Member Route
 @main.route('/student/invite_user/<int:group_id>/<int:invitee_id>', methods=['POST'])
+@student_required
 def invite_user(group_id, invitee_id):
     user_id = session.get('id')  # User A (group leader) who is sending the invite
-    if not user_id:
-        return redirect(url_for('student_login'))
 
-    # Insert the invitation into the 'invitations' table
-    cur = mysql.connection.cursor()
+    cur = mysql.connection.cursor()    # Insert the invitation into the 'invitations' table
     cur.execute("""
         INSERT INTO invitations (group_id, inviter_id, invitee_id, status)
         VALUES (%s, %s, %s, 'pending')
@@ -540,11 +527,9 @@ def invite_user(group_id, invitee_id):
 
 # Accept the invitation
 @main.route('/student/accept_invite/<int:invitation_id>', methods=['POST'])
+@student_required
 def accept_invite(invitation_id):
-    
     user_id = session.get('id')  # User B (invitee)
-    if not user_id:
-        return redirect(url_for('student_login'))
     
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
 
@@ -572,10 +557,9 @@ def accept_invite(invitation_id):
 
 # Decline the invitation
 @main.route('/student/decline_invite/<int:invitation_id>', methods=['POST'])
+@student_required
 def decline_invite(invitation_id):
     user_id = session.get('id')  # User B (invitee)
-    if not user_id:
-        return redirect(url_for('student_login'))
 
     cur = mysql.connection.cursor()
 
@@ -593,10 +577,9 @@ def decline_invite(invitation_id):
 
 # Select Hostel Route
 @main.route('/student/select_hostel/<mode>', methods=['GET', 'POST'])
+@student_required
 def select_hostel(mode):
     user_id = session.get('id')
-    if not user_id:
-        return redirect(url_for('student_login'))
 
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     
@@ -620,11 +603,8 @@ def select_hostel(mode):
 
 # Select Room Type Route
 @main.route('/student/select_room_type/<mode>/<int:hostel_id>', methods=['GET', 'POST'])
+@student_required
 def select_room_type(mode, hostel_id):
-    user_id = session.get('id')
-    if not user_id:
-        return redirect(url_for('student_login'))
-
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
 
     group_id = session.get('group_id')
@@ -665,10 +645,9 @@ def select_room_type(mode, hostel_id):
 
 # Select Bed Route
 @main.route('/student/select_bed/<mode>/<int:hostel_id>/<room_type>', methods=['GET', 'POST'])
+@student_required
 def select_bed(mode, hostel_id, room_type):
     user_id = session.get('id')
-    if not user_id:
-        return redirect(url_for('student_login'))
 
     selected_room = request.args.get('selected_room')
     if not selected_room:
@@ -731,10 +710,9 @@ def select_bed(mode, hostel_id, room_type):
 
 # Booking Confirmation
 @main.route('/student/booking_summary/<mode>/<int:hostel_id>/<room_type>/<int:room_number>/<bed_ids>/<user_ids>', methods=['GET', 'POST'])
+@student_required
 def booking_summary(mode, hostel_id, room_type, room_number, bed_ids, user_ids):
     user_id = session.get('id')
-    if not user_id:
-        return redirect(url_for('student_login'))
 
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     cur.execute("SELECT * FROM rooms WHERE number = %s", (room_number,))
@@ -769,7 +747,7 @@ def booking_summary(mode, hostel_id, room_type, room_number, bed_ids, user_ids):
     }
 
     if request.method == 'POST':
-        trimester_id = session.get('trimester')
+        trimester_id = session.get('trimester_id')
 
         for assignment in bed_assignments:
             cur.execute(
@@ -798,10 +776,9 @@ def booking_summary(mode, hostel_id, room_type, room_number, bed_ids, user_ids):
 
 # Transfer Leadership
 @main.route('/student/transfer_leadership/<int:group_id>/<int:new_leader_id>', methods=['POST'])
+@student_required
 def transfer_leadership(group_id, new_leader_id):
     user_id = session.get('id')
-    if not user_id:
-        return redirect(url_for('student_login'))
 
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     
@@ -830,10 +807,9 @@ def transfer_leadership(group_id, new_leader_id):
 
 # Remove Member
 @main.route('/student/remove_member/<int:group_id>/<int:member_id>', methods=['POST'])
+@student_required
 def remove_member(group_id, member_id):
     user_id = session.get('id')
-    if not user_id:
-        return redirect(url_for('student_login'))
 
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     cur.execute("SELECT * FROM `groups` WHERE group_id = %s AND leader_id = %s", (group_id, user_id))
@@ -851,10 +827,9 @@ def remove_member(group_id, member_id):
 
 # Disband Group
 @main.route('/student/disband_group/<int:group_id>', methods=['POST'])
+@student_required
 def disband_group(group_id):
     user_id = session.get('id')
-    if not user_id:
-        return redirect(url_for('student_login'))
 
     session.pop('group_id', None)
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
@@ -871,28 +846,10 @@ def disband_group(group_id):
 
     return redirect(url_for('choose_mode'))
 
-# Feedback route
-@main.route('/student/feedback', methods=['POST'])
-def feedback():
-    user_id = session.get('id')
-    if not user_id:
-        return redirect(url_for('student_login'))
-
-    feedback_text = request.form['feedback']
-    # Save feedback to the database
-    cursor = mysql.connection.cursor()
-    cursor.execute("INSERT INTO feedback (user_id, feedback) VALUES (%s, %s)", (user_id, feedback_text))
-    mysql.connection.commit()
-    cursor.close()
-
-    return redirect(url_for('room_status'))
-
 # Survey Start Route
 @main.route('/student/survey', methods=['GET', 'POST'])
+@student_required
 def survey():
-    if not user_id:
-        return redirect(url_for('login'))
-
     user_id = session['id']
     cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     
@@ -914,11 +871,8 @@ def survey():
 
 # Answer Survey Route
 @main.route('/student/rate/<int:section_id>', methods=['GET', 'POST'])
+@student_required
 def survey_questions(section_id):
-    if not user_id:
-        return redirect(url_for('login'))
-
-    user_id = session['id']
     cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
 
     # Get all questions for the current section
@@ -960,10 +914,8 @@ def survey_questions(section_id):
 
 # Done Survey Route
 @main.route('/student/survey_done')
+@student_required
 def save_survey():
-    if not user_id:
-        return redirect(url_for('login'))
-
     user_id = session['id']
     cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     
@@ -983,11 +935,9 @@ def get_user_ratings(user_id):
 
 # Student Request Room Change
 @main.route('/student/request_room_change', methods=['POST'])
+@student_required
 def request_room_change():
     user_id = session.get('id')
-    if not user_id:
-        return redirect(url_for('student_login'))
-
     reason = request.form.get('reason')
     
     cur = mysql.connection.cursor()
@@ -999,6 +949,110 @@ def request_room_change():
     cur.close()
     
     flash('Your room change request has been submitted.', 'success')
+    return redirect(url_for('room_setting'))
+
+@main.route('/student/submit_room_change', methods=['POST'])
+@student_required
+def submit_room_change():
+    user_id = session.get('id')
+    reason = request.form.get('reason')
+    
+    cur = mysql.connection.cursor()
+    cur.execute("""
+        INSERT INTO room_change_requests (user_id, reason, status)
+        VALUES (%s, %s, 'pending')
+    """, (user_id, reason))
+    mysql.connection.commit()
+    cur.close()
+    
+    flash('Your room change request has been submitted.', 'success')
+    return redirect(url_for('room_setting'))
+
+@main.route('/student/request_room_swap', methods=['POST'])
+@student_required
+def request_room_swap():
+    user_id = session.get('id')
+    other_student_id = request.form.get('other_student_id')
+    other_student_email = request.form.get('other_student_email')
+    
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    
+    # Check if the other student exists and has the same hostel
+    cur.execute("""
+        SELECT u.id, u.email, b.hostel_id, b.room_no, b.bed_number
+        FROM users u
+        JOIN booking b ON u.id = b.user_id
+        WHERE u.id = %s AND u.email = %s
+    """, (other_student_id, other_student_email))
+    other_student = cur.fetchone()
+    
+    if not other_student:
+        flash('No student found with the given ID and email.', 'error')
+        return redirect(url_for('room_setting'))
+    
+    # Get current user's booking
+    cur.execute("""
+        SELECT hostel_id, room_no, bed_number
+        FROM booking
+        WHERE user_id = %s
+        ORDER BY booking_no DESC
+        LIMIT 1
+    """, (user_id,))
+    current_booking = cur.fetchone()
+    
+    if current_booking['hostel_id'] != other_student['hostel_id']:
+        flash('Room swap is only allowed within the same hostel.', 'error')
+        return redirect(url_for('room_setting'))
+    
+    cur.close()
+    
+    # If all checks pass, show the swap confirmation form
+    return render_template('confirm_room_swap.html', other_student=other_student)
+
+@main.route('/student/confirm_room_swap', methods=['POST'])
+@student_required
+def confirm_room_swap():
+    user_id = session.get('id')
+    other_student_id = request.form.get('other_student_id')
+    reason = request.form.get('reason')
+    
+    cur = mysql.connection.cursor()
+    cur.execute("""
+        INSERT INTO room_swap_requests (user_id, other_user_id, reason, status)
+        VALUES (%s, %s, %s, 'pending')
+    """, (user_id, other_student_id, reason))
+    mysql.connection.commit()
+    cur.close()
+    
+    flash('Your room swap request has been submitted.', 'success')
+    return redirect(url_for('room_setting'))
+
+@main.route('/student/respond_to_swap', methods=['POST'])
+@student_required
+def respond_to_swap():
+    user_id = session.get('id')
+    swap_request_id = request.form.get('swap_request_id')
+    response = request.form.get('response')
+    
+    cur = mysql.connection.cursor()
+    if response == 'approve':
+        cur.execute("""
+            UPDATE room_swap_requests
+            SET status = 'approved_by_student'
+            WHERE id = %s AND other_user_id = %s
+        """, (swap_request_id, user_id))
+        flash('You have approved the room swap request. It will now be reviewed by the admin.', 'success')
+    else:
+        cur.execute("""
+            UPDATE room_swap_requests
+            SET status = 'rejected'
+            WHERE id = %s AND other_user_id = %s
+        """, (swap_request_id, user_id))
+        flash('You have rejected the room swap request.', 'info')
+    
+    mysql.connection.commit()
+    cur.close()
+    
     return redirect(url_for('room_setting'))
 
 #########################################ADMIN#############################################
@@ -1377,6 +1431,93 @@ def update_room_status(cur, room_number):
         new_status = 'Partially Occupied'
     
     cur.execute("UPDATE rooms SET status = %s WHERE number = %s", (new_status, room_number))
+
+# Room Swap Request
+@main.route('/admin/room_swap_requests')
+@admin_required
+def admin_room_swap_requests():
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    cur.execute("""
+        SELECT rsr.*, 
+               u1.name AS requester_name, u1.email AS requester_email,
+               u2.name AS other_name, u2.email AS other_email,
+               b1.room_no AS requester_room, b1.bed_number AS requester_bed,
+               b2.room_no AS other_room, b2.bed_number AS other_bed
+        FROM room_swap_requests rsr
+        JOIN users u1 ON rsr.user_id = u1.id
+        JOIN users u2 ON rsr.other_user_id = u2.id
+        JOIN booking b1 ON rsr.user_id = b1.user_id
+        JOIN booking b2 ON rsr.other_user_id = b2.user_id
+        WHERE rsr.status = 'approved_by_student'
+        ORDER BY rsr.created_at DESC
+    """)
+    swap_requests = cur.fetchall()
+    cur.close()
+    
+    return render_template('admin_room_swap_requests.html', swap_requests=swap_requests)
+
+# Room Swap Process
+@main.route('/admin/process_room_swap', methods=['POST'])
+@admin_required
+def process_room_swap():
+    swap_request_id = request.form.get('swap_request_id')
+    action = request.form.get('action')
+    
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    
+    if action == 'approve':
+        # Fetch the swap request details
+        cur.execute("""
+            SELECT user_id, other_user_id
+            FROM room_swap_requests
+            WHERE id = %s
+        """, (swap_request_id,))
+        swap_request = cur.fetchone()
+        
+        if swap_request:
+            # Swap the rooms
+            cur.execute("""
+                UPDATE booking b1
+                JOIN booking b2 ON b1.user_id = %s AND b2.user_id = %s
+                SET b1.room_no = b2.room_no, b1.bed_number = b2.bed_number,
+                    b2.room_no = b1.room_no, b2.bed_number = b1.bed_number
+                WHERE b1.user_id = %s AND b2.user_id = %s
+            """, (swap_request['user_id'], swap_request['other_user_id'], 
+                  swap_request['user_id'], swap_request['other_user_id']))
+            
+            # Update the swap request status
+            cur.execute("""
+                UPDATE room_swap_requests
+                SET status = 'approved_by_admin'
+                WHERE id = %s
+            """, (swap_request_id,))
+            
+            mysql.connection.commit()
+            flash('Room swap has been approved and processed.', 'success')
+        else:
+            flash('Swap request not found.', 'error')
+    
+    elif action == 'reject':
+        # Update the swap request status
+        cur.execute("""
+            UPDATE room_swap_requests
+            SET status = 'rejected_by_admin'
+            WHERE id = %s
+        """, (swap_request_id,))
+        
+        # Set notification message for the requester
+        cur.execute("""
+            UPDATE users u
+            JOIN room_swap_requests rsr ON u.id = rsr.user_id
+            SET u.notification_message = 'Your room swap request has been rejected by the admin.'
+            WHERE rsr.id = %s
+        """, (swap_request_id,))
+        
+        mysql.connection.commit()
+        flash('Room swap request has been rejected.', 'info')
+    
+    cur.close()
+    return redirect(url_for('admin_room_swap_requests'))
 
 # Logout Route
 @main.route('/logout')
