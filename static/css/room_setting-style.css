@@ -1,17 +1,10 @@
 .page-container {
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    background: white;
     padding: 20px;
     border-radius: 8px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     text-align: center;
     max-width: 500px;
-    margin-bottom: 20px;
+    margin: 20px auto;
 }
 
 .page-container h1 {
@@ -24,9 +17,6 @@
 }
 
 .buttons {
-    display: flex;
-    justify-content: center;
-    gap: 20px; /* Spacing between buttons */
     margin-bottom: 20px;
 }
 
@@ -42,26 +32,10 @@ button {
 }
 
 button:hover {
-    opacity: 0.8; /* Slightly change opacity on hover */
+    opacity: 0.8;
 }
 
-.feedback-btn {
-    background-color: #28a745;
-}
-
-.feedback-btn:hover {
-    background-color: #218838;
-}
-
-.change-room-btn {
-    background-color: #dc3545;
-}
-
-.change-room-btn:hover {
-    background-color: #c82333;
-}
-
-#feedbackForm, #changeRoomForm {
+#changeRoomForm {
     display: none;
     background-color: #f8f9fa;
     padding: 20px;
@@ -70,19 +44,15 @@ button:hover {
     width: 100%;
 }
 
-#feedbackForm h3, #changeRoomForm h3 {
+#changeRoomForm h3 {
     margin-bottom: 15px;
 }
 
-#feedbackForm label, #changeRoomForm label {
-    display: block;
+#changeRoomForm label {
     margin-bottom: 5px;
     font-weight: bold;
 }
 
-#feedbackForm input[type="text"], 
-#feedbackForm textarea,
-#changeRoomForm input[type="text"], 
 #changeRoomForm textarea {
     width: 100%;
     padding: 8px;
@@ -91,7 +61,6 @@ button:hover {
     border-radius: 4px;
 }
 
-#feedbackForm input[type="submit"],
 #changeRoomForm input[type="submit"] {
     background-color: #007bff;
     color: white;
@@ -101,7 +70,6 @@ button:hover {
     cursor: pointer;
 }
 
-#feedbackForm input[type="submit"]:hover,
 #changeRoomForm input[type="submit"]:hover {
     background-color: #0069d9;
 }

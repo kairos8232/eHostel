@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_room_change_request-style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+{% endblock %}
+
+{% block content %}
+  <div class="manage-group-wrapper">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="menu-item inactive" id="statusBtn" onclick="location.href='{{ url_for('admin_room_change_requests') }}';">
+        <i class="fas fa-spinner"></i>
+      </div>
+      <div class="menu-item inactive" id="addBtn" onclick="location.href='{{ url_for('add_room') }}';">
+          <i class="fas fa-plus"></i>
+      </div>
+      <div class="menu-item inactive" id="editBtn" onclick="location.href='{{ url_for('manage_rooms') }}';">
+          <i class="fas fa-edit"></i>
+      </div>
+    </div>
+
+    <div class="content">
+      <h1>Room Change Requests</h1>
+        {% if requests %}
+          {% for request in requests %}
+            <div class="request-card">
+              <h2>Request #{{ request.request_id }}</h2>
+              <p><strong>Student ID:</strong> {{ request.user_id }}</p>
+              <p><strong>Name:</strong> {{ request.name }}</p>
+              <p><strong>Email:</strong> {{ request.email }}</p>
+              <p><strong>Current Room:</strong> {{ request.room_no }}</p>
+              <p><strong>Current Bed:</strong> {{ request.bed_number }}</p>
+              <p><strong>Hostel:</strong> {{ request.hostel_name }}</p>
+              <p><strong>Reason:</strong> {{ request.reason }}</p>
+        
+              <form id="requestForm{{ request.request_id }}" action="{{ url_for('admin_room_change_requests') }}" method="POST">
+                <input type="hidden" name="request_id" value="{{ request.request_id }}">
+                
+                <button type="button" onclick="showApproveOptions({{ request.request_id }})">Approve</button>
+                <button type="submit" name="action" value="reject">Reject</button>
+        
+                <div id="approveOptions{{ request.request_id }}" style="display: none;">
+                  <label for="new_room_no{{ request.request_id }}">New Room:</label>
+                  <select name="new_room_no" id="new_room_no{{ request.request_id }}">
+                    <option value="">Select a room</option>
+                    {% for room in available_rooms %}
+                      {% if room.hostel_id == request.hostel_id %}
+                        <option value="{{ room.number }}">{{ room.number }} ({{ room.hostel_name }})</option>
+                      {% endif %}
+                    {% endfor %}
+                  </select>
+        
+                  <label for="new_bed_letter{{ request.request_id }}">New Bed:</label>
+                  <select name="new_bed_letter" id="new_bed_letter{{ request.request_id }}">
+                    <option value="">Select a bed</option>
+                  </select>
+        
+                  <button type="submit" name="action" value="approve">Assign Room and Approve</button>
+                </div>
+              </form>
+            </div>
+          {% endfor %}
+        {% else %}
+          <div class="no-requests-message">
+            <h2>No Pending Room Change Requests</h2>
+            <p>There are currently no pending room change requests to process.</p>
+          </div>
+        {% endif %}
+    </div>
+  </div>  
+  
+  <script>
+    function showApproveOptions(requestId) {
+      document.getElementById('approveOptions' + requestId).style.display = 'block';
+    }
+  
+    // JavaScript to handle room and bed selection
+    {% for request in requests %}
+      document.getElementById('new_room_no{{ request.request_id }}').addEventListener('change', function() {
+        var roomNumber = this.value;
+        var bedSelect = document.getElementById('new_bed_letter{{ request.request_id }}');
+        bedSelect.innerHTML = '<option value="">Select a bed</option>';
+        
+        if (roomNumber) {
+          {% for room, beds in available_beds.items() %}
+            if (roomNumber == '{{ room }}') {
+              {% for bed in beds %}
+                var option = document.createElement('option');
+                option.value = '{{ bed }}';
+                option.text = '{{ bed }}';
+                bedSelect.add(option);
+              {% endfor %}
+            }
+          {% endfor %}
+        }
+      });
+    {% endfor %}
+  </script>
+{% endblock %}

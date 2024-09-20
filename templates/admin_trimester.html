@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <!-- <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -10,6 +11,13 @@
 
 </head> -->
 {% extends 'admin_base.html' %}
+=======
+{% extends 'base.html' %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static' , filename = 'css/admin-trimester.css' ) }}">
+{% endblock %}
+>>>>>>> b6b07f9f2bca21f6144c2ea66550468c5e44a77b
 
 {% block content %}
 <body>
@@ -23,5 +31,4 @@
             </form>
         </div>
     </div>
-</body>
 {% endblock %}

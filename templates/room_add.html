@@ -1,21 +1,24 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Add Room</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/romm_add-style.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-</head>
-<body>
+{% extends 'base.html' %}
 
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/room_add-style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+{% endblock %}
+
+{% block content %}
     <div class="manage-group-wrapper">
         <!-- Sidebar -->
         <div class="sidebar">
+            <div class="menu-item inactive" id="statusBtn" onclick="location.href='{{ url_for('admin_room_change_requests') }}';">
+                <i class="fas fa-spinner"></i>
+            </div>
             <div class="menu-item inactive" id="addBtn" onclick="location.href='{{ url_for('add_room') }}';">
                 <i class="fas fa-plus"></i>
             </div>
-        </div>
+            <div class="menu-item inactive" id="editBtn" onclick="location.href='{{ url_for('manage_rooms') }}';">
+                <i class="fas fa-edit"></i>
+            </div>
+          </div>
     
         <!-- Main content area -->
         <div class="content">
@@ -59,6 +62,4 @@
             </form>
         </div>
     </div>
-    
-</body>
-</html>
+{% endblock %}

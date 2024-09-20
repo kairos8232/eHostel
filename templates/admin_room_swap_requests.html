@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+    <h1>Room Swap Requests</h1>
+    
+    {% if swap_requests %}
+        {% for request in swap_requests %}
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">Swap Request #{{ request.id }}</h5>
+                    <p><strong>Requester:</strong> {{ request.requester_name }} ({{ request.requester_email }})</p>
+                    <p><strong>Requester's Room:</strong> {{ request.requester_room }} (Bed: {{ request.requester_bed }})</p>
+                    <p><strong>Other Student:</strong> {{ request.other_name }} ({{ request.other_email }})</p>
+                    <p><strong>Other Student's Room:</strong> {{ request.other_room }} (Bed: {{ request.other_bed }})</p>
+                    <p><strong>Reason:</strong> {{ request.reason }}</p>
+                    <form action="{{ url_for('process_room_swap') }}" method="post" class="mt-3">
+                        <input type="hidden" name="swap_request_id" value="{{ request.id }}">
+                        <button type="submit" name="action" value="approve" class="btn btn-success">Approve</button>
+                        <button type="submit" name="action" value="reject" class="btn btn-danger">Reject</button>
+                    </form>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>No pending room swap requests.</p>
+    {% endif %}
+</div>
+{% endblock %}
