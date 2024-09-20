@@ -38,7 +38,7 @@
   }
   
   .button-container a {
-	width: 100%; /* Ensure both buttons take equal space */
+	width: 45%; /* Ensure both buttons take equal space */
   }
   
   .button-container button {
@@ -54,5 +54,19 @@
 	transition: background-color 0.3s, transform 0.2s, box-shadow 0.2s;
   }
   
+  .button-container button:hover {
+	background-color: #23527c;
+	transform: scale(1.05);
+	box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  }
+  
+  .button-container button:active {
+	transform: scale(0.98);
+  }
+  
+  .button-container button:focus {
+	outline: none;
+	box-shadow: 0 0 0 3px rgba(51, 122, 183, 0.5);
+  }
 
   
