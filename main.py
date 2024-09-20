@@ -1259,14 +1259,14 @@ def manage_rooms():
     # Fetch rooms based on the selected hostel filter
     selected_hostel_id = request.form.get('hostel_id') if request.method == 'POST' else None
 
-    if selected_hostel_id:
-        # If a hostel is selected, filter rooms by hostel_id
+    if selected_hostel_id and selected_hostel_id != 'all':
+        # If a specific hostel is selected, filter rooms by hostel_id
         cur.execute('''SELECT rooms.*, hostel.name as hostel_name 
                        FROM rooms 
                        JOIN hostel ON rooms.hostel_id = hostel.id 
                        WHERE rooms.hostel_id = %s''', (selected_hostel_id,))
     else:
-        # If no hostel is selected, fetch all rooms
+        # If 'All Hostels' is selected or no hostel is selected, fetch all rooms
         cur.execute('''SELECT rooms.*, hostel.name as hostel_name 
                        FROM rooms 
                        JOIN hostel ON rooms.hostel_id = hostel.id''')
@@ -1383,7 +1383,7 @@ def admin_room_change_requests():
         JOIN booking b ON u.id = b.user_id
         JOIN hostel h ON b.hostel_id = h.id
         WHERE rcr.status = 'pending'
-        ORDER BY rcr.request_id DESC
+        ORDER BY rcr.request_id ASC
     """)
     requests = cur.fetchall()
     
@@ -1442,14 +1442,16 @@ def admin_room_swap_requests():
                u1.name AS requester_name, u1.email AS requester_email,
                u2.name AS other_name, u2.email AS other_email,
                b1.room_no AS requester_room, b1.bed_number AS requester_bed,
-               b2.room_no AS other_room, b2.bed_number AS other_bed
+               b2.room_no AS other_room, b2.bed_number AS other_bed,
+               h.name AS hostel_name
         FROM room_swap_requests rsr
         JOIN users u1 ON rsr.user_id = u1.id
         JOIN users u2 ON rsr.other_user_id = u2.id
         JOIN booking b1 ON rsr.user_id = b1.user_id
         JOIN booking b2 ON rsr.other_user_id = b2.user_id
+        JOIN hostel h ON b1.hostel_id = h.id
         WHERE rsr.status = 'approved_by_student'
-        ORDER BY rsr.created_at DESC
+        ORDER BY rsr.created_at ASC
     """)
     swap_requests = cur.fetchall()
     cur.close()

@@ -69,21 +69,22 @@ h1 {
 .request-table th {
     background-color: #f4f4f4;
     font-weight: bold;
+    text-align: left;
 }
 
 .request-table td {
     background-color: #fff;
 }
 
+h2 {
+    font-weight: bold;
+}
+
+/* Buttons for approve/reject */
 .button-row {
     gap: 10px;
     display: flex;
     justify-content: center;
-}
-
-.approve-options {
-    display: none; /* Hidden by default */
-    text-align: center;
 }
 
 .btn {
@@ -93,20 +94,13 @@ h1 {
     border: none;
     border-radius: 5px;
     cursor: pointer;
+
 }
 
 .btn:hover {
     background-color: #30334f;
 }
 
-label {
-    font-weight: bold;
-    margin-bottom: 5px;
-}
-
-input, select {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
+.no-requests-message {
+    text-align: center;
 }

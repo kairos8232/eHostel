@@ -10,13 +10,16 @@
       <!-- Sidebar -->
       <div class="sidebar">
         <div class="menu-item inactive" id="statusBtn" onclick="location.href='{{ url_for('admin_room_change_requests') }}';">
-            <i class="fas fa-spinner"></i>
+          <i class="fas fa-repeat"></i>
+        </div>
+        <div class="menu-item inactive" id="swapBtn" onclick="location.href='{{ url_for('admin_room_swap_requests') }}';">
+          <i class="fas fa-exchange"></i>
         </div>
         <div class="menu-item inactive" id="addBtn" onclick="location.href='{{ url_for('add_room') }}';">
-            <i class="fas fa-plus"></i>
+          <i class="fas fa-plus"></i>
         </div>
         <div class="menu-item inactive" id="editBtn" onclick="location.href='{{ url_for('manage_rooms') }}';">
-            <i class="fas fa-edit"></i>
+          <i class="fas fa-edit"></i>
         </div>
       </div>
   
