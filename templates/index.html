@@ -11,8 +11,13 @@
     <div class="glass-blur-container">
         <img src="{{url_for('static', filename = 'images/Multimedia_University_logo.png')}}" alt="Multimedia University" class="logo">
         <div class="button-container">
-            <a href="{{ url_for('login') }}">
-                <button>Login</button>
+
+            <a href="{{ url_for('student_login') }}">
+                <button>Login Student</button>
+            </a>
+
+            <a href="{{ url_for('admin_login') }}">
+                <button>Login Admin</button>
             </a>
         </div>
     </div>
