@@ -83,7 +83,7 @@ def home():
     user_id = session.get('id')
     if not user_id:
         return redirect(url_for('student_login'))
-
+    
     # Fetch any pending invitations for this user
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     cur.execute("""
@@ -94,23 +94,29 @@ def home():
         WHERE invitee_id = %s AND status = 'pending'
     """, (user_id,))
     invitation = cur.fetchone()
-
+    
     # Fetch announcements
     cur.execute("SELECT * FROM announcement ORDER BY id DESC")
     announcements = cur.fetchall()
     cur.close()
-
+    
     current_index = session.get('announcement_index', 0)
     total_announcements = len(announcements)
-
+    
     if request.args.get('next'):
         current_index = (current_index + 1) % total_announcements
-        session['announcement_index'] = current_index
-
+    elif request.args.get('back'):
+        current_index = (current_index - 1) % total_announcements
+    
+    session['announcement_index'] = current_index
+    
     current_announcement = announcements[current_index] if announcements else None
-
-    return render_template('home.html', announcement=current_announcement, has_next=total_announcements > 1, invitation=invitation)
-
+    
+    return render_template('home.html', 
+                           announcement=current_announcement, 
+                           has_next=total_announcements > 1,
+                           has_back=total_announcements > 1,
+                           invitation=invitation)
 @main.route("/chatbox")
 def chatbox():
     return render_template('chatbox.html')

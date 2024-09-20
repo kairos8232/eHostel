@@ -51,8 +51,6 @@
   }
 .btn {
     display: inline-block;
-    margin-left: 95%;
-    margin-top: 15px;
     padding: 10px 15px;
     background-color: #4CAF50;
     color: white;
@@ -63,4 +61,14 @@
 
 .btn:hover {
     background-color: #45a049;
+}
+
+.navigation-buttons {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+}
+
+.navigation-buttons form {
+    margin: 0 10px;
 }
