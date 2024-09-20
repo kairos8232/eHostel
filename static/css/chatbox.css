@@ -1,0 +1,28 @@
+
+.chat-container {
+    background-color: white;
+    width: 700px;
+    margin: 50px auto;
+    border: 1px solid #ccc;
+    padding: 20px;
+}
+
+.messages {
+    height: 400px;
+    overflow-y: scroll;
+    border-bottom: 1px solid #ccc;
+    margin-bottom: 20px;
+}
+
+form input {
+    width: 85%;
+    padding: 10px;
+}
+
+form button {
+    padding: 10px;
+    background-color: blue;
+    color: white;
+    border: none;
+    cursor: pointer;
+}

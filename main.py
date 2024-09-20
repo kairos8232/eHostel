@@ -30,6 +30,7 @@ def calculate_similarity(ratings1, ratings2):
     similarity = (1 - cosine(v1, v2))*100     # Calculate cosine similarity
     return similarity
 
+
 @main.route('/')
 def index():
     return render_template('index.html')
@@ -76,14 +77,14 @@ def admin_login():
 
 @main.route("/admin_home")
 def admin_home():
-    return render_template('admin_base.html')
+    return render_template('admin_trimester.html')
 
 @main.route("/home")
 def home():
     user_id = session.get('id')
     if not user_id:
         return redirect(url_for('student_login'))
-
+    
     # Fetch any pending invitations for this user
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     cur.execute("""
@@ -94,26 +95,32 @@ def home():
         WHERE invitee_id = %s AND status = 'pending'
     """, (user_id,))
     invitation = cur.fetchone()
-
+    
     # Fetch announcements
     cur.execute("SELECT * FROM announcement ORDER BY id DESC")
     announcements = cur.fetchall()
     cur.close()
-
+    
     current_index = session.get('announcement_index', 0)
     total_announcements = len(announcements)
-
+    
     if request.args.get('next'):
         current_index = (current_index + 1) % total_announcements
-        session['announcement_index'] = current_index
-
+    elif request.args.get('back'):
+        current_index = (current_index - 1) % total_announcements
+    
+    session['announcement_index'] = current_index
+    
     current_announcement = announcements[current_index] if announcements else None
-
-    return render_template('home.html', announcement=current_announcement, has_next=total_announcements > 1, invitation=invitation)
-
-@main.route("/admin_page")
-def admin():
-        return render_template('admin_page.html')
+    
+    return render_template('home.html', 
+                           announcement=current_announcement, 
+                           has_next=total_announcements > 1,
+                           has_back=total_announcements > 1,
+                           invitation=invitation)
+@main.route("/chatbox")
+def chatbox():
+    return render_template('chatbox.html')
 
 @main.route('/signup', methods=['POST', 'GET'])
 def signup():
@@ -1240,4 +1247,3 @@ def logout():
 
 if __name__ == "__main__":
     main.run(debug=True)
-
