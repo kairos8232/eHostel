@@ -37,12 +37,6 @@ def index():
 
 @main.route('/student_login', methods=['POST', 'GET'])
 def student_login():
-@main.route("/home")
-def home():
-    return render_template('home.html')
-
-@main.route('/signup', methods=['POST', 'GET'])
-def SignUp():
     if request.method == 'POST':
         userDetails = request.form
         id = userDetails['id']
@@ -63,9 +57,6 @@ def SignUp():
 
 @main.route('/admin', methods=['POST', 'GET'])
 def admin_login():
-
-@main.route('/login', methods=['POST', 'GET'])
-def Login():
     if request.method == 'POST':
         userDetails = request.form
         id = userDetails['id']
@@ -453,18 +444,11 @@ def manage_group(group_id):
     group = cur.fetchone()
 
     cur.execute("SELECT users.id, users.email FROM users JOIN group_members ON users.id = group_members.user_id WHERE group_members.group_id = %s AND group_members.user_id = %s", (group_id, user_id))
-    cur.execute("SELECT * FROM groups WHERE group_id = %s AND leader_id = %s", (group_id, user_id))
-    group = cur.fetchone()
-
-    # Check if the user is a member of the group, regardless of whether they are the leader or not
-    cur.execute("SELECT users.id, users.email FROM users JOIN group_members ON users.id = group_members.user_id WHERE group_members.group_id = %s AND group_members.user_id = %s", (group_id, user_id))
     is_group_member = cur.fetchone()
 
     if not group and not is_group_member:
-    if not group and not is_group_member:
         return redirect(url_for('group_page'))
 
-    session['group_id'] = group_id
     cur.execute("SELECT * FROM `groups` WHERE group_id = %s", (group_id,))
     group = cur.fetchone()
 
@@ -474,8 +458,6 @@ def manage_group(group_id):
 
     is_leader = group['leader_id'] == user_id
 
-    # Fetch all group members
-    cur.execute("SELECT users.id, users.email FROM users JOIN group_members ON users.id = group_members.user_id WHERE group_members.group_id = %s", (group_id,))
     cur.execute("SELECT gender FROM users WHERE id = %s", (group['leader_id'],))
     leader_gender = cur.fetchone()['gender']
 
@@ -490,13 +472,6 @@ def manage_group(group_id):
     members = cur.fetchall()
 
     students = None
-    if request.method == 'POST':
-        filter_student_id = request.form.get('filter_student_id')
-        if filter_student_id:
-            cur.execute("SELECT id, email FROM users WHERE id = %s AND id NOT IN (SELECT user_id FROM group_members WHERE group_id = %s)", (filter_student_id, group_id))
-            students = cur.fetchall()
-        else:
-            students = []
     if request.method == 'POST':
         if 'suggest_roommates' in request.form:
             # Get the current user's ratings
@@ -559,7 +534,6 @@ def manage_group(group_id):
 
     cur.close()
 
-    return render_template('manage_group.html', members=members, group_id=group_id, students=students)
     return render_template('manage_group.html', members=members, group_id=group_id, students=students, is_leader=is_leader, current_user_id=user_id, leader_gender=leader_gender)
 
 # Leave Group
