@@ -66,6 +66,7 @@ CREATE TABLE IF NOT EXISTS `beds` (
 ) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Dumping data for table flaskapp.beds: ~20 rows (approximately)
+DELETE FROM `beds`;
 INSERT INTO `beds` (`id`, `room_number`, `bed_letter`, `status`) VALUES
 	(1, 101, 'A', 'Available'),
 	(2, 102, 'A', 'Available'),
@@ -111,31 +112,30 @@ CREATE TABLE IF NOT EXISTS `booking` (
   CONSTRAINT `FK_booking_rooms` FOREIGN KEY (`room_no`) REFERENCES `rooms` (`number`),
   CONSTRAINT `FK_booking_trimester` FOREIGN KEY (`trimester_id`) REFERENCES `trimester` (`id`),
   CONSTRAINT `FK_booking_users` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=93 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
-) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
-
--- Dumping data for table flaskapp.booking: ~2 rows (approximately)
+-- Dumping data for table flaskapp.booking: ~0 rows (approximately)
 DELETE FROM `booking`;
-INSERT INTO `booking` (`booking_no`, `user_id`, `trimester_id`, `group_individual`, `group_id`, `hostel_id`, `room_no`, `cost`, `bed_number`) VALUES
-	(19, 1, 2310, 0, NULL, 1, 101, 100.00, 'A'),
-	(20, 1, 2310, 0, NULL, 2, 203, 210.00, 'A');
 
 -- Dumping structure for table flaskapp.groups
 DROP TABLE IF EXISTS `groups`;
 CREATE TABLE IF NOT EXISTS `groups` (
   `group_id` int NOT NULL AUTO_INCREMENT,
   `leader_id` int NOT NULL,
-  `trimester` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
+  `trimester_id` int NOT NULL,
+  `name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
   PRIMARY KEY (`group_id`),
   KEY `leader_id` (`leader_id`),
+  KEY `FK_groups_trimester` (`trimester_id`),
+  CONSTRAINT `FK_groups_trimester` FOREIGN KEY (`trimester_id`) REFERENCES `trimester` (`id`),
   CONSTRAINT `groups_ibfk_1` FOREIGN KEY (`leader_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=35 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=49 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
 -- Dumping data for table flaskapp.groups: ~2 rows (approximately)
 DELETE FROM `groups`;
-INSERT INTO `groups` (`group_id`, `leader_id`, `trimester`) VALUES
-	(32, 2, '2310'),
-	(34, 123, '2310');
+INSERT INTO `groups` (`group_id`, `leader_id`, `trimester_id`, `name`) VALUES
+	(47, 1, 1, NULL),
+	(48, 3, 1, NULL);
 
 -- Dumping structure for table flaskapp.group_members
 DROP TABLE IF EXISTS `group_members`;
@@ -148,16 +148,14 @@ CREATE TABLE IF NOT EXISTS `group_members` (
   KEY `user_id` (`user_id`),
   CONSTRAINT `group_members_ibfk_1` FOREIGN KEY (`group_id`) REFERENCES `groups` (`group_id`),
   CONSTRAINT `group_members_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=112 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
-) ENGINE=InnoDB AUTO_INCREMENT=62 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
-
--- Dumping data for table flaskapp.group_members: ~4 rows (approximately)
+-- Dumping data for table flaskapp.group_members: ~3 rows (approximately)
 DELETE FROM `group_members`;
 INSERT INTO `group_members` (`id`, `group_id`, `user_id`) VALUES
-	(55, 32, 1),
-	(57, 32, 2),
-	(58, 32, 3),
-	(61, 34, 123);
+	(109, 47, 1),
+	(110, 48, 3),
+	(111, 48, 5);
 
 -- Dumping structure for table flaskapp.hostel
 DROP TABLE IF EXISTS `hostel`;
@@ -169,6 +167,7 @@ CREATE TABLE IF NOT EXISTS `hostel` (
 ) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Dumping data for table flaskapp.hostel: ~4 rows (approximately)
+DELETE FROM `hostel`;
 INSERT INTO `hostel` (`id`, `name`, `gender`) VALUES
 	(1, 'Hostel A', 'Male'),
 	(2, 'Hostel B', 'Female'),
@@ -180,7 +179,7 @@ DROP TABLE IF EXISTS `rooms`;
 CREATE TABLE IF NOT EXISTS `rooms` (
   `number` int NOT NULL,
   `hostel_id` int NOT NULL,
-  `category` varchar(20) NOT NULL,
+  `category` enum('Single','Double','Triple') CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `capacity` int NOT NULL,
   `status` varchar(20) NOT NULL DEFAULT 'Available',
   `price` decimal(10,2) NOT NULL,
@@ -190,6 +189,7 @@ CREATE TABLE IF NOT EXISTS `rooms` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Dumping data for table flaskapp.rooms: ~23 rows (approximately)
+DELETE FROM `rooms`;
 INSERT INTO `rooms` (`number`, `hostel_id`, `category`, `capacity`, `status`, `price`) VALUES
 	(101, 1, 'Single', 1, 'Available', 100.00),
 	(102, 1, 'Double', 2, 'Available', 150.00),
@@ -225,6 +225,7 @@ CREATE TABLE IF NOT EXISTS `trimester` (
 ) ENGINE=InnoDB AUTO_INCREMENT=2317 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
 -- Dumping data for table flaskapp.trimester: ~3 rows (approximately)
+DELETE FROM `trimester`;
 INSERT INTO `trimester` (`id`, `term`, `name`) VALUES
 	(1, 2310, 'Trimester March/April 2024'),
 	(2, 2320, 'Trimester July/August 2024'),
@@ -240,27 +241,29 @@ CREATE TABLE IF NOT EXISTS `users` (
   `password` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `faculty` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
   `profile_pic` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+  `survey_completed` tinyint(1) DEFAULT '0',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Dumping data for table flaskapp.users: ~16 rows (approximately)
-INSERT INTO `users` (`id`, `name`, `gender`, `email`, `password`, `faculty`, `profile_pic`) VALUES
-	(1, 'John Wick', 'Male', '1@example.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi', 'Computing', ''),
-	(2, 'Jane Smith', 'Female', 'user2@example.com', 'password2', 'Science', ''),
-	(3, 'Bob Johnson', 'Male', 'user3@example.com', '$2b$12$JM.1cbG9FfxI25htADx53.6uJ95x28nFq1ze0Qz/v4m/gpy1cqhkm', 'Arts', ''),
-	(4, 'Alice Cooper', 'Female', 'alice.cooper@example.com', 'password4', 'Business', ''),
-	(5, 'David Miller', 'Male', 'david.miller@example.com', 'password5', 'Mathematics', ''),
-	(6, 'Emma Watson', 'Female', 'emma.watson@example.com', 'password6', 'Computer Science', ''),
-	(7, 'Liam Nelson', 'Male', 'liam.nelson@example.com', 'password7', 'Physics', ''),
-	(8, 'Sophia Lee', 'Female', 'sophia.lee@example.com', 'password8', 'Biology', ''),
-	(9, 'Noah Brown', 'Male', 'noah.brown@example.com', 'password9', 'History', ''),
-	(10, 'Olivia Martin', 'Female', 'olivia.martin@example.com', 'password10', 'Chemistry', ''),
-	(11, 'William Davis', 'Male', 'william.davis@example.com', 'password11', 'Engineering', ''),
-	(12, 'Isabella Garcia', 'Female', 'isabella.garcia@example.com', 'password12', 'Psychology', ''),
-	(13, 'James Wilson', 'Male', 'james.wilson@example.com', 'password13', 'Philosophy', ''),
-	(14, 'Charlotte Martinez', 'Female', 'charlotte.martinez@example.com', 'password14', 'Art', ''),
-	(15, 'Michael Anderson', 'Male', 'michael.anderson@example.com', 'password15', 'Business', ''),
-	(16, 'WAKABAKA', 'Male', 'userNick@example.com', 'password1', 'Engineering', '');
+DELETE FROM `users`;
+INSERT INTO `users` (`id`, `name`, `gender`, `email`, `password`, `faculty`, `profile_pic`, `survey_completed`) VALUES
+	(1, 'John Wick', 'Male', '1@www.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi', 'Computing', '/static/uploads/IMG_9520.JPG', 0),
+	(2, 'Jane Smith', 'Female', 'user2@example.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi', 'Science', '', 0),
+	(3, 'Bob Johnson', 'Male', 'user3@example.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi', 'Arts', '', 1),
+	(4, 'Alice Cooper', 'Female', 'alice.cooper@example.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi', 'Business', '', 0),
+	(5, 'David Miller', 'Male', 'david.miller@example.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi', 'Mathematics', '', 0),
+	(6, 'Emma Watson', 'Female', 'emma.watson@example.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi', 'Computer Science', '', 0),
+	(7, 'Liam Nelson', 'Male', 'liam.nelson@example.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi', 'Physics', '', 0),
+	(8, 'Sophia Lee', 'Female', 'sophia.lee@example.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi', 'Biology', '', 0),
+	(9, 'Noah Brown', 'Male', 'noah.brown@example.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi', 'History', '', 0),
+	(10, 'Olivia Martin', 'Female', 'olivia.martin@example.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi', 'Chemistry', '', 0),
+	(11, 'William Davis', 'Male', 'william.davis@example.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi', 'Engineering', '', 0),
+	(12, 'Isabella Garcia', 'Female', 'isabella.garcia@example.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi', 'Psychology', '', 0),
+	(13, 'James Wilson', 'Male', 'james.wilson@example.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi', 'Philosophy', '', 0),
+	(14, 'Charlotte Martinez', 'Female', 'charlotte.martinez@example.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi', 'Art', '', 0),
+	(15, 'Michael Anderson', 'Male', 'michael.anderson@example.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi', 'Business', '', 0),
+	(16, 'WAKABAKA', 'Male', 'userNick@example.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi', 'Engineering', '', 0);
 
 /*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;
