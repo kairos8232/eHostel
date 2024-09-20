@@ -6,8 +6,6 @@ from flask_bcrypt import Bcrypt
 import os
 from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user
 import hashlib
-from scipy.spatial.distance import cosine
-import numpy as np
 
 main = Flask(__name__)
 
@@ -21,14 +19,6 @@ main.secret_key = 'terrychin'
 bcrypt = Bcrypt(main)
 mysql = MySQL(main)
 
-
-# Comparision between User and User
-def calculate_similarity(ratings1, ratings2):
-    v1 = np.array(ratings1)    # Convert ratings to numpy arrays
-    v2 = np.array(ratings2)
-    
-    similarity = (1 - cosine(v1, v2))*100     # Calculate cosine similarity
-    return similarity
 
 @main.route('/')
 def index():
@@ -80,22 +70,10 @@ def admin_home():
 
 @main.route("/home")
 def home():
-    user_id = session.get('id')
-    if not user_id:
-        return redirect(url_for('student_login'))
+    announcement_id = session.get('id')
 
-    # Fetch any pending invitations for this user
+
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    cur.execute("""
-        SELECT invitations.invitation_id, `groups`.name AS group_name, users.name AS leader_name
-        FROM invitations
-        JOIN `groups` ON invitations.group_id = `groups`.group_id
-        JOIN users ON invitations.inviter_id = users.id
-        WHERE invitee_id = %s AND status = 'pending'
-    """, (user_id,))
-    invitation = cur.fetchone()
-
-    # Fetch announcements
     cur.execute("SELECT * FROM announcement ORDER BY id DESC")
     announcements = cur.fetchall()
     cur.close()
@@ -109,11 +87,15 @@ def home():
 
     current_announcement = announcements[current_index] if announcements else None
 
-    return render_template('home.html', announcement=current_announcement, has_next=total_announcements > 1, invitation=invitation)
+    return render_template('home.html', announcement=current_announcement, has_next=total_announcements > 1)
 
 @main.route("/admin_page")
 def admin():
         return render_template('admin_page.html')
+
+@main.route("/add_student")
+def add_student():
+        return render_template('add_student.html')
 
 @main.route('/signup', methods=['POST', 'GET'])
 def signup():
@@ -136,7 +118,7 @@ def profile():
     user_id = session.get('id')
    
     if not user_id:
-        return redirect(url_for('student_login'))
+        return redirect(url_for('login'))
     
     cur = mysql.connection.cursor()
     cur.execute("SELECT * FROM users WHERE id = %s", (user_id,))
@@ -319,47 +301,6 @@ def edit_trimester():
         return redirect(url_for('admin_home'))
     return render_template('admin_trimester.html')
 
-@main.route('/add_student', methods=['GET', 'POST'])
-def add_student():
-    admin_id = session.get('id')
-    if not admin_id:
-        return redirect(url_for('admin_login'))
-    
-    if request.method == 'POST':
-        userDetails = request.form
-        id = userDetails['id']
-        name = userDetails['name']
-        gender = userDetails['gender']
-        email = userDetails['email']
-        password = userDetails['password']
-        faculty = userDetails['faculty']
-        hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
-        cur = mysql.connection.cursor()
-        cur.execute("INSERT INTO users(id, name, gender, email, password, faculty) VALUES(%s, %s, %s, %s, %s, %s)", (id, name, gender, email, hashed_password, faculty))
-        mysql.connection.commit()
-        cur.close()
-        flash('Student added successfully!')
-
-    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    cur.execute("SELECT * FROM users")
-    students = cur.fetchall()
-    cur.close()
-
-    return render_template('add_student.html', students=students)
-
-@main.route('/delete_student/<student_id>', methods=['POST'])
-def delete_student(student_id):
-    admin_id = session.get('id')
-    if not admin_id:
-        return redirect(url_for('admin_login'))
-
-    cur = mysql.connection.cursor()
-    cur.execute("DELETE FROM users WHERE id = %s", (student_id,))
-    mysql.connection.commit()
-    cur.close()
-
-    flash('Student deleted successfully!')
-    return redirect(url_for('add_student'))
 
 # Mode selection route (Individual or Group)
 @main.route('/choose_mode', methods=['GET', 'POST'])
@@ -402,7 +343,7 @@ def group_page():
     user_id = session.get('id')
     
     if not user_id:
-        return redirect(url_for('login'))
+        return redirect(url_for('student_login'))
 
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     cur.execute("SELECT * FROM `groups` WHERE leader_id = %s", (user_id,))
@@ -415,10 +356,9 @@ def group_page():
     if request.method == 'POST':
         group_action = request.form['group_action']
         if group_action == 'create':
-            selected_trimester = session.get('trimester_id')
-
+            selected_trimester = session.get('trimester')
             cur = mysql.connection.cursor()
-            cur.execute("INSERT INTO `groups`(leader_id, trimester_id) VALUES(%s, %s)", (user_id, selected_trimester))
+            cur.execute("INSERT INTO `groups`(leader_id, trimester) VALUES(%s, %s)", (user_id, selected_trimester))
             mysql.connection.commit()
             group_id = cur.lastrowid
             cur.execute("INSERT INTO group_members(group_id, user_id) VALUES(%s, %s)", (group_id, user_id))
@@ -429,7 +369,7 @@ def group_page():
 
     return render_template('group_page.html')
 
-# Manage Group route with student filtering and suggested roommate
+# Manage Group route with student filtering
 @main.route('/manage_group/<int:group_id>', methods=['GET', 'POST'])
 def manage_group(group_id):
     user_id = session.get('id')
@@ -440,12 +380,14 @@ def manage_group(group_id):
     cur.execute("SELECT * FROM `groups` WHERE group_id = %s AND leader_id = %s", (group_id, user_id))
     group = cur.fetchone()
 
+    # Check if the user is a member of the group, regardless of whether they are the leader or not
     cur.execute("SELECT users.id, users.email FROM users JOIN group_members ON users.id = group_members.user_id WHERE group_members.group_id = %s AND group_members.user_id = %s", (group_id, user_id))
     is_group_member = cur.fetchone()
 
     if not group and not is_group_member:
         return redirect(url_for('group_page'))
 
+    # Get group information
     cur.execute("SELECT * FROM `groups` WHERE group_id = %s", (group_id,))
     group = cur.fetchone()
 
@@ -455,9 +397,11 @@ def manage_group(group_id):
 
     is_leader = group['leader_id'] == user_id
 
+    # Get the leader's gender
     cur.execute("SELECT gender FROM users WHERE id = %s", (group['leader_id'],))
     leader_gender = cur.fetchone()['gender']
 
+    # Fetch all group members with additional information
     cur.execute("""
         SELECT users.id, users.email, users.name, users.faculty, users.gender,
                CASE WHEN users.id = groups.leader_id THEN 1 ELSE 0 END as is_leader
@@ -470,64 +414,12 @@ def manage_group(group_id):
 
     students = None
     if request.method == 'POST':
-        if 'suggest_roommates' in request.form:
-            # Get the current user's ratings
-            cur.execute("SELECT rating FROM user_ratings WHERE user_id = %s ORDER BY question_id", (user_id,))
-            user_ratings = [rating['rating'] for rating in cur.fetchall()]
-
-            # Get all other users of the same gender who are not in the group
-            cur.execute("""
-                SELECT id, name, faculty, gender
-                FROM users
-                WHERE gender = %s AND id != %s AND id NOT IN (
-                    SELECT user_id FROM group_members WHERE group_id = %s
-                )
-            """, (leader_gender, user_id, group_id))
-            potential_roommates = cur.fetchall()
-
-            # Calculate similarity for each potential roommate
+        filter_student_id = request.form.get('filter_student_id')
+        if filter_student_id:
+            cur.execute("SELECT id, email, name, faculty, gender FROM users WHERE id = %s AND gender = %s AND id NOT IN (SELECT user_id FROM group_members WHERE group_id = %s)", (filter_student_id, leader_gender, group_id))
+            students = cur.fetchall()
+        else:
             students = []
-            for roommate in potential_roommates:
-                cur.execute("SELECT rating FROM user_ratings WHERE user_id = %s ORDER BY question_id", (roommate['id'],))
-                roommate_ratings = [rating['rating'] for rating in cur.fetchall()]
-                
-                if len(user_ratings) == len(roommate_ratings):
-                    similarity = calculate_similarity(user_ratings, roommate_ratings)
-                    roommate['similarity'] = round(similarity, 2)  # Round to 2 decimal places
-                    students.append(roommate)
-
-            # Sort by similarity (highest first) and take top 10
-            students = sorted(students, key=lambda x: x['similarity'], reverse=True)[:10]
-            print(students)  # Print the list of students and their similarity values
-
-        elif 'filter_student_id' in request.form:
-            filter_student_id = request.form.get('filter_student_id')
-            if filter_student_id:
-                cur.execute("""
-                    SELECT id, name, faculty, gender
-                    FROM users
-                    WHERE id = %s AND gender = %s AND id != %s
-                    AND id NOT IN (
-                        SELECT user_id FROM group_members
-                    )
-                """, (filter_student_id, leader_gender, user_id))
-                students = cur.fetchall()
-
-                if students:
-                    # Calculate similarity for the found student
-                    cur.execute("SELECT rating FROM user_ratings WHERE user_id = %s ORDER BY question_id", (user_id,))
-                    user_ratings = [rating['rating'] for rating in cur.fetchall()]
-
-                    cur.execute("SELECT rating FROM user_ratings WHERE user_id = %s ORDER BY question_id", (students[0]['id'],))
-                    student_ratings = [rating['rating'] for rating in cur.fetchall()]
-
-                    if len(user_ratings) == len(student_ratings):
-                        similarity = calculate_similarity(user_ratings, student_ratings)
-                        students[0]['similarity'] = round(similarity, 2)  # Round to 2 decimal places
-                    else:
-                        students[0]['similarity'] = 0
-            else:
-                students = []
 
     cur.close()
 
@@ -565,77 +457,6 @@ def leave_group(group_id):
     cur.close()
 
     return redirect(url_for('choose_mode'))
-
-# Invite Member Route
-@main.route('/invite_user/<int:group_id>/<int:invitee_id>', methods=['POST'])
-def invite_user(group_id, invitee_id):
-    user_id = session.get('id')  # User A (group leader) who is sending the invite
-    if not user_id:
-        return redirect(url_for('student_login'))
-
-    # Insert the invitation into the 'invitations' table
-    cur = mysql.connection.cursor()
-    cur.execute("""
-        INSERT INTO invitations (group_id, inviter_id, invitee_id, status)
-        VALUES (%s, %s, %s, 'pending')
-    """, (group_id, user_id, invitee_id))
-    mysql.connection.commit()
-    cur.close()
-
-    return redirect(url_for('manage_group', group_id=group_id))
-
-# Accept the invitation
-@main.route('/accept_invite/<int:invitation_id>', methods=['POST'])
-def accept_invite(invitation_id):
-    
-    user_id = session.get('id')  # User B (invitee)
-    if not user_id:
-        return redirect(url_for('student_login'))
-    
-    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-
-    # Update invitation status to 'accepted'
-    cur.execute("""
-        UPDATE invitations
-        SET status = 'accepted'
-        WHERE invitation_id = %s AND invitee_id = %s
-    """, (invitation_id, user_id))
-
-    # Fetch the group_id from the invitation
-    cur.execute("SELECT group_id FROM invitations WHERE invitation_id = %s", (invitation_id,))
-    group = cur.fetchone()
-
-    # Add the user to the group members
-    cur.execute("""
-        INSERT INTO group_members (group_id, user_id)
-        VALUES (%s, %s)
-    """, (group['group_id'], user_id))
-
-    mysql.connection.commit()
-    cur.close()
-
-    return redirect(url_for('manage_group', group_id=group['group_id']))
-
-# Decline the invitation
-@main.route('/decline_invite/<int:invitation_id>', methods=['POST'])
-def decline_invite(invitation_id):
-    user_id = session.get('id')  # User B (invitee)
-    if not user_id:
-        return redirect(url_for('student_login'))
-
-    cur = mysql.connection.cursor()
-
-    # Update invitation status to 'declined'
-    cur.execute("""
-        UPDATE invitations
-        SET status = 'declined'
-        WHERE invitation_id = %s AND invitee_id = %s
-    """, (invitation_id, user_id))
-
-    mysql.connection.commit()
-    cur.close()
-
-    return redirect(url_for('home'))
 
 # Select Hostel Route
 @main.route('/select_hostel/<mode>', methods=['GET', 'POST'])
@@ -843,6 +664,44 @@ def booking_summary(mode, hostel_id, room_type, room_number, bed_ids, user_ids):
 
     return render_template('booking_summary.html', booking_details=booking_details, mode=mode, hostel_id=hostel_id, room_type=room_type, room_number=room_number, bed_ids=bed_ids)
 
+# Invite Member Route
+@main.route('/invite_member/<int:group_id>', methods=['POST'])
+def invite_member(group_id):
+    user_id = session.get('id')
+    if not user_id:
+        return redirect(url_for('student_login'))
+
+    new_member_id = request.form['user_id']
+
+    # Check if the user exists
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    cur.execute("SELECT * FROM users WHERE id = %s", (new_member_id,))
+    new_member = cur.fetchone()
+
+    # Check if the new member's gender matches the leader's gender
+    cur.execute("SELECT gender FROM users WHERE id = %s", (user_id,))
+    leader_gender = cur.fetchone()['gender']
+
+    if not new_member:
+        return render_template('error.html', message="User does not exist.")
+    
+    if new_member['gender'] != leader_gender:
+        return render_template('error.html', message="You can only invite members of the same gender.")
+
+    # Check if the user is already in the group
+    cur.execute("SELECT * FROM group_members WHERE group_id = %s AND user_id = %s", (group_id, new_member_id))
+    if cur.fetchone():
+        return render_template('error.html', message="This user is already a member of your group.")
+
+    # Add the user to the group
+    cur.execute("INSERT INTO group_members(group_id, user_id) VALUES(%s, %s)", (group_id, new_member_id))
+    mysql.connection.commit()
+    cur.close()
+
+    session['group_id'] = group_id
+
+    return redirect(url_for('manage_group', group_id=group_id))
+
 # Transfer Leadership
 @main.route('/transfer_leadership/<int:group_id>/<int:new_leader_id>', methods=['POST'])
 def transfer_leadership(group_id, new_leader_id):
@@ -910,7 +769,6 @@ def disband_group(group_id):
     if not group:
         return render_template('error.html', message="You are not the leader of this group.")
 
-    cur.execute("DELETE FROM invitations WHERE group_id = %s", (group_id,))
     cur.execute("DELETE FROM group_members WHERE group_id = %s", (group_id,))
     cur.execute("DELETE FROM `groups` WHERE group_id = %s", (group_id,))
     mysql.connection.commit()
@@ -949,291 +807,6 @@ def request_room_change():
     cursor.close()
 
     return redirect(url_for('room_status'))
-
-# Survey Start Route
-@main.route('/survey', methods=['GET', 'POST'])
-def survey():
-    if 'id' not in session:
-        return redirect(url_for('login'))
-
-    user_id = session['id']
-    cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    
-    # Check if the user has already completed the survey
-    cursor.execute("SELECT survey_completed FROM users WHERE id = %s", (user_id,))
-    user = cursor.fetchone()
-    
-    if user['survey_completed'] == 1:
-        return render_template('survey_completed.html')
-
-    if request.method == 'POST':
-        # Get the first section
-        cursor.execute("SELECT id FROM ques_sections ORDER BY id ASC LIMIT 1")
-        first_section = cursor.fetchone()
-        if first_section:
-            return redirect(url_for('survey_questions', section_id=first_section['id']))
-    
-    return render_template('survey_start.html')
-
-# Answer Survey Route
-@main.route('/rate/<int:section_id>', methods=['GET', 'POST'])
-def survey_questions(section_id):
-    if 'id' not in session:
-        return redirect(url_for('login'))
-
-    cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-
-    # Get all questions for the current section
-    cursor.execute("SELECT * FROM questions WHERE section_id = %s", (section_id,))
-    questions = cursor.fetchall()
-
-    # Get section name
-    cursor.execute("SELECT name FROM ques_sections WHERE id = %s", (section_id,))
-    section = cursor.fetchone()
-    section_name = section['name'] if section else "Unknown Section"
-
-    # Check if this is the last section
-    cursor.execute("SELECT id FROM ques_sections WHERE id > %s ORDER BY id ASC LIMIT 1", (section_id,))
-    next_section = cursor.fetchone()
-    is_last_section = next_section is None
-
-    if request.method == 'POST':
-        # Store ratings for all questions in the section
-        for question in questions:
-            rating = request.form.get(f'rating_{question["id"]}')
-            if rating:
-                cursor.execute("""
-                    INSERT INTO user_ratings (user_id, question_id, rating) 
-                    VALUES (%s, %s, %s) 
-                    ON DUPLICATE KEY UPDATE rating = %s
-                """, (session['id'], question['id'], rating, rating))
-        mysql.connection.commit()
-
-        if is_last_section:
-            return redirect(url_for('save_survey'))
-        else:
-            return redirect(url_for('survey_questions', section_id=next_section['id']))
-
-    return render_template('survey_questions.html', 
-                           questions=questions, 
-                           section_name=section_name,
-                           section_id=section_id,
-                           is_last_section=is_last_section)
-
-# Done Survey Route
-@main.route('/survey_done')
-def save_survey():
-    if 'id' not in session:
-        return redirect(url_for('login'))
-
-    user_id = session['id']
-    cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    
-    # Mark the survey as completed for this user
-    cursor.execute("UPDATE users SET survey_completed = 1 WHERE id = %s", (user_id,))
-    mysql.connection.commit()
-    
-    return render_template('survey_success.html')
-
-# Get User Ratings
-def get_user_ratings(user_id):
-    cur = mysql.connection.cursor()
-    cur.execute("SELECT rating FROM user_ratings WHERE user_id = %s ORDER BY question_id", (user_id,))
-    ratings = cur.fetchall()
-    cur.close()
-    return [rating[0] for rating in ratings]
-
-# Add room route
-@main.route('/add-room', methods=['GET', 'POST'])
-def add_room():
-    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-
-    cur.execute("SELECT id, name, gender FROM hostel")
-    hostels = cur.fetchall()
-
-    status_message = None  # Initialize status message variable
-
-    if request.method == 'POST':
-        number = request.form['number']
-        hostel_id = request.form['hostel_id']
-        category = request.form['category']
-        price = request.form['price']
-        status = 'Available'
-
-        # Determine the capacity and corresponding bed letters based on the category
-        if category == 'Single':
-            capacity = 1
-            beds = ['A']
-        elif category == 'Double':
-            capacity = 2
-            beds = ['A', 'B']
-        elif category == 'Triple':
-            capacity = 3
-            beds = ['A', 'B', 'C']
-
-        # Check if the room number already exists
-        cur.execute("SELECT * FROM rooms WHERE number = %s AND hostel_id = %s", (number, hostel_id))
-        existing_room = cur.fetchone()
-
-        if existing_room:
-            status_message = f"Room number {number} already exists in this hostel."
-        else:
-            try:
-                # Insert new room into the database
-                cur.execute('''
-                    INSERT INTO rooms (number, hostel_id, category, capacity, price, status)
-                    VALUES (%s, %s, %s, %s, %s, %s)
-                ''', (number, hostel_id, category, capacity, price, status))
-
-                # Create beds for the room
-                for bed in beds:
-                    cur.execute('''
-                        INSERT INTO beds (room_number, bed_letter, status)
-                        VALUES (%s, %s, %s)
-                    ''', (number, bed, 'Available'))
-
-                mysql.connection.commit()
-                status_message = 'Room and beds added successfully!'
-            except mysql.connect.Error as err:
-                mysql.connection.rollback()
-                status_message = f"Error: {err}"
-            finally:
-                cur.close()
-
-            return redirect(url_for('add_room'))
-
-    # Render template and pass hostels and status_message to the form
-    return render_template('room_add.html', hostels=hostels, status_message=status_message)
-
-@main.route('/edit-room/<int:room_number>', methods=['GET', 'POST'])
-def edit_room(room_number):
-    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-
-    # Fetch room details based on the room number
-    cur.execute("SELECT * FROM rooms WHERE number = %s", (room_number,))
-    room = cur.fetchone()
-
-    if not room:
-        flash("Room not found", "error")
-        return redirect(url_for('rooms'))
-
-    # Fetch all hostels for the dropdown
-    cur.execute("SELECT id, name, gender FROM hostel")
-    hostels = cur.fetchall()
-
-    if request.method == 'POST':
-        new_number = request.form['number']
-        hostel_id = request.form['hostel_id']
-        category = request.form['category']
-        price = request.form['price']
-        status = 'Available'
-
-        # Determine the capacity based on the category
-        capacity = {'Single': 1, 'Double': 2, 'Triple': 3}[category]
-
-        # Check if the new room number already exists (if it's different from the current number)
-        if int(new_number) != room_number:
-            cur.execute("SELECT * FROM rooms WHERE number = %s", (new_number,))
-            existing_room = cur.fetchone()
-            if existing_room:
-                flash(f"Room number {new_number} already exists.", "error")
-                return render_template('room_edit.html', room=room, hostels=hostels)
-
-        try:
-            # Update room details in the database
-            cur.execute('''
-                UPDATE rooms 
-                SET number = %s, hostel_id = %s, category = %s, capacity = %s, price = %s, status = %s
-                WHERE number = %s
-            ''', (new_number, hostel_id, category, capacity, price, status, room_number))
-
-            # Update beds
-            cur.execute("UPDATE beds SET room_number = %s WHERE room_number = %s", (new_number, room_number))
-
-            # Adjust the number of beds if the category has changed
-            cur.execute("SELECT COUNT(*) as bed_count FROM beds WHERE room_number = %s", (new_number,))
-            current_beds = cur.fetchone()['bed_count']
-
-            if current_beds < capacity:
-                for i in range(current_beds, capacity):
-                    bed_letter = chr(65 + i)  # A, B, C
-                    cur.execute('''
-                        INSERT INTO beds (room_number, bed_letter, status)
-                        VALUES (%s, %s, 'Available')
-                    ''', (new_number, bed_letter))
-            elif current_beds > capacity:
-                cur.execute("DELETE FROM beds WHERE room_number = %s ORDER BY bed_letter DESC LIMIT %s", 
-                            (new_number, current_beds - capacity))
-
-            mysql.connection.commit()
-            flash('Room and beds updated successfully!', 'success')
-            return redirect(url_for('edit_room', room_number=new_number))
-        except MySQLdb.Error as err:
-            mysql.connection.rollback()
-            flash(f"Error: {err}", "error")
-
-    cur.close()
-    return render_template('room_edit.html', room=room, hostels=hostels)
-
-
-@main.route('/manage-rooms', methods=['GET', 'POST'])
-def manage_rooms():
-    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-
-    # Fetch all hostels for the filter dropdown
-    cur.execute("SELECT id, name FROM hostel")
-    hostels = cur.fetchall()
-
-    # Fetch rooms based on the selected hostel filter
-    selected_hostel_id = request.form.get('hostel_id') if request.method == 'POST' else None
-
-    if selected_hostel_id:
-        # If a hostel is selected, filter rooms by hostel_id
-        cur.execute('''SELECT rooms.*, hostel.name as hostel_name 
-                       FROM rooms 
-                       JOIN hostel ON rooms.hostel_id = hostel.id 
-                       WHERE rooms.hostel_id = %s''', (selected_hostel_id,))
-    else:
-        # If no hostel is selected, fetch all rooms
-        cur.execute('''SELECT rooms.*, hostel.name as hostel_name 
-                       FROM rooms 
-                       JOIN hostel ON rooms.hostel_id = hostel.id''')
-
-    rooms = cur.fetchall()
-    cur.close()
-
-    # Render the template with rooms and hostels
-    return render_template('room_manage.html', rooms=rooms, hostels=hostels, selected_hostel_id=selected_hostel_id)
-
-@main.route('/delete-room/<int:room_number>', methods=['POST'])
-def delete_room(room_number):
-    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-
-    try:
-        # Check if the room exists
-        cur.execute('SELECT * FROM rooms WHERE number = %s', (room_number,))
-        room = cur.fetchone()
-        
-        if not room:
-            flash(f'Room {room_number} not found.', 'error')
-            return redirect(url_for('manage_rooms'))
-
-        # Delete associated beds first
-        cur.execute('DELETE FROM beds WHERE room_number = %s', (room_number,))
-        
-        # Now delete the room
-        cur.execute('DELETE FROM rooms WHERE number = %s', (room_number,))
-        
-        mysql.connection.commit()
-        flash(f'Room {room_number} and associated beds deleted successfully!', 'success')
-    except MySQLdb.Error as err:
-        mysql.connection.rollback()
-        flash(f"Error deleting room: {err}", 'error')
-    finally:
-        cur.close()
-
-    return redirect(url_for('manage_rooms'))
-
 
 # Logout Route
 @main.route('/logout')
