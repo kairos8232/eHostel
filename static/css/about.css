@@ -1,0 +1,145 @@
+/* General Styles */
+body {
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+    color: #333;
+}
+
+h2 {
+    color: #2c3e50;
+}
+
+/* Container 1 Styles */
+.container1 {
+    background-color: rgba(240, 240, 240, 0.79);
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    max-width: 85%;
+    margin: 0 auto;
+    margin-top: 4%;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+}
+
+.container1 img {
+    width: 40%;
+    border-radius: 8px;
+    margin-right: 20px;
+    margin-top: 45px;
+}
+
+.content {
+    flex: 1;
+    min-width: 300px;
+}
+
+.note, .contact {
+    margin-bottom: 20px;
+}
+.note, .contact, .location {
+    padding-left: 20px;
+}
+
+/* Container 2 Styles */
+.container2 {
+    background-color: rgba(240, 240, 240, 0.79);
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    max-width: 85%;
+    margin: 0 auto;
+    margin-top: 2%;
+    display: flex; /* Flexbox to position slideshows side by side */
+    justify-content: space-between; /* Spread them across the container */
+}
+
+.room_facilities {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+}
+
+/* Styles for both slideshow containers */
+.slideshow-container, .slideshow-container2 {
+    width: 45%; /* Set each slideshow width to 45% */
+    position: relative;
+    height: 250px;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+.slide {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transition: opacity 1s ease-in-out;
+}
+
+.slide img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.slide-caption {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    padding: 10px;
+    text-align: center;
+}
+
+/* Slideshow animation for the first container */
+.slideshow-container > div:nth-child(1) {
+    opacity: 1;
+}
+.slideshow-container > div:nth-child(2) {
+    animation: slideshow 20s linear infinite;
+}
+.slideshow-container > div:nth-child(3) {
+    animation: slideshow 20s linear infinite 2.5s;
+}
+.slideshow-container > div:nth-child(4) {
+    animation: slideshow 20s linear infinite 5s;
+}
+.slideshow-container > div:nth-child(5) {
+    animation: slideshow 20s linear infinite 7.5s;
+}
+.slideshow-container > div:nth-child(6) {
+    animation: slideshow 20s linear infinite 10s;
+}
+.slideshow-container > div:nth-child(7) {
+    animation: slideshow 20s linear infinite 12.5s;
+}
+.slideshow-container > div:nth-child(8) {
+    animation: slideshow 20s linear infinite 15s;
+}
+
+/* Slideshow animation for the second container */
+.slideshow-container2 > div:nth-child(1) {
+    opacity: 1;
+}
+.slideshow-container2 > div:nth-child(2) {
+    animation: slideshow 8s linear infinite;
+}
+.slideshow-container2 > div:nth-child(3) {
+    animation: slideshow 8s linear infinite 2s;
+}
+.slideshow-container2 > div:nth-child(4) {
+    animation: slideshow 8s linear infinite 4s;
+}
+
+/* Keyframes for both slideshows */
+@keyframes slideshow {
+    0%, 16%, 100% { opacity: 0; }
+    20%, 36% { opacity: 1; }
+}
