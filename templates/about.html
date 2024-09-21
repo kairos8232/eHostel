@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/about.css') }}">
+{% endblock %}
+
+{% block content %}
+    <title>Hostel Service</title>
+    <body>
+        <div class="container1">
+            <img src="/static/images/hostel/hostel.png" alt="Hostel Image">
+            <div class="content">
+                <div class="note">
+                    <h2>Notes:</h2>
+                    <p>• Selected student will be given ONE ACADEMIC YEAR to stay on campus
+                    <br>
+                    • Continuation of stay for the following academic year will be based on student club/sport activities and academic result</p>
+                </div>
+                <div class="contact">
+                    <h2>Contact:</h2>
+                    <p>
+                        Male Hostel: 03-83125443
+                        <br>
+                        Female Hostel: 03-8312 5212
+                    </p>
+                </div>
+                <div class="location">
+                    <h2>Location:</h2>
+                    <p>
+                        Student Lifestyle & Experience (STyLE) office,<br>
+                        Second Floor, STC Building, Cyberjaya Campus
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="container2">           
+            <h2>Room and Facilities:</h2>
+            <div class="room_facilities">
+                <!-- First slideshow container -->
+                <div class="slideshow-container">
+                    <div class="slide">
+                        <img src="/static/images/hostel/common-room.png" alt="Common Room">
+                        <div class="slide-caption">Common Room</div>
+                    </div>
+                    <div class="slide">
+                        <img src="/static/images/hostel/study-room.png" alt="Study Room">
+                        <div class="slide-caption">Study Room</div>
+                    </div>
+                    <div class="slide">
+                        <img src="/static/images/hostel/surau.png" alt="Surau">
+                        <div class="slide-caption">Surau</div>
+                    </div>
+                    <div class="slide">
+                        <img src="/static/images/hostel/recretional-room.png" alt="Recreational Room">
+                        <div class="slide-caption">Recreational Room</div>
+                    </div>
+                    <div class="slide">
+                        <img src="/static/images/hostel/laundry.png" alt="Laundry">
+                        <div class="slide-caption">Laundry</div>
+                    </div>
+                    <div class="slide">
+                        <img src="/static/images/hostel/pantry.png" alt="Pantry">
+                        <div class="slide-caption">Pantry</div>
+                    </div>
+                    <div class="slide">
+                        <img src="/static/images/hostel/iron-room.png" alt="Iron Room">
+                        <div class="slide-caption">Iron Room</div>
+                    </div>
+                    <div class="slide">
+                        <img src="/static/images/hostel/food-court.png" alt="Food Court">
+                        <div class="slide-caption">Food Court</div>
+                    </div>
+                </div>
+        
+                <!-- Second slideshow container for Twin Sharing Room images -->
+                <div class="slideshow-container2">
+                    <div class="slide">
+                        <img src="/static/images/hostel/twin-1.png" alt="Twin Sharing Room">
+                        <div class="slide-caption">Twin Sharing Room</div>
+                    </div>
+                    <div class="slide">
+                        <img src="/static/images/hostel/twin-2.png" alt="Twin Sharing Room">
+                        <div class="slide-caption">Twin Sharing Room</div>
+                    </div>
+                    <div class="slide">
+                        <img src="/static/images/hostel/triple-1.png" alt="Triple Sharing Room">
+                        <div class="slide-caption">Triple Sharing Room</div>
+                    </div>
+                    <div class="slide">
+                        <img src="/static/images/hostel/triple-2.png" alt="Triple Sharing Room">
+                        <div class="slide-caption">Triple Sharing Room</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+{% endblock %}

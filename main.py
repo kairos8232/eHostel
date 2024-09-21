@@ -122,6 +122,10 @@ def home():
 def chatbox():
     return render_template('chatbox.html')
 
+@main.route("/about")
+def about():
+    return render_template('about.html')
+
 @main.route('/signup', methods=['POST', 'GET'])
 def signup():
     if request.method == 'POST':
