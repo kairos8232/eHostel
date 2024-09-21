@@ -48,3 +48,12 @@ textarea {
     box-shadow: 0 5px #666;
     transform: translateY(4px);
 }
+
+.exit-button{
+    position: absolute;
+    right: 5%;
+}
+.exit{
+    width: 30px;
+    cursor: pointer;
+}

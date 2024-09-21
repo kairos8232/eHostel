@@ -65,9 +65,14 @@ def calculate_similarity(ratings1, ratings2):
     similarity = (1 - cosine(v1, v2))*100     # Calculate cosine similarity
     return similarity
 
+
 @main.route('/')
 def index():
     return render_template('index.html')
+
+@main.route("/about")
+def about():
+    return render_template('about.html')
 
 @main.route('/login', methods=['GET', 'POST'])
 def login():
@@ -124,26 +129,38 @@ def home():
         WHERE invitee_id = %s AND status = 'pending'
     """, (user_id,))
     invitation = cur.fetchone()
-
+    
     # Fetch announcements
     cur.execute("SELECT * FROM announcement ORDER BY id DESC")
     announcements = cur.fetchall()
     cur.close()
-
+    
     current_index = session.get('announcement_index', 0)
     total_announcements = len(announcements)
-
+    
     if request.args.get('next'):
         current_index = (current_index + 1) % total_announcements
-        session['announcement_index'] = current_index
-
+    elif request.args.get('back'):
+        current_index = (current_index - 1) % total_announcements
+    
+    session['announcement_index'] = current_index
+    
     current_announcement = announcements[current_index] if announcements else None
+    
+    return render_template('home.html', 
+                           announcement=current_announcement, 
+                           has_next=total_announcements > 1,
+                           has_back=total_announcements > 1,
+                           invitation=invitation)
 
-    return render_template('home.html', announcement=current_announcement, has_next=total_announcements > 1, invitation=invitation)
-
-# Student Profile Route
-@main.route('/student/profile', methods=['GET', 'POST'])
+# Chatbox
+@main.route("/student/chatbox")
 @student_required
+def chatbox():
+    return render_template('chatbox.html')
+
+# Student Profile
+@main.route('/student/profile', methods=['GET', 'POST'])
 def profile():
     user_id = session.get('id')
     
@@ -159,7 +176,7 @@ def profile():
         gender=user[2],
         email=user[3],
         faculty=user[5],
-        image_url=user[6] or url_for('static', filename='images/default_profile_pic.jpg'),
+        image_url=user[6] or url_for('static', filename='default_profile.jpg'),
         url_for=url_for,
         status=status
     )
@@ -203,7 +220,6 @@ def edit_profile():
             'email': user_data['email'],
             'image_url': user_data['profile_pic'] if user_data['profile_pic'] else url_for('static', filename='images/default_profile_pic.jpg')
         }
-
         return render_template('edit_profile.html', **user_profile)
     else:
         return redirect(url_for('home'))
@@ -666,6 +682,7 @@ def select_bed(mode, hostel_id, room_type):
 
         group_id = session.get('group_id')
         
+        # Always fetch the most up-to-date information from the database
         if mode == 'group' and group_id:
             cur.execute("""
                 SELECT users.id, users.name, users.email 
@@ -1111,6 +1128,51 @@ def edit_trimester():
         return redirect(url_for('home'))
     return render_template('admin_trimester.html')
 
+# Admin Add Student
+@main.route('/admin/add_student', methods=['GET', 'POST'])
+@admin_required
+def add_student():
+    admin_id = session.get('id')
+    if not admin_id:
+        return redirect(url_for('admin_login'))
+    
+    if request.method == 'POST':
+        userDetails = request.form
+        id = userDetails['id']
+        name = userDetails['name']
+        gender = userDetails['gender']
+        email = userDetails['email']
+        password = userDetails['password']
+        faculty = userDetails['faculty']
+        hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+        cur = mysql.connection.cursor()
+        cur.execute("INSERT INTO users(id, name, gender, email, password, faculty) VALUES(%s, %s, %s, %s, %s, %s)", (id, name, gender, email, hashed_password, faculty))
+        mysql.connection.commit()
+        cur.close()
+        flash('Student added successfully!')
+
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    cur.execute("SELECT * FROM users")
+    students = cur.fetchall()
+    cur.close()
+
+    return render_template('add_student.html', students=students)
+
+# Admin Delete Student
+@main.route('/admin/delete_student/<student_id>', methods=['POST'])
+def delete_student(student_id):
+    admin_id = session.get('id')
+    if not admin_id:
+        return redirect(url_for('admin_login'))
+
+    cur = mysql.connection.cursor()
+    cur.execute("DELETE FROM users WHERE id = %s", (student_id,))
+    mysql.connection.commit()
+    cur.close()
+
+    flash('Student deleted successfully!')
+    return redirect(url_for('add_student'))
+
 # Add room route
 @main.route('/admin/add-room', methods=['GET', 'POST'])
 @admin_required
@@ -1531,4 +1593,3 @@ def logout():
 
 if __name__ == "__main__":
     main.run(debug=True)
-

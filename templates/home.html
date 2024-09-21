@@ -1,11 +1,10 @@
-<link rel="stylesheet" href="{{ url_for('static' , filename = 'css/home-style.css' ) }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/home-style.css') }}">
 
 {% extends 'base.html' %}
 {% block content %}
 
 <div class="container">
     <div class="content">
-
         <!-- Display group invitation if pending -->
         {% if invitation %}
         <div class="invitation-section">
@@ -29,12 +28,20 @@
                 <h2>{{ announcement.title }}</h2>
                 <p>{{ announcement.context }}</p>
             </div>
-            {% if has_next %}
-                <form method="get" action="{{ url_for('home') }}">
-                    <input type="hidden" name="next" value="1">
-                    <button type="submit" class="btn btn-primary">Next</button>
-                </form>
-            {% endif %}
+            <div class="navigation-buttons">
+                {% if has_back %}
+                    <form method="get" action="{{ url_for('home') }}" style="display: inline;">
+                        <input type="hidden" name="back" value="1">
+                        <button type="submit" class="btn btn-secondary">Back</button>
+                    </form>
+                {% endif %}
+                {% if has_next %}
+                    <form method="get" action="{{ url_for('home') }}" style="display: inline;">
+                        <input type="hidden" name="next" value="1">
+                        <button type="submit" class="btn btn-primary">Next</button>
+                    </form>
+                {% endif %}
+            </div>
         {% else %}
             <p>No announcements available.</p>
         {% endif %}
