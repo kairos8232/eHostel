@@ -1639,7 +1639,7 @@ def edit_section(section_id):
     cur.execute("SELECT * FROM ques_sections WHERE id = %s", (section_id,))
     section = cur.fetchone()
     cur.close()
-    return render_template('section_add.html', section=section)
+    return render_template('section_edit.html', section=section)
 
 @main.route('/admin/delete_section/<int:section_id>', methods=['POST'])
 @admin_required
