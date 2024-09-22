@@ -136,3 +136,11 @@ header {
 .user-form-group label {
     display: none;
 }
+.exit-button{
+    position: absolute;
+    right: 5%;
+}
+.exit{
+    width: 30px;
+    cursor: pointer;
+}

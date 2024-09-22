@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/login-style.css') }}">
+</head>
+<body class='header'>
+    <div class="login-container">
+        <form method="POST" action="{{ url_for('login') }}">
+            <h1>Login</h1>
+            <input type="id" name="id" placeholder="Student ID/Admin ID" required="">
+            <input type="password" name="password" placeholder="Password" required="">
+            <a href="{{ url_for('index') }}">Forgot Your Password?</a>
+            <button type="submit" value="Login">Login</button>
+        </form>
+    </div>
+</body>
+</html>

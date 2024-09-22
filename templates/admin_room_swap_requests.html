@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_room_swap_requests-style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="manage-group-wrapper">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="menu-item inactive" id="statusBtn" onclick="location.href='{{ url_for('admin_room_change_requests') }}';">
+            <i class="fas fa-repeat"></i>
+        </div>
+        <div class="menu-item inactive" id="swapBtn" onclick="location.href='{{ url_for('admin_room_swap_requests') }}';">
+            <i class="fas fa-exchange"></i>
+        </div>
+        <div class="menu-item inactive" id="addBtn" onclick="location.href='{{ url_for('add_room') }}';">
+            <i class="fas fa-plus"></i>
+        </div>
+        <div class="menu-item inactive" id="editBtn" onclick="location.href='{{ url_for('manage_rooms') }}';">
+            <i class="fas fa-edit"></i>
+        </div>
+    </div>
+
+    <!-- Content Area -->
+    <div class="content">
+        <h1>Room Swap Requests</h1>
+
+        {% if swap_requests %}
+            {% for request in swap_requests %}
+                <div class="request-card">
+                    <h2>Request #{{ request.id }}</h2>
+                    
+                    <!-- Swap Request Details -->
+                    <table class="request-table">
+                        <tr>
+                            <th colspan="5">Hostel: {{ request.hostel_name }}</th>
+                        </tr>
+
+                        <!-- Requester Information -->
+                        <tr>
+                            <th colspan="5">Requester</th>
+                        </tr>
+                        <tr>
+                            <th>Student ID</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Current Room</th>
+                            <th>Current Bed</th>
+                        </tr>
+                        <tr>
+                            <td>{{ request.user_id }}</td>
+                            <td>{{ request.requester_name }}</td>
+                            <td>{{ request.requester_email }}</td>
+                            <td>{{ request.requester_room }}</td>
+                            <td>{{ request.requester_bed }}</td>
+                        </tr>
+
+                        <!-- Responder Information -->
+                        <tr>
+                            <th colspan="5">Responder</th>
+                        </tr>
+                        <tr>
+                            <th>Student ID</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Current Room</th>
+                            <th>Current Bed</th>
+                        </tr>
+                        <tr>
+                            <td>{{ request.other_user_id }}</td>
+                            <td>{{ request.other_name }}</td>
+                            <td>{{ request.other_email }}</td>
+                            <td>{{ request.other_room }}</td>
+                            <td>{{ request.other_bed }}</td>
+                        </tr>
+
+                        <!-- Reason for Swap -->
+                        <tr>
+                            <th colspan="5">Reason: {{ request.reason }}</th>
+                        </tr>
+
+                        <!-- Approve/Reject Buttons -->
+                        <tr>
+                            <td colspan="5">
+                                <div class="button-row">
+                                    <form action="{{ url_for('process_room_swap') }}" method="post">
+                                        <input type="hidden" name="swap_request_id" value="{{ request.id }}">
+                                        <button type="submit" name="action" value="approve" class="btn btn-success">Approve</button>
+                                        <button type="submit" name="action" value="reject" class="btn btn-danger">Reject</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="no-requests-message">
+                <h2>No Pending Room Swap Requests</h2>
+                <p>There are currently no pending room swap requests to process.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

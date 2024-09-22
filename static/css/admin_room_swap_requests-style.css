@@ -1,0 +1,106 @@
+.manage-group-wrapper {
+    background-color: #ffffff;
+    max-width: 900px;
+    border-radius: 15px;
+    margin: 0 auto;
+    padding: 30px;
+    box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.1);
+    display: flex;
+    margin-top: 50px;
+}
+
+h1 {
+    margin-bottom: 20px;
+    font-weight: bold;
+    text-align: center;
+}
+
+/* Sidebar */
+.sidebar {
+    background-color: #1a1b2d;
+    padding: 20px;
+    width: 50px;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border-radius: 30px;
+    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 50px;
+    height: 50px;
+    margin-bottom: 20px;
+    background-color: transparent;
+    border-radius: 15px;
+    cursor: pointer;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.menu-item i {
+    font-size: 24px;
+    color: #ffffff;
+}
+
+.menu-item:hover {
+    background-color: #30334f;
+}
+
+.content {
+    flex-grow: 1;
+    padding-left: 30px;
+}
+
+.request-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+}
+
+.request-table th, .request-table td {
+    border: 1px solid #ccc;
+    padding: 10px;
+}
+
+.request-table th {
+    background-color: #f4f4f4;
+    font-weight: bold;
+    text-align: left;
+}
+
+.request-table td {
+    background-color: #fff;
+}
+
+h2 {
+    font-weight: bold;
+}
+
+/* Buttons for approve/reject */
+.button-row {
+    gap: 10px;
+    display: flex;
+    justify-content: center;
+}
+
+.btn {
+    padding: 10px 20px;
+    background-color: #1a1b2d;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+
+}
+
+.btn:hover {
+    background-color: #30334f;
+}
+
+.no-requests-message {
+    text-align: center;
+}

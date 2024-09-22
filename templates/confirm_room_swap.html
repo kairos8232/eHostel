@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-container">
+    <h1>Confirm Room Swap</h1>
+    
+    <h3>Swap Details:</h3>
+    <p><strong>Other Student ID:</strong> {{ other_student.id }}</p>
+    <p><strong>Other Student Room:</strong> {{ other_student.room_no }}</p>
+    <p><strong>Other Student Bed:</strong> {{ other_student.bed_number }}</p>
+    
+    <form action="{{ url_for('confirm_room_swap') }}" method="post">
+        <input type="hidden" name="other_student_id" value="{{ other_student.id }}">
+        <div class="form-group">
+            <label for="reason">Reason for Room Swap:</label>
+            <textarea id="reason" name="reason" rows="4" required></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Confirm Swap Request</button>
+    </form>
+</div>
+{% endblock %}
