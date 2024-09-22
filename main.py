@@ -1174,7 +1174,7 @@ def delete_student(student_id):
     return redirect(url_for('add_student'))
 
 # Add room route
-@main.route('/admin/add-room', methods=['GET', 'POST'])
+@main.route('/admin/add_room', methods=['GET', 'POST'])
 @admin_required
 def add_room():
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
@@ -1237,7 +1237,7 @@ def add_room():
     return render_template('room_add.html', hostels=hostels, status_message=status_message)
 
 # Admin Edit Room
-@main.route('/admin/edit-room/<int:room_number>', methods=['GET', 'POST'])
+@main.route('/admin/edit_room/<int:room_number>', methods=['GET', 'POST'])
 @admin_required
 def edit_room(room_number):
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
@@ -1309,7 +1309,7 @@ def edit_room(room_number):
     return render_template('room_edit.html', room=room, hostels=hostels)
 
 # Admin Manage Rooms
-@main.route('/admin/manage-rooms', methods=['GET', 'POST'])
+@main.route('/admin/manage_rooms', methods=['GET', 'POST'])
 @admin_required
 def manage_rooms():
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
@@ -1340,7 +1340,7 @@ def manage_rooms():
     return render_template('room_manage.html', rooms=rooms, hostels=hostels, selected_hostel_id=selected_hostel_id)
 
 # Admin Delete Room
-@main.route('/admin/delete-room/<int:room_number>', methods=['POST'])
+@main.route('/admin/delete_room/<int:room_number>', methods=['POST'])
 @admin_required
 def delete_room(room_number):
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
@@ -1582,6 +1582,134 @@ def process_room_swap():
     
     cur.close()
     return redirect(url_for('admin_room_swap_requests'))
+
+@main.route('/admin/manage_sections', methods=['GET'])
+@admin_required
+def manage_sections():
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    cur.execute("SELECT * FROM ques_sections ORDER BY id")
+    sections = cur.fetchall()
+    cur.close()
+    return render_template('section_manage.html', sections=sections)
+
+@main.route('/admin/manage_questions', methods=['GET'])
+@admin_required
+def manage_questions():
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    
+    # Fetch all sections for the dropdown
+    cur.execute("SELECT * FROM ques_sections ORDER BY id")
+    sections = cur.fetchall()
+    
+    # Fetch all questions with their corresponding section names
+    cur.execute("""
+        SELECT q.*, s.name as section_name 
+        FROM questions q 
+        JOIN ques_sections s ON q.section_id = s.id 
+        ORDER BY s.id, q.id
+    """)
+    questions = cur.fetchall()
+    
+    cur.close()
+    return render_template('question_manage.html', sections=sections, questions=questions)
+
+@main.route('/admin/add_section', methods=['GET', 'POST'])
+@admin_required
+def add_section():
+    if request.method == 'POST':
+        section_name = request.form['section_name']
+        cur = mysql.connection.cursor()
+        cur.execute("INSERT INTO ques_sections (name) VALUES (%s)", (section_name,))
+        mysql.connection.commit()
+        cur.close()
+        flash('Section added successfully!', 'success')
+        return redirect(url_for('manage_sections'))
+    return render_template('section_add.html')
+
+@main.route('/admin/edit_section/<int:section_id>', methods=['GET', 'POST'])
+@admin_required
+def edit_section(section_id):
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    if request.method == 'POST':
+        section_name = request.form['section_name']
+        cur.execute("UPDATE ques_sections SET name = %s WHERE id = %s", (section_name, section_id))
+        mysql.connection.commit()
+        flash('Section updated successfully!', 'success')
+        return redirect(url_for('manage_sections'))
+    
+    cur.execute("SELECT * FROM ques_sections WHERE id = %s", (section_id,))
+    section = cur.fetchone()
+    cur.close()
+    return render_template('section_add.html', section=section)
+
+@main.route('/admin/delete_section/<int:section_id>', methods=['POST'])
+@admin_required
+def delete_section(section_id):
+    cur = mysql.connection.cursor()
+    cur.execute("DELETE FROM ques_sections WHERE id = %s", (section_id,))
+    mysql.connection.commit()
+    cur.close()
+    flash('Section deleted successfully!', 'success')
+    return redirect(url_for('manage_sections'))
+
+@main.route('/admin/add_question', methods=['GET', 'POST'])
+@admin_required
+def add_question():
+    if request.method == 'POST':
+        section_id = request.form['section_id']
+        question_text = request.form['question_text']
+        
+        cur = mysql.connection.cursor()
+        cur.execute("""
+            INSERT INTO questions (section_id, text) 
+            VALUES (%s, %s)
+        """, (section_id, question_text))
+        mysql.connection.commit()
+        cur.close()
+        flash('Question added successfully!', 'success')
+        return redirect(url_for('add_question'))
+    
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    cur.execute("SELECT * FROM ques_sections ORDER BY id")
+    sections = cur.fetchall()
+    cur.close()
+    return render_template('question_add.html', sections=sections)
+
+@main.route('/admin/edit_question/<int:question_id>', methods=['GET', 'POST'])
+@admin_required
+def edit_question(question_id):
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    if request.method == 'POST':
+        section_id = request.form['section_id']
+        question_text = request.form['question_text']
+        
+        cur.execute("""
+            UPDATE questions 
+            SET section_id = %s, text = %s
+            WHERE id = %s
+        """, (section_id, question_text, question_id))
+        mysql.connection.commit()
+        flash('Question updated successfully!', 'success')
+        return redirect(url_for('manage_questions'))
+    
+    cur.execute("SELECT * FROM questions WHERE id = %s", (question_id,))
+    question = cur.fetchone()
+    cur.execute("SELECT * FROM ques_sections ORDER BY id")
+    sections = cur.fetchall()
+    cur.close()
+    return render_template('question_edit.html', question=question, sections=sections)
+
+@main.route('/admin/delete_question/<int:question_id>', methods=['POST'])
+@admin_required
+def delete_question(question_id):
+    cur = mysql.connection.cursor()
+    cur.execute("DELETE FROM questions WHERE id = %s", (question_id,))
+    mysql.connection.commit()
+    cur.close()
+    flash('Question deleted successfully!', 'success')
+    return redirect(url_for('manage_questions'))
+
+#####################################################################
 
 # Logout Route
 @main.route('/logout')

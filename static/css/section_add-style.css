@@ -1,0 +1,126 @@
+/* Wrapper and Layout */
+.manage-group-wrapper {
+    background-color: #ffffff;
+    max-width: 900px;
+    border-radius: 15px;
+    margin: 50px auto;
+    padding: 30px;
+    box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.1);
+    display: flex;
+}
+
+/* Sidebar */
+.sidebar {
+    background-color: #1a1b2d;
+    padding: 20px;
+    width: 50px;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border-radius: 30px;
+    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 50px;
+    height: 50px;
+    margin-bottom: 20px;
+    background-color: transparent;
+    border-radius: 15px;
+    cursor: pointer;
+    transition: background-color 0.3s, color 0.3s;
+    color: #ffffff;
+}
+
+.menu-item p {
+    font-size: 24px;
+}
+
+.menu-item:hover {
+    background-color: #30334f;
+}
+
+.text {
+    font-size: 16px;
+    font-weight: bold; 
+    margin-top: 10px;
+    margin-bottom: 20px;
+    color: #b3b3b3;
+    text-align: center;
+}
+
+.menu-item p.text:hover {
+    background-color: transparent; /* No background change */
+}
+
+/* Content Area */
+.content {
+    flex-grow: 1;
+    padding-left: 30px;
+}
+
+h1 {
+    margin-bottom: 20px;
+    font-weight: bold;
+    text-align: center;
+}
+
+/* Form Styles */
+form {
+    font-size: 1.1em;
+    max-width: 800px;
+    margin-top: 20px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+input, select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-sizing: border-box;
+}
+
+button {
+    padding: 10px 20px;
+    background-color: #1a1b2d;
+    color: #ffffff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+button:hover {
+    background-color: #30334f;
+}
+
+/* Status Messages */
+.status-message {
+    padding: 10px;
+    margin-bottom: 15px;
+    border-radius: 5px;
+}
+
+.status-message.success {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.status-message.error {
+    background-color: #f8d7da;
+    color: #721c24;
+}
