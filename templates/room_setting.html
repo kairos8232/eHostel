@@ -1,81 +1,87 @@
 {% extends "base.html" %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/room_setting-style.css') }}">
+{% endblock %}
+
 {% block content %}
-<div class="page-container">
-    <h1>Room Setting</h1>
-    
-    {% if status_message %}
-    <div class="alert alert-info">
-        {{ status_message }}
+<h1>Room Setting</h1>
+<div class="wrapper">
+    <div class="page-container">        
+        {% if status_message %}
+        <div class="alert alert-info">
+            {{ status_message }}
+        </div>
+        {% endif %}
+
+        <p><strong>Hostel:</strong> {{ booking.hostel_name }}</p>
+        <p><strong>Room Number:</strong> {{ booking.room_no }}</p>
+        <p><strong>Room Type:</strong> {{ booking.room_type }}</p>
+        <p><strong>Bed Number:</strong> {{ booking.bed_number }}</p>
+        
+        <div class="buttons">
+            <button onclick="toggleRoomChangeForm()" class="btn btn-primary">Request Room Change</button>
+            <button onclick="toggleSwapForm()" class="btn btn-secondary">Request Room Swap</button>
+        </div>
+
+        <!-- Room Change Form -->
+        <div id="roomChangeForm" style="display: none;">
+            <h3>Room Change Request</h3>
+            <form action="{{ url_for('request_room_change') }}" method="post">
+                <div class="form-group">
+                    <label for="reason">Reason for Room Change:</label>
+                    <textarea id="reason" name="reason" required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Submit Request</button>
+            </form>
+        </div>
+
+        <!-- Room Swap Form -->
+        <div id="swapRoomForm" style="display: none;">
+            <h3>Room Swap Request</h3>
+            <form action="{{ url_for('request_room_swap') }}" method="post">
+                <div class="form-group">
+                    <label for="other_student_id">Other Student ID:</label>
+                    <input type="text" id="other_student_id" name="other_student_id" required>
+                </div>
+                <div class="form-group">
+                    <label for="other_student_email">Other Student Email:</label>
+                    <input type="email" id="other_student_email" name="other_student_email" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Check Availability</button>
+            </form>
+        </div>
+
+        <!-- Pending Room Swap Requests -->
+        {% if pending_swaps %}
+            <h3>Pending Room Swap Requests</h3>
+            <ul>
+                {% for swap in pending_swaps %}
+                <li>
+                    <p><strong>Requester Name:</strong> {{ swap.requester_name }}</p>
+                    <p><strong>Requester Room:</strong> {{ swap.requester_room }}</p>
+                    <p><strong>Requester Bed:</strong> {{ swap.requester_bed }}</p>
+                    
+                    <form action="{{ url_for('respond_to_swap') }}" method="post" style="display:inline;">
+                        <input type="hidden" name="swap_request_id" value="{{ swap.id }}">
+                        <input type="hidden" name="response" value="approve">
+                        <button type="submit" class="btn btn-success">Approve</button>
+                    </form>
+
+                    <form action="{{ url_for('respond_to_swap') }}" method="post" style="display:inline;">
+                        <input type="hidden" name="swap_request_id" value="{{ swap.id }}">
+                        <input type="hidden" name="response" value="reject">
+                        <button type="submit" class="btn btn-danger">Reject</button>
+                    </form>
+                </li>
+                <hr>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>No pending room swap requests.</p>
+        {% endif %}
+
     </div>
-    {% endif %}
-
-    <p><strong>Hostel:</strong> {{ booking.hostel_name }}</p>
-    <p><strong>Room Number:</strong> {{ booking.room_no }}</p>
-    <p><strong>Room Type:</strong> {{ booking.room_type }}</p>
-    <p><strong>Bed Number:</strong> {{ booking.bed_number }}</p>
-    
-    <div class="buttons">
-        <button onclick="toggleRoomChangeForm()" class="btn btn-primary">Request Room Change</button>
-        <button onclick="toggleSwapForm()" class="btn btn-secondary">Request Room Swap</button>
-    </div>
-
-    <!-- Room Change Form -->
-    <div id="roomChangeForm" style="display: none;">
-        <h3>Room Change Request</h3>
-        <form action="{{ url_for('request_room_change') }}" method="post">
-            <div class="form-group">
-                <label for="reason">Reason for Room Change:</label>
-                <textarea id="reason" name="reason" required></textarea>
-            </div>
-            <button type="submit" class="btn btn-primary">Submit Request</button>
-        </form>
-    </div>
-
-    <!-- Room Swap Form -->
-    <div id="swapRoomForm" style="display: none;">
-        <h3>Room Swap Request</h3>
-        <form action="{{ url_for('request_room_swap') }}" method="post">
-            <div class="form-group">
-                <label for="other_student_id">Other Student ID:</label>
-                <input type="text" id="other_student_id" name="other_student_id" required>
-            </div>
-            <div class="form-group">
-                <label for="other_student_email">Other Student Email:</label>
-                <input type="email" id="other_student_email" name="other_student_email" required>
-            </div>
-            <button type="submit" class="btn btn-primary">Check Availability</button>
-        </form>
-    </div>
-
-    <!-- Pending Room Swap Requests -->
-    {% if pending_swaps %}
-        <h3>Pending Room Swap Requests</h3>
-        <ul>
-            {% for swap in pending_swaps %}
-            <li>
-                <p><strong>Requester Name:</strong> {{ swap.requester_name }}</p>
-                <p><strong>Requester Room:</strong> {{ swap.requester_room }}</p>
-                <p><strong>Requester Bed:</strong> {{ swap.requester_bed }}</p>
-                
-                <form action="{{ url_for('respond_to_swap') }}" method="post" style="display:inline;">
-                    <input type="hidden" name="swap_request_id" value="{{ swap.id }}">
-                    <input type="hidden" name="response" value="approve">
-                    <button type="submit" class="btn btn-success">Approve</button>
-                </form>
-
-                <form action="{{ url_for('respond_to_swap') }}" method="post" style="display:inline;">
-                    <input type="hidden" name="swap_request_id" value="{{ swap.id }}">
-                    <input type="hidden" name="response" value="reject">
-                    <button type="submit" class="btn btn-danger">Reject</button>
-                </form>
-            </li>
-            <hr>
-            {% endfor %}
-        </ul>
-    {% else %}
-        <p>No pending room swap requests.</p>
-    {% endif %}
-
 </div>
 
 <script>
