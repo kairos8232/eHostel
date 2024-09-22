@@ -1569,13 +1569,12 @@ def process_room_swap():
             WHERE id = %s
         """, (swap_request_id,))
         
-        # Set notification message for the requester
-        cur.execute("""
-            UPDATE users u
-            JOIN room_swap_requests rsr ON u.id = rsr.user_id
-            SET u.notification_message = 'Your room swap request has been rejected by the admin.'
-            WHERE rsr.id = %s
-        """, (swap_request_id,))
+        # # Set notification message for the requester
+        # cur.execute("""
+        #     UPDATE users u
+        #     JOIN room_swap_requests rsr ON u.id = rsr.user_id
+        #     WHERE rsr.id = %s
+        # """, (swap_request_id,))
         
         mysql.connection.commit()
         flash('Room swap request has been rejected.', 'info')

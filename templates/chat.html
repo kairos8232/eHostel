@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Page</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
+        .chat-container { display: flex; height: 100vh; }
+        .conversation-list { width: 30%; border-right: 1px solid #ccc; overflow-y: auto; }
+        .chat-area { width: 70%; display: flex; flex-direction: column; }
+        .message-list { flex-grow: 1; overflow-y: auto; padding: 10px; }
+        .message-form { padding: 10px; border-top: 1px solid #ccc; }
+        .conversation-item { padding: 10px; cursor: pointer; }
+        .conversation-item:hover { background-color: #f0f0f0; }
+        .active { background-color: #e0e0e0; }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="conversation-list">
+            <h2>Conversations</h2>
+            {% for conv in conversations %}
+                <div class="conversation-item {% if chat_partner and chat_partner.id == conv.partner_id %}active{% endif %}" 
+                     onclick="window.location.href='{{ url_for('chat', partner_id=conv.partner_id) }}'">
+                    {{ conv.partner_name }}
+                </div>
+            {% endfor %}
+            {% if user_group %}
+                <div class="conversation-item {% if not chat_partner %}active{% endif %}" 
+                     onclick="window.location.href='{{ url_for('chat') }}'">
+                    Group: {{ user_group.name }}
+                </div>
+            {% endif %}
+        </div>
+        <div class="chat-area">
+            {% if chat_partner %}
+                <h2>Chat with {{ chat_partner.name }}</h2>
+                <div class="message-list">
+                    {% for message in messages %}
+                        <p><strong>{{ message.sender_name }}:</strong> {{ message.message }}</p>
+                    {% endfor %}
+                </div>
+                <form class="message-form" action="{{ url_for('send_message') }}" method="post">
+                    <input type="hidden" name="receiver_id" value="{{ chat_partner.id }}">
+                    <textarea name="message" required></textarea>
+                    <button type="submit">Send</button>
+                </form>
+            {% elif user_group %}
+                <h2>Group Chat: {{ user_group.name }}</h2>
+                <div class="message-list">
+                    {% for message in group_messages %}
+                        <p><strong>{{ message.sender_name }}:</strong> {{ message.message }}</p>
+                    {% endfor %}
+                </div>
+                <form class="message-form" action="{{ url_for('send_group_message') }}" method="post">
+                    <input type="hidden" name="group_id" value="{{ user_group.group_id }}">
+                    <textarea name="message" required></textarea>
+                    <button type="submit">Send to Group</button>
+                </form>
+            {% else %}
+                <p>Select a conversation to start chatting</p>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>
