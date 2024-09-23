@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat Page</title>
+    <link rel="stylesheet" href="{{ url_for('static' , filename = 'css/chat-style.css' ) }}">
     <style>
         body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
         .chat-container { display: flex; height: 100vh; }
@@ -16,46 +17,73 @@
         .active { background-color: #e0e0e0; }
     </style>
 </head>
+
 <body>
     <div class="chat-container">
         <div class="conversation-list">
             <h2>Conversations</h2>
-            {% for conv in conversations %}
+            {% for conv in individual_conversations %}
                 <div class="conversation-item {% if chat_partner and chat_partner.id == conv.partner_id %}active{% endif %}" 
-                     onclick="window.location.href='{{ url_for('chat', partner_id=conv.partner_id) }}'">
+                        onclick="window.location.href='{{ url_for('individual_chat', partner_id=conv.partner_id) }}'">
+                    <img src="{{ conv.partner_profile_pic or url_for('static', filename='images/default_profile_pic.jpg') }}" alt="{{ conv.partner_name }}" class="profile-pic">
                     {{ conv.partner_name }}
                 </div>
             {% endfor %}
-            {% if user_group %}
-                <div class="conversation-item {% if not chat_partner %}active{% endif %}" 
-                     onclick="window.location.href='{{ url_for('chat') }}'">
-                    Group: {{ user_group.name }}
+            {% for group in group_conversations %}
+                <div class="conversation-item"
+                    onclick="window.location.href='{{ url_for('group_chat', group_id=group.group_id) }}'">
+                    <img src="{{ user_group.profile_pic or url_for('static', filename='images/default_profile_pic.jpg') }}" alt="{{ user_group.name }}" class="profile-pic">
+                    Group: {{ group.group_name }}
                 </div>
-            {% endif %}
+            {% endfor %}
         </div>
+    
         <div class="chat-area">
             {% if chat_partner %}
-                <h2>Chat with {{ chat_partner.name }}</h2>
+                <h2>{{ chat_partner.name }}</h2>
                 <div class="message-list">
                     {% for message in messages %}
-                        <p><strong>{{ message.sender_name }}:</strong> {{ message.message }}</p>
+                        <div class="chat-message {% if message.sender_id == session['id'] %}sent{% else %}received{% endif %}">
+                            {% if message.sender_id != session['id'] %}
+                                <img src="{{ message.sender_profile_pic or url_for('static', filename='images/default_profile_pic.jpg') }}" alt="{{ message.sender_name }}" class="profile-pic">
+                                <div class="message-content">
+                                    <strong>{{ message.sender_name }}</strong>: {{ message.message }}
+                                </div>
+                            {% endif %}
+                            {% if message.sender_id == session['id'] %}
+                            <div class="message-content">
+                                {{ message.message }}
+                            </div>
+                            {% endif %}
+                        </div>
                     {% endfor %}
                 </div>
-                <form class="message-form" action="{{ url_for('send_message') }}" method="post">
+                <form action="{{ url_for('send_message') }}" method="post">
                     <input type="hidden" name="receiver_id" value="{{ chat_partner.id }}">
-                    <textarea name="message" required></textarea>
+                    <input type="text" name="message" placeholder="Type your message...">
                     <button type="submit">Send</button>
                 </form>
             {% elif user_group %}
-                <h2>Group Chat: {{ user_group.name }}</h2>
+                <h2>{{ user_group.name }}</h2>
                 <div class="message-list">
-                    {% for message in group_messages %}
-                        <p><strong>{{ message.sender_name }}:</strong> {{ message.message }}</p>
+                    {% for message in messages %}
+                        <div class="chat-message {% if message.sender_id == session['id'] %}sent{% else %}received{% endif %}">
+                            {% if message.sender_id != session['id'] %}
+                                <img src="{{ message.sender_profile_pic or url_for('static', filename='images/default_profile_pic.jpg') }}" alt="{{ message.sender_name }}" class="profile-pic">
+                                <div class="message-content">
+                                    <strong>{{ message.sender_name }}</strong>: {{ message.message }}
+                                </div>
+                            {% else %}
+                                <div class="message-content">
+                                    {{ message.message }}
+                                </div>
+                            {% endif %}
+                        </div>
                     {% endfor %}
-                </div>
-                <form class="message-form" action="{{ url_for('send_group_message') }}" method="post">
+                </div>                
+                <form action="{{ url_for('send_group_message') }}" method="post">
                     <input type="hidden" name="group_id" value="{{ user_group.group_id }}">
-                    <textarea name="message" required></textarea>
+                    <input type="text" name="message" placeholder="Type your message...">
                     <button type="submit">Send to Group</button>
                 </form>
             {% else %}
@@ -63,5 +91,32 @@
             {% endif %}
         </div>
     </div>
+    
+    <style>
+        .chat-message {
+            display: flex;
+            margin-bottom: 10px;
+            align-items: flex-start;
+        }
+        .chat-message.sent {
+            flex-direction: row-reverse;
+        }
+        .chat-message .profile-pic {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin: 0 10px;
+        }
+        .chat-message .message-content {
+            background-color: #f1f0f0;
+            padding: 10px;
+            border-radius: 10px;
+            max-width: 70%;
+        }
+        .chat-message.sent .message-content {
+            background-color: #dcf8c6;
+        }
+    </style>
 </body>
+
 </html>

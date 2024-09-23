@@ -97,8 +97,10 @@ textarea, input[type="text"], input[type="email"] {
     margin-bottom: 10px;
 }
 
-input[type="text"], input[type="email"] {
+textarea, input[type="text"], input[type="email"] {
     padding-top: 10px;
+    padding-bottom: 10px;
+    
 }
 
 textarea {

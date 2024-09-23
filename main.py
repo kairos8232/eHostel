@@ -36,10 +36,10 @@ def student_required(f):
     def decorated_function(*args, **kwargs):
         if session.get('is_admin', False):
             flash('Access denied. This area is for students only.', 'error')
-            return redirect(url_for('admin_dashboard'))
+            return redirect(url_for('home'))
         if not session.get('loggedin', False):
             flash('Please log in to access this page.', 'error')
-            return redirect(url_for('login'))
+            return redirect(url_for('home'))
         return f(*args, **kwargs)
     return decorated_function
 
@@ -57,6 +57,13 @@ def get_profile_pic_url(user_id):
     cur.close()
     return user['profile_pic'] if user and user['profile_pic'] else url_for('static', filename='images/default_profile_pic.jpg')
 
+def get_group_profile_pic_url(group_id):
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    cur.execute("SELECT profile_pic FROM `groups` WHERE group_id = %s", (group_id,))
+    group = cur.fetchone()
+    cur.close()
+    return group['profile_pic'] if group and group['profile_pic'] else url_for('static', filename='images/default_group_pic.jpg')
+
 # Comparision between User and User
 def calculate_similarity(ratings1, ratings2):
     v1 = np.array(ratings1)    # Convert ratings to numpy arrays
@@ -64,7 +71,6 @@ def calculate_similarity(ratings1, ratings2):
     
     similarity = (1 - cosine(v1, v2))*100     # Calculate cosine similarity
     return similarity
-
 
 @main.route('/')
 def index():
@@ -153,11 +159,225 @@ def home():
                            has_back=total_announcements > 1,
                            invitation=invitation)
 
-# Chatbox
-@main.route("/student/chatbox")
-@student_required
-def chatbox():
-    return render_template('chatbox.html')
+@main.route('/chat/')
+def chat_home():
+    user_id = session.get('id')
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
+    # Fetch all individual conversations for the current user
+    cur.execute("""
+        SELECT DISTINCT 
+            CASE 
+                WHEN cm.sender_id = %s THEN cm.receiver_id 
+                ELSE cm.sender_id 
+            END AS partner_id,
+            u.name AS partner_name,
+            u.profile_pic AS partner_profile_pic
+        FROM chat_messages cm
+        JOIN users u ON u.id = CASE 
+            WHEN cm.sender_id = %s THEN cm.receiver_id 
+            ELSE cm.sender_id 
+        END
+        WHERE %s IN (cm.sender_id, cm.receiver_id) AND cm.group_id IS NULL
+    """, (user_id, user_id, user_id))
+    individual_conversations = cur.fetchall()
+
+    # Fetch all group conversations for the current user
+    cur.execute("""
+        SELECT g.group_id, g.name AS group_name, g.profile_pic AS group_profile_pic
+        FROM `groups` g 
+        JOIN group_members gm ON g.group_id = gm.group_id 
+        WHERE gm.user_id = %s
+    """, (user_id,))
+    group_conversations = cur.fetchall()
+
+    cur.close()
+
+    return render_template('chat.html', 
+                           individual_conversations=individual_conversations,
+                           group_conversations=group_conversations,
+                           messages=[],
+                           chat_partner=None,
+                           user_group=None,
+                           user_profile_pic=get_profile_pic_url(user_id))
+
+@main.route('/chat/individual/<int:partner_id>')
+def individual_chat(partner_id):
+    user_id = session.get('id')
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
+    # Fetch messages for the selected individual conversation
+    cur.execute("""
+        SELECT cm.*, u.name as sender_name, u.profile_pic as sender_profile_pic
+        FROM chat_messages cm 
+        JOIN users u ON cm.sender_id = u.id 
+        WHERE ((cm.sender_id = %s AND cm.receiver_id = %s) 
+        OR (cm.sender_id = %s AND cm.receiver_id = %s))
+        AND cm.group_id IS NULL
+        ORDER BY cm.timestamp
+    """, (user_id, partner_id, partner_id, user_id))
+    messages = cur.fetchall()
+
+    cur.execute("SELECT id, name, profile_pic FROM users WHERE id = %s", (partner_id,))
+    chat_partner = cur.fetchone()
+
+    # Fetch all individual conversations (for sidebar)
+    cur.execute("""
+        SELECT DISTINCT 
+            CASE 
+                WHEN cm.sender_id = %s THEN cm.receiver_id 
+                ELSE cm.sender_id 
+            END AS partner_id,
+            u.name AS partner_name,
+            u.profile_pic AS partner_profile_pic
+        FROM chat_messages cm
+        JOIN users u ON u.id = CASE 
+            WHEN cm.sender_id = %s THEN cm.receiver_id 
+            ELSE cm.sender_id 
+        END
+        WHERE %s IN (cm.sender_id, cm.receiver_id) AND cm.group_id IS NULL
+    """, (user_id, user_id, user_id))
+    individual_conversations = cur.fetchall()
+
+    # Fetch all group conversations (for sidebar)
+    cur.execute("""
+        SELECT g.group_id, g.name AS group_name, g.profile_pic AS group_profile_pic
+        FROM `groups` g 
+        JOIN group_members gm ON g.group_id = gm.group_id 
+        WHERE gm.user_id = %s
+    """, (user_id,))
+    group_conversations = cur.fetchall()
+
+    cur.close()
+
+    return render_template('chat.html', 
+                           individual_conversations=individual_conversations,
+                           group_conversations=group_conversations,
+                           messages=messages,
+                           chat_partner=chat_partner,
+                           user_group=None,
+                           user_profile_pic=get_profile_pic_url(user_id))
+
+@main.route('/chat/group/<int:group_id>')
+def group_chat(group_id):
+    user_id = session.get('id')
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
+    # Fetch messages for the selected group conversation
+    cur.execute("""
+        SELECT cm.*, u.name as sender_name, u.profile_pic as sender_profile_pic
+        FROM chat_messages cm 
+        JOIN users u ON cm.sender_id = u.id 
+        WHERE cm.group_id = %s 
+        ORDER BY cm.timestamp
+    """, (group_id,))
+    messages = cur.fetchall()
+
+    # Fetch group info
+    cur.execute("SELECT * FROM `groups` WHERE group_id = %s", (group_id,))
+    user_group = cur.fetchone()
+
+    # Fetch all individual conversations (for sidebar)
+    cur.execute("""
+        SELECT DISTINCT 
+            CASE 
+                WHEN cm.sender_id = %s THEN cm.receiver_id 
+                ELSE cm.sender_id 
+            END AS partner_id,
+            u.name AS partner_name,
+            u.profile_pic AS partner_profile_pic
+        FROM chat_messages cm
+        JOIN users u ON u.id = CASE 
+            WHEN cm.sender_id = %s THEN cm.receiver_id 
+            ELSE cm.sender_id 
+        END
+        WHERE %s IN (cm.sender_id, cm.receiver_id) AND cm.group_id IS NULL
+    """, (user_id, user_id, user_id))
+    individual_conversations = cur.fetchall()
+
+    # Fetch all group conversations (for sidebar)
+    cur.execute("""
+        SELECT g.group_id, g.name AS group_name, g.profile_pic AS group_profile_pic
+        FROM `groups` g 
+        JOIN group_members gm ON g.group_id = gm.group_id 
+        WHERE gm.user_id = %s
+    """, (user_id,))
+    group_conversations = cur.fetchall()
+
+    cur.close()
+
+    return render_template('chat.html', 
+                           individual_conversations=individual_conversations,
+                           group_conversations=group_conversations,
+                           messages=messages,
+                           chat_partner=None,
+                           user_group=user_group,
+                           user_profile_pic=get_profile_pic_url(user_id))
+
+@main.route('/search_user', methods=['POST'])
+def search_user():
+    user_id = session.get('id')
+    search_id = request.form['search_id']
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
+    cur.execute("SELECT id, name FROM users WHERE id = %s", (search_id,))
+    chat_partner = cur.fetchone()
+
+    if chat_partner:
+        # Fetch chat history
+        cur.execute("""
+            SELECT cm.*, u.name as sender_name 
+            FROM chat_messages cm 
+            JOIN users u ON cm.sender_id = u.id 
+            WHERE (cm.sender_id = %s AND cm.receiver_id = %s) 
+            OR (cm.sender_id = %s AND cm.receiver_id = %s) 
+            ORDER BY cm.timestamp
+        """, (user_id, chat_partner['id'], chat_partner['id'], user_id))
+        messages = cur.fetchall()
+    else:
+        messages = []
+
+    cur.close()
+
+    return render_template('chat.html', chat_partner=chat_partner, messages=messages)
+
+@main.route('/send_message', methods=['POST'])
+def send_message():
+    sender_id = session.get('id')
+    receiver_id = request.form['receiver_id']
+    message = request.form['message']
+
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
+    cur.execute("""
+        INSERT INTO chat_messages (sender_id, receiver_id, message)
+        VALUES (%s, %s, %s)
+    """, (sender_id, receiver_id, message))
+
+    mysql.connection.commit()
+    cur.close()
+
+    return redirect(url_for('individual_chat', partner_id=receiver_id))
+
+@main.route('/send_group_message', methods=['POST'])
+def send_group_message():
+
+    sender_id = session.get('id')
+    group_id = request.form['group_id']
+    message = request.form['message']
+
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
+    cur.execute("""
+        INSERT INTO chat_messages (sender_id, group_id, message)
+        VALUES (%s, %s, %s)
+    """, (sender_id, group_id, message))
+
+    mysql.connection.commit()
+    cur.close()
+
+    return redirect(url_for('group_chat', group_id=group_id))
+
 
 # Student Profile
 @main.route('/student/profile', methods=['GET', 'POST'])

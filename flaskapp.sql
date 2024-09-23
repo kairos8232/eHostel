@@ -113,6 +113,43 @@ INSERT INTO `booking` (`booking_no`, `user_id`, `trimester_id`, `group_individua
 	(97, 1, 1, 0, NULL, 1, 103, 200.00, 'A'),
 	(98, 3, 1, 0, NULL, 1, 104, 200.00, 'B');
 
+-- Dumping structure for table flaskapp.chat_messages
+DROP TABLE IF EXISTS `chat_messages`;
+CREATE TABLE IF NOT EXISTS `chat_messages` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `sender_id` int NOT NULL,
+  `receiver_id` int DEFAULT NULL,
+  `group_id` int DEFAULT NULL,
+  `message` text COLLATE utf8mb4_unicode_520_ci NOT NULL,
+  `timestamp` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `FK_chat_messages_sender` (`sender_id`),
+  KEY `FK_chat_messages_receiver` (`receiver_id`),
+  KEY `FK_chat_messages_group` (`group_id`),
+  CONSTRAINT `FK_chat_messages_group` FOREIGN KEY (`group_id`) REFERENCES `groups` (`group_id`),
+  CONSTRAINT `FK_chat_messages_receiver` FOREIGN KEY (`receiver_id`) REFERENCES `users` (`id`),
+  CONSTRAINT `FK_chat_messages_sender` FOREIGN KEY (`sender_id`) REFERENCES `users` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+
+-- Dumping data for table flaskapp.chat_messages: ~16 rows (approximately)
+INSERT INTO `chat_messages` (`id`, `sender_id`, `receiver_id`, `group_id`, `message`, `timestamp`) VALUES
+	(1, 1, 3, NULL, 'sddsd', '2024-09-22 22:03:04'),
+	(2, 1, 3, NULL, 'fdfdfdf', '2024-09-22 22:03:07'),
+	(3, 7, NULL, 54, 'ssf', '2024-09-22 22:12:40'),
+	(4, 7, NULL, 54, 'dsfsfsf', '2024-09-22 22:12:43'),
+	(5, 7, NULL, 54, 'fsffsfsf', '2024-09-22 22:12:45'),
+	(6, 7, 3, NULL, 'sfsfsf', '2024-09-22 22:12:51'),
+	(7, 7, 3, NULL, 'sdfsfs', '2024-09-22 22:12:54'),
+	(8, 3, 3, NULL, 'sdsdsf', '2024-09-22 22:13:09'),
+	(9, 3, 1, NULL, 'sdsfsfsf', '2024-09-22 22:13:34'),
+	(10, 3, 7, NULL, 'sfsffs', '2024-09-22 22:14:04'),
+	(11, 3, 7, NULL, 'asdsfs', '2024-09-22 22:21:36'),
+	(12, 3, 1, NULL, 'dadadd', '2024-09-22 22:21:40'),
+	(13, 3, 3, NULL, 'hfyhjfgh\r\n', '2024-09-22 22:22:20'),
+	(14, 7, NULL, 54, 'saadd', '2024-09-22 22:23:03'),
+	(15, 7, 3, NULL, 'saqsdad', '2024-09-22 22:28:49'),
+	(16, 7, 3, NULL, 'adaddad', '2024-09-22 22:28:55');
+
 -- Dumping structure for table flaskapp.groups
 DROP TABLE IF EXISTS `groups`;
 CREATE TABLE IF NOT EXISTS `groups` (
@@ -125,9 +162,11 @@ CREATE TABLE IF NOT EXISTS `groups` (
   KEY `FK_groups_trimester` (`trimester_id`),
   CONSTRAINT `FK_groups_trimester` FOREIGN KEY (`trimester_id`) REFERENCES `trimester` (`id`),
   CONSTRAINT `groups_ibfk_1` FOREIGN KEY (`leader_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=54 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=55 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
--- Dumping data for table flaskapp.groups: ~0 rows (approximately)
+-- Dumping data for table flaskapp.groups: ~1 rows (approximately)
+INSERT INTO `groups` (`group_id`, `leader_id`, `trimester_id`, `name`) VALUES
+	(54, 7, 1, NULL);
 
 -- Dumping structure for table flaskapp.group_members
 DROP TABLE IF EXISTS `group_members`;
@@ -140,9 +179,11 @@ CREATE TABLE IF NOT EXISTS `group_members` (
   KEY `user_id` (`user_id`),
   CONSTRAINT `group_members_ibfk_1` FOREIGN KEY (`group_id`) REFERENCES `groups` (`group_id`),
   CONSTRAINT `group_members_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=119 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=120 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
--- Dumping data for table flaskapp.group_members: ~0 rows (approximately)
+-- Dumping data for table flaskapp.group_members: ~1 rows (approximately)
+INSERT INTO `group_members` (`id`, `group_id`, `user_id`) VALUES
+	(119, 54, 7);
 
 -- Dumping structure for table flaskapp.hostel
 DROP TABLE IF EXISTS `hostel`;
@@ -191,9 +232,9 @@ CREATE TABLE IF NOT EXISTS `questions` (
   PRIMARY KEY (`id`) USING BTREE,
   KEY `FK_questions_ques_sections` (`section_id`),
   CONSTRAINT `FK_questions_ques_sections` FOREIGN KEY (`section_id`) REFERENCES `ques_sections` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=31 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=33 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
--- Dumping data for table flaskapp.questions: ~29 rows (approximately)
+-- Dumping data for table flaskapp.questions: ~30 rows (approximately)
 INSERT INTO `questions` (`id`, `section_id`, `text`, `min_rating`, `max_rating`) VALUES
 	(1, 1, 'I prefer a quiet environment when studying.', 1, 5),
 	(2, 1, 'I usually study early in the morning.', 1, 5),
@@ -232,7 +273,7 @@ CREATE TABLE IF NOT EXISTS `ques_sections` (
   `id` int NOT NULL AUTO_INCREMENT,
   `name` varchar(50) COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
 -- Dumping data for table flaskapp.ques_sections: ~6 rows (approximately)
 INSERT INTO `ques_sections` (`id`, `name`) VALUES
