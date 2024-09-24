@@ -1,7 +1,6 @@
-/* Wrapper and Layout */
 .manage-group-wrapper {
     background-color: #ffffff;
-    max-width: 900px;
+    max-width: 800px;
     border-radius: 15px;
     margin: 50px auto;
     padding: 30px;
@@ -32,18 +31,10 @@
     border-radius: 15px;
     cursor: pointer;
     transition: background-color 0.3s, color 0.3s;
-}
-
-.menu-item.active {
-    background-color: #ffffff;
-    color: #1a1b2d;
-}
-
-.menu-item.inactive {
     color: #ffffff;
 }
 
-.menu-item i {
+.menu-item p {
     font-size: 24px;
 }
 
@@ -63,14 +54,13 @@ h1 {
     text-align: center;
 }
 
-/* Form Styles */
 form {
     font-size: 1.1em;
     max-width: 800px;
     margin-top: 20px;
 }
 
-.form-group {
+form div {
     margin-bottom: 15px;
 }
 
@@ -86,6 +76,7 @@ input, select {
     border: 1px solid #ccc;
     border-radius: 5px;
     box-sizing: border-box;
+    font-size: 1em;
 }
 
 button {
@@ -96,6 +87,7 @@ button {
     border-radius: 5px;
     cursor: pointer;
     transition: background-color 0.3s;
+    font-size: 1em;
 }
 
 button:hover {

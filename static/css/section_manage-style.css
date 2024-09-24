@@ -80,6 +80,7 @@ table {
 table thead {
     background-color: #1a1b2d;
     color: #ffffff;
+    font-size: 1.2em;
 }
 
 table th, table td {
@@ -99,12 +100,12 @@ table td button {
     color: #ffffff;
     padding: 5px 10px;
     border: none;
-    border-radius: 3px;
+    border-radius: 5px;
     cursor: pointer;
     text-decoration: none;
     display: inline-block;
     margin-right: 10px;
-    font-size: 14px;
+    font-size: 16px;
 }
 
 table td a:hover,
