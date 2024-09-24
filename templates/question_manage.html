@@ -30,6 +30,20 @@
 
     <main class="content">
         <h1>Manage Questions</h1>
+        <!-- Filter Form -->
+        <form method="POST" action="{{ url_for('manage_questions') }}">
+            <div class="form-group">
+                <label for="section_id">Filter by Section:</label>
+                <select name="section_id" id="section_id" onchange="this.form.submit()">
+                    <option value="all" {% if selected_section_id == 'all' or not selected_section_id %}selected{% endif %}>All Sections</option>
+                    {% for section in sections %}
+                    <option value="{{ section.id }}" {% if selected_section_id|string == section.id|string %}selected{% endif %}>
+                        {{ section.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </form>
         <table>
             <thead>
                 <tr>

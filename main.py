@@ -1811,7 +1811,7 @@ def manage_sections():
     cur.close()
     return render_template('section_manage.html', sections=sections)
 
-@main.route('/admin/manage_questions', methods=['GET'])
+@main.route('/admin/manage_questions', methods=['GET', 'POST'])
 @admin_required
 def manage_questions():
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
@@ -1820,17 +1820,32 @@ def manage_questions():
     cur.execute("SELECT * FROM ques_sections ORDER BY id")
     sections = cur.fetchall()
     
-    # Fetch all questions with their corresponding section names
-    cur.execute("""
-        SELECT q.*, s.name as section_name 
-        FROM questions q 
-        JOIN ques_sections s ON q.section_id = s.id 
-        ORDER BY s.id, q.id
-    """)
+    # Fetch questions based on the selected section filter
+    selected_section_id = request.form.get('section_id') if request.method == 'POST' else None
+
+    # Fetch questions based on the selected section filter
+    if selected_section_id and selected_section_id != 'all':
+        # If a specific section is selected, filter questions by section_id
+        cur.execute('''
+            SELECT q.*, s.name as section_name 
+            FROM questions q
+            JOIN ques_sections s ON q.section_id = s.id 
+            WHERE q.section_id = %s
+            ORDER BY q.id
+        ''', (selected_section_id,))
+    else:
+        # If 'All Sections' is selected or no section is selected, fetch all questions
+        cur.execute('''
+            SELECT q.*, s.name as section_name 
+            FROM questions q
+            JOIN ques_sections s ON q.section_id = s.id 
+            ORDER BY s.id, q.id
+        ''')
+
     questions = cur.fetchall()
-    
     cur.close()
-    return render_template('question_manage.html', sections=sections, questions=questions)
+
+    return render_template('question_manage.html', sections=sections, questions=questions, selected_section_id=selected_section_id)
 
 @main.route('/admin/add_section', methods=['GET', 'POST'])
 @admin_required
