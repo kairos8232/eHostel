@@ -24,9 +24,12 @@ mysql = MySQL(main)
 def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if not session.get('is_admin', False):
+        if not session.get('is_admin', False):  # Default to False
             flash('Access denied. Admin privileges required.', 'error')
-            return redirect(url_for('home'))
+            return redirect(url_for('index'))
+        if not session.get('loggedin', False):
+            flash('Please log in to access this page.', 'error')
+            return redirect(url_for('index'))
         return f(*args, **kwargs)
     return decorated_function
 
@@ -36,10 +39,10 @@ def student_required(f):
     def decorated_function(*args, **kwargs):
         if session.get('is_admin', False):
             flash('Access denied. This area is for students only.', 'error')
-            return redirect(url_for('home'))
+            return redirect(url_for('index'))
         if not session.get('loggedin', False):
             flash('Please log in to access this page.', 'error')
-            return redirect(url_for('home'))
+            return redirect(url_for('index'))
         return f(*args, **kwargs)
     return decorated_function
 
@@ -160,6 +163,7 @@ def home():
                            invitation=invitation)
 
 @main.route('/chat/')
+@student_required
 def chat_home():
     user_id = session.get('id')
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
@@ -202,6 +206,7 @@ def chat_home():
                            user_profile_pic=get_profile_pic_url(user_id))
 
 @main.route('/chat/individual/<int:partner_id>')
+@student_required
 def individual_chat(partner_id):
     user_id = session.get('id')
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
@@ -259,6 +264,7 @@ def individual_chat(partner_id):
                            user_profile_pic=get_profile_pic_url(user_id))
 
 @main.route('/chat/group/<int:group_id>')
+@student_required
 def group_chat(group_id):
     user_id = session.get('id')
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
@@ -315,6 +321,7 @@ def group_chat(group_id):
                            user_profile_pic=get_profile_pic_url(user_id))
 
 @main.route('/search_user', methods=['POST'])
+@student_required
 def search_user():
     user_id = session.get('id')
     search_id = request.form['search_id']
@@ -342,6 +349,7 @@ def search_user():
     return render_template('chat.html', chat_partner=chat_partner, messages=messages)
 
 @main.route('/send_message', methods=['POST'])
+@student_required
 def send_message():
     sender_id = session.get('id')
     receiver_id = request.form['receiver_id']
@@ -360,6 +368,7 @@ def send_message():
     return redirect(url_for('individual_chat', partner_id=receiver_id))
 
 @main.route('/send_group_message', methods=['POST'])
+@student_required
 def send_group_message():
 
     sender_id = session.get('id')
@@ -381,6 +390,7 @@ def send_group_message():
 
 # Student Profile
 @main.route('/student/profile', methods=['GET', 'POST'])
+@student_required
 def profile():
     user_id = session.get('id')
     
@@ -396,7 +406,7 @@ def profile():
         gender=user[2],
         email=user[3],
         faculty=user[5],
-        image_url=user[6] or url_for('static', filename='default_profile.jpg'),
+        image_url=user[6],
         url_for=url_for,
         status=status
     )
@@ -1351,11 +1361,7 @@ def edit_trimester():
 # Admin Add Student
 @main.route('/admin/add_student', methods=['GET', 'POST'])
 @admin_required
-def add_student():
-    admin_id = session.get('id')
-    if not admin_id:
-        return redirect(url_for('admin_login'))
-    
+def add_student():    
     if request.method == 'POST':
         userDetails = request.form
         id = userDetails['id']
@@ -1380,10 +1386,8 @@ def add_student():
 
 # Admin Delete Student
 @main.route('/admin/delete_student/<student_id>', methods=['POST'])
+@admin_required
 def delete_student(student_id):
-    admin_id = session.get('id')
-    if not admin_id:
-        return redirect(url_for('admin_login'))
 
     cur = mysql.connection.cursor()
     cur.execute("DELETE FROM users WHERE id = %s", (student_id,))
@@ -1942,6 +1946,94 @@ def delete_question(question_id):
     cur.close()
     flash('Question deleted successfully!', 'success')
     return redirect(url_for('manage_questions'))
+
+@main.route('/admin/profile', methods=['GET', 'POST'])
+def admin_profile():
+    admin_id = session.get('id')
+    
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT * FROM admin WHERE id = %s", (admin_id,))
+    admin = cur.fetchone()
+    
+    return render_template('admin_profile.html',
+        admin_id=admin[0],                         
+        name=admin[1],
+        email=admin[2],
+    )
+
+@main.route('/admin/change_password', methods=['GET', 'POST'])
+@admin_required
+def admin_change_password():
+    admin_id = session.get('id')
+    
+    if request.method == 'POST':
+        current_password = request.form['current_password']
+        new_password = request.form['new_password']
+        confirm_password = request.form['confirm_password']
+
+        cur = mysql.connection.cursor()
+        cur.execute("SELECT password FROM admin WHERE id=%s", [admin_id])
+        admin_data = cur.fetchone()
+        cur.close()
+
+        if admin_data and bcrypt.check_password_hash(admin_data[0], current_password):
+            if new_password == confirm_password:
+                hashed_password = bcrypt.generate_password_hash(new_password).decode('utf-8')
+                cur = mysql.connection.cursor()
+                cur.execute("UPDATE admin SET password=%s WHERE id=%s", (hashed_password, admin_id))
+                mysql.connection.commit()
+                cur.close()
+                return redirect(url_for('admin_change_password', status='Changed successfully!'))
+            else:
+                return redirect(url_for('admin_change_password', error='Passwords do not match.'))
+        else:
+            return redirect(url_for('admin_change_password', error='Current password is incorrect.'))
+
+    error = request.args.get('error')
+    status = request.args.get('status')
+    return render_template('admin_change_password.html', error=error, status=status)
+
+# Admin Add Student
+@main.route('/admin/add_admin', methods=['GET', 'POST'])
+@admin_required
+def add_admin():
+    
+    if request.method == 'POST':
+        admin_id = request.form['admin_id']
+        name = request.form['name']
+        email = request.form['email']
+        password = request.form['password']
+        hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+
+        cur = mysql.connection.cursor()
+        cur.execute("INSERT INTO admin(id, name, email, password) VALUES(%s, %s, %s, %s)", (admin_id, name, email, hashed_password))
+        mysql.connection.commit()
+        cur.close()
+
+        flash('Admin added successfully!')
+
+    return render_template('add_admin.html')
+
+# Admin Manage Admins
+@main.route('/admin/manage_admins', methods=['GET'])
+@admin_required
+def manage_admins():
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    cur.execute("SELECT * FROM admin")
+    admins = cur.fetchall()
+    cur.close()
+    return render_template('admin_manage.html', admins=admins)
+
+# Admin Delete Admin
+@main.route('/admin/delete_admin/<int:admin_id>', methods=['POST'])
+@admin_required
+def delete_admin(admin_id):
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    cur.execute("DELETE FROM admin WHERE id = %s", (admin_id,))
+    mysql.connection.commit()
+    cur.close()
+    flash('Admin deleted successfully!')
+    return redirect(url_for('manage_admins'))
 
 #####################################################################
 

@@ -53,15 +53,32 @@
             </div>
         </div>
         {% else %}
-        <div class="admin-logout">
+        <!-- <div class="admin-logout">
             <a href="{{ url_for('logout') }}">
                 <img src="/static/images/exit.png" class="exit">
             </a>
+        </div> -->
+
+        <div class="user-form-group">
+            <img src="{{ profile_pic_url }}" alt="User" class="user-pic" onclick="togglemenu()">
+
+            <div id="sub-menu-wrap" class="sub-menu-wrap">
+                <div class="sub-menu">
+                    <a href="{{ url_for('admin_profile') }}" class="sub-menu-link">
+                        <img src="{{ url_for('static', filename='images/account.png') }}" alt="Edit Profile">
+                        <p>Edit Profile</p>
+                    </a>
+                    <a href="#" class="sub-menu-link">
+                        <img src="{{ url_for('static', filename='images/setting.png') }}" alt="Settings">
+                        <p>Settings</p>
+                    </a>
+                    <a href="{{ url_for('logout') }}" class="sub-menu-link">
+                        <img src="{{ url_for('static', filename='images/logout.png') }}" alt="Logout">
+                        <p>Logout</p>
+                    </a>
+                </div>
+            </div>
         </div>
-
-        <nav class="exit-button">
-
-        </nav>
         {% endif %}
     
         <!-- Add your JavaScript links here -->
