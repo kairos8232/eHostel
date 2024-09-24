@@ -2035,6 +2035,102 @@ def delete_admin(admin_id):
     flash('Admin deleted successfully!')
     return redirect(url_for('manage_admins'))
 
+# Booking Listing
+@main.route('/admin/booking_listing', methods=['GET'])
+@admin_required
+def booking_listing():
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
+    cur.execute("""
+        SELECT 
+            b.booking_no,
+            t.term AS trimester_term,
+            u.name AS student_name,
+            h.name AS hostel_name,
+            b.room_no,
+            b.bed_number
+        FROM booking b
+        JOIN users u ON b.user_id = u.id
+        JOIN trimester t ON b.trimester_id = t.id
+        JOIN hostel h ON b.hostel_id = h.id
+        ORDER BY b.booking_no DESC
+    """)
+    bookings = cur.fetchall()
+
+    cur.close()
+    return render_template('booking_listing.html', bookings=bookings)
+
+# Delete Booking Route
+@main.route('/admin/delete_booking/<int:booking_no>', methods=['POST'])
+@admin_required
+def delete_booking(booking_no):
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    
+    # Retrieve booking details based on booking_no
+    cur.execute("""
+        SELECT 
+            b.room_no, 
+            b.bed_number, 
+            r.category AS room_category
+        FROM booking b
+        JOIN rooms r ON b.room_no = r.number
+        WHERE b.booking_no = %s
+    """, (booking_no,))
+    booking = cur.fetchone()
+
+    if not booking:
+        # If booking doesn't exist, return error or redirect with message
+        flash('Booking not found.', 'danger')
+        return redirect(url_for('main.booking_listing'))
+    
+    room_no = booking['room_no']
+    bed_letter = booking['bed_number']
+    room_category = booking['room_category']
+    
+    # Delete the booking from the 'booking' table
+    cur.execute("DELETE FROM booking WHERE booking_no = %s", (booking_no,))
+    
+    # Mark the bed as 'Available'
+    cur.execute("""
+        UPDATE beds
+        SET status = 'Available'
+        WHERE room_number = %s AND bed_letter = %s
+    """, (room_no, bed_letter))
+
+    # Check the occupancy status of the room
+    cur.execute("""
+        SELECT COUNT(*) AS occupied_beds
+        FROM beds
+        WHERE room_number = %s AND status = 'Occupied'
+    """, (room_no,))
+    occupied_beds = cur.fetchone()['occupied_beds']
+    
+    # Determine the new room status based on bed occupancy and room category
+    if occupied_beds == 0:
+        new_room_status = 'Available'
+    elif (room_category == 'Double' and occupied_beds == 1) or (room_category == 'Triple' and occupied_beds < 3):
+        new_room_status = 'Partially Occupied'
+    else:
+        new_room_status = 'Occupied'
+    
+    # Update the room's status
+    cur.execute("""
+        UPDATE rooms
+        SET status = %s
+        WHERE number = %s
+    """, (new_room_status, room_no))
+    
+    # Commit changes to the database
+    mysql.connection.commit()
+    
+    # Close the cursor
+    cur.close()
+
+    # Redirect back to the booking listing page with a success message
+    flash('Booking successfully deleted.', 'success')
+    return redirect(url_for('booking_listing'))
+
+
 #####################################################################
 
 # Logout Route
