@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS `admin` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table flaskapp.admin: ~2 rows (approximately)
+-- Dumping data for table flaskapp.admin: ~1 rows (approximately)
 INSERT INTO `admin` (`id`, `name`, `email`, `password`) VALUES
 	(1234, 'Kairos', 'admin@example.com', '$2b$12$296Zc5hnoYBlVYMOWi7QWu9LTKe5N8w05oZXPMIwT5afDcAkVwD0e'),
 	(2468284, 'Lee', 'admin2@example.com', '$2b$12$296Zc5hnoYBlVYMOWi7QWu9LTKe5N8w05oZXPMIwT5afDcAkVwD0e');
@@ -68,7 +68,7 @@ CREATE TABLE IF NOT EXISTS `beds` (
 -- Dumping data for table flaskapp.beds: ~17 rows (approximately)
 INSERT INTO `beds` (`id`, `room_number`, `bed_letter`, `status`) VALUES
 	(1, 101, 'A', 'Available'),
-	(3, 103, 'A', 'Occupied'),
+	(3, 103, 'A', 'Available'),
 	(4, 104, 'A', 'Available'),
 	(6, 202, 'A', 'Available'),
 	(7, 203, 'A', 'Available'),
@@ -76,7 +76,7 @@ INSERT INTO `beds` (`id`, `room_number`, `bed_letter`, `status`) VALUES
 	(9, 302, 'A', 'Available'),
 	(10, 303, 'A', 'Available'),
 	(12, 103, 'B', 'Available'),
-	(13, 104, 'B', 'Occupied'),
+	(13, 104, 'B', 'Available'),
 	(14, 202, 'B', 'Available'),
 	(15, 203, 'B', 'Available'),
 	(16, 302, 'B', 'Available'),
@@ -111,9 +111,6 @@ CREATE TABLE IF NOT EXISTS `booking` (
 ) ENGINE=InnoDB AUTO_INCREMENT=99 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
 -- Dumping data for table flaskapp.booking: ~2 rows (approximately)
-INSERT INTO `booking` (`booking_no`, `user_id`, `trimester_id`, `group_individual`, `group_id`, `hostel_id`, `room_no`, `cost`, `bed_number`) VALUES
-	(97, 1, 1, 0, NULL, 1, 103, 200.00, 'A'),
-	(98, 3, 1, 0, NULL, 1, 104, 200.00, 'B');
 
 -- Dumping structure for table flaskapp.chat_messages
 DROP TABLE IF EXISTS `chat_messages`;
@@ -345,11 +342,11 @@ CREATE TABLE IF NOT EXISTS `rooms` (
   CONSTRAINT `rooms_ibfk_1` FOREIGN KEY (`hostel_id`) REFERENCES `hostel` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table flaskapp.rooms: ~15 rows (approximately)
+-- Dumping data for table flaskapp.rooms: ~17 rows (approximately)
 INSERT INTO `rooms` (`number`, `hostel_id`, `category`, `capacity`, `status`, `price`) VALUES
 	(101, 1, 'Single', 1, 'Available', 100.00),
-	(103, 1, 'Triple', 3, 'Partially Occupied', 200.00),
-	(104, 1, 'Double', 2, 'Partially Occupied', 200.00),
+	(103, 1, 'Triple', 3, 'Available', 200.00),
+	(104, 1, 'Double', 2, 'Available', 200.00),
 	(202, 2, 'Double', 2, 'Available', 160.00),
 	(203, 2, 'Triple', 3, 'Available', 210.00),
 	(204, 2, 'Single', 1, 'Available', 110.00),

@@ -113,3 +113,7 @@ input, select {
     border-radius: 5px;
     font-size: 1em;
 }
+
+.no-requests-message {
+    text-align: center;
+}

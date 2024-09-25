@@ -7,6 +7,7 @@ from flask_bcrypt import Bcrypt
 import os
 from scipy.spatial.distance import cosine
 import numpy as np
+from datetime import datetime
 
 main = Flask(__name__)
 
@@ -1304,28 +1305,44 @@ def respond_to_swap():
 
 #########################################ADMIN#############################################
 
-# Admin Home
-@main.route("/admin")
+@main.route('/admin')
 @admin_required
-def admin():
-        return render_template('admin_page.html')
+def admin_dashboard():
+    admin_id = session.get('id')
 
-# Admin Signup Route (Implement to the Admin System) #########################################ADMIN#############################################
-@main.route('/signup', methods=['POST', 'GET'])
-def signup():
-    if request.method == 'POST':
-        userDetails = request.form
-        id = userDetails['id']
-        name = userDetails['name']
-        email = userDetails['email']
-        password = userDetails['password']
-        hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
-        cur = mysql.connection.cursor()
-        cur.execute("INSERT INTO admin(id, name, email, password) VALUES(%s, %s, %s, %s)", (id, name, email, hashed_password))
-        mysql.connection.commit()
-        cur.close()
-        return redirect(url_for('admin'))
-    return render_template('signup.html')
+    current_hour = datetime.now().hour
+    if current_hour < 12:
+        greeting = "Good Morning"
+    elif 12 <= current_hour < 18:
+        greeting = "Good Afternoon"
+    else:
+        greeting = "Good Evening"
+
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT name FROM admin WHERE id = %s", (admin_id,))
+    admin_name = cur.fetchone()[0]
+
+    # Query to count registered students
+    cur.execute("SELECT COUNT(*) FROM users")
+    students = cur.fetchone()[0]
+
+    # Query to count total rooms
+    cur.execute("SELECT COUNT(*) FROM rooms")
+    total_rooms = cur.fetchone()[0]
+
+    # Query to count booked rooms
+    cur.execute("""
+        SELECT COUNT(DISTINCT room_no) 
+        FROM booking
+    """)
+    booked_rooms = cur.fetchone()[0]
+
+    cur.execute("SELECT COUNT(*) FROM hostel")
+    total_hostels = cur.fetchone()[0]
+
+    cur.close()
+
+    return render_template('admin_dashboard.html', students=students, total_rooms=total_rooms, booked_rooms=booked_rooms, total_hostels=total_hostels, greeting=greeting, admin_name=admin_name)
 
 # Post Annoucement Route
 @main.route('/admin/post_annoucement', methods=['GET', 'POST'])
@@ -2077,11 +2094,6 @@ def delete_booking(booking_no):
         WHERE b.booking_no = %s
     """, (booking_no,))
     booking = cur.fetchone()
-
-    if not booking:
-        # If booking doesn't exist, return error or redirect with message
-        flash('Booking not found.', 'danger')
-        return redirect(url_for('main.booking_listing'))
     
     room_no = booking['room_no']
     bed_letter = booking['bed_number']
@@ -2129,6 +2141,7 @@ def delete_booking(booking_no):
     # Redirect back to the booking listing page with a success message
     flash('Booking successfully deleted.', 'success')
     return redirect(url_for('booking_listing'))
+
 
 
 #####################################################################

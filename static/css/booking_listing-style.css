@@ -1,0 +1,96 @@
+.manage-booking-wrapper {
+    background-color: #ffffff;
+    max-width: 1000px;
+    border-radius: 15px;
+    margin: 0 auto;
+    padding: 30px;
+    box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.1);
+    display: flex;
+    margin-top: 50px;
+}
+
+.content {
+    flex-grow: 1;
+}
+
+h1 {
+    margin-bottom: 20px;
+    font-weight: bold;
+    text-align: center;
+}
+
+button, .btn {
+    padding: 10px 20px;
+    background-color: #1a1b2d;
+    color: #ffffff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+button:hover {
+    background-color: #30334f;
+}
+
+.status-message {
+    padding: 10px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+}
+
+.status-message.success {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.status-message.error {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+/* Table */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+}
+
+table thead {
+    background-color: #1a1b2d;
+    color: #ffffff;
+}
+
+table th, table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+table th {
+    font-weight: bold;
+}
+
+/* Edit and Delete button styles */
+table td .btn,
+table td button {
+    background-color: #1a1b2d;
+    color: #ffffff;
+    padding: 5px 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    margin-right: 10px;
+    font-size: 16px;
+}
+
+table td a:hover,
+table td button:hover {
+    background-color: #30334f;
+}
+
+table td form {
+    display: inline;
+}
