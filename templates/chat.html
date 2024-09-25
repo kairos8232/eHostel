@@ -8,6 +8,10 @@
 <div class="wrapper">
     <div class="chat-container">
         <div class="conversation-list">
+            <form action="{{ url_for('search_user') }}" method="post" class="search-form">
+                <input type="text" name="search_id" placeholder="Student ID" required>
+                <button type="submit">Search</button>
+            </form>
             <h2>Conversations</h2>
             {% for conv in individual_conversations %}
                 <div class="conversation-item {% if chat_partner and chat_partner.id == conv.partner_id %}active{% endif %}" 
@@ -74,7 +78,9 @@
                     <button type="submit">Send to Group</button>
                 </form>
             {% else %}
-                <p>Select a conversation to start chatting</p>
+                <div class="empty-chat">
+                    <p>Select a conversation to start chatting</p>
+                </div>
             {% endif %}
         </div>
     </div>

@@ -101,7 +101,7 @@ def login():
             session['id'] = user['id']
             session['is_admin'] = True
             cur.close()
-            return redirect(url_for('admin'))
+            return redirect(url_for('admin_dashboard'))
         
         # If not an admin, try to authenticate as a student
         cur.execute('SELECT * FROM users WHERE id=%s', (id,))
@@ -328,11 +328,14 @@ def search_user():
     search_id = request.form['search_id']
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
 
+    # Fetch the chat partner based on user ID
     cur.execute("SELECT id, name FROM users WHERE id = %s", (search_id,))
     chat_partner = cur.fetchone()
 
+    messages = []  # Initialize messages
+
     if chat_partner:
-        # Fetch chat history
+        # Fetch chat history if chat partner is found
         cur.execute("""
             SELECT cm.*, u.name as sender_name 
             FROM chat_messages cm 
@@ -342,8 +345,6 @@ def search_user():
             ORDER BY cm.timestamp
         """, (user_id, chat_partner['id'], chat_partner['id'], user_id))
         messages = cur.fetchall()
-    else:
-        messages = []
 
     cur.close()
 
@@ -1586,29 +1587,19 @@ def manage_rooms():
 def delete_room(room_number):
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
 
-    try:
-        # Check if the room exists
-        cur.execute('SELECT * FROM rooms WHERE number = %s', (room_number,))
-        room = cur.fetchone()
-        
-        if not room:
-            flash(f'Room {room_number} not found.', 'error')
-            return redirect(url_for('manage_rooms'))
-
-        # Delete associated beds first
-        cur.execute('DELETE FROM beds WHERE room_number = %s', (room_number,))
-        
-        # Now delete the room
-        cur.execute('DELETE FROM rooms WHERE number = %s', (room_number,))
-        
-        mysql.connection.commit()
-        flash(f'Room {room_number} and associated beds deleted successfully!', 'success')
-    except MySQLdb.Error as err:
-        mysql.connection.rollback()
-        flash(f"Error deleting room: {err}", 'error')
-    finally:
-        cur.close()
-
+    # Check if the room exists
+    cur.execute('SELECT * FROM rooms WHERE number = %s', (room_number,))
+    room = cur.fetchone()
+    
+    # Delete associated beds first
+    cur.execute('DELETE FROM beds WHERE room_number = %s', (room_number,))
+    
+    # Now delete the room
+    cur.execute('DELETE FROM rooms WHERE number = %s', (room_number,))
+    
+    mysql.connection.commit()    
+    cur.close()
+    flash(f'Room {room_number} and associated beds deleted successfully!', 'success')
     return redirect(url_for('manage_rooms'))
 
 # Admin Room Change Request Approval
@@ -2142,7 +2133,84 @@ def delete_booking(booking_no):
     flash('Booking successfully deleted.', 'success')
     return redirect(url_for('booking_listing'))
 
+@main.route('/admin/add_hostel', methods=['GET', 'POST'])
+@admin_required
+def add_hostel():
+    if request.method == 'POST':
+        hostel_name = request.form['hostel_name']
+        gender = request.form['gender']
 
+        cur = mysql.connection.cursor()
+        cur.execute("INSERT INTO hostel (name, gender) VALUES (%s, %s)", (hostel_name, gender))
+        mysql.connection.commit()
+        cur.close()
+
+        flash('Hostel added successfully!', 'success')
+        return redirect(url_for('manage_hostels'))
+    return render_template('hostel_add.html')
+
+@main.route('/admin/manage_hostels', methods=['GET', 'POST'])
+@admin_required
+def manage_hostels():
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    
+    # Fetch distinct genders from the hostel table for the dropdown
+    cur.execute("SELECT DISTINCT gender FROM hostel ORDER BY gender")
+    genders = cur.fetchall()
+
+    # Fetch hostels based on the selected gender filter
+    selected_gender = request.form.get('gender') if request.method == 'POST' else None
+
+    if selected_gender and selected_gender != 'all':
+        # If a specific gender is selected, filter hostels by gender
+        cur.execute('''
+            SELECT * FROM hostel
+            WHERE gender = %s
+            ORDER BY id
+        ''', (selected_gender,))
+    else:
+        # If 'All Genders' is selected or no gender is selected, fetch all hostels
+        cur.execute('''
+            SELECT * FROM hostel
+            ORDER BY id
+        ''')
+
+    hostels = cur.fetchall()
+    cur.close()
+
+    return render_template('hostel_manage.html', genders=genders, hostels=hostels, selected_gender=selected_gender)
+
+@main.route('/admin/edit_hostel/<int:hostel_id>', methods=['GET', 'POST'])
+@admin_required
+def edit_hostel(hostel_id):
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    
+    if request.method == 'POST':
+        hostel_name = request.form['hostel_name']
+        gender = request.form['gender']
+        
+        # Update the hostel details in the database
+        cur.execute("UPDATE hostel SET name = %s, gender = %s WHERE id = %s", (hostel_name, gender, hostel_id))
+        mysql.connection.commit()
+        flash('Hostel updated successfully!', 'success')
+        return redirect(url_for('manage_hostels'))
+    
+    # Fetch the existing hostel details for the form
+    cur.execute("SELECT * FROM hostel WHERE id = %s", (hostel_id,))
+    hostel = cur.fetchone()
+    cur.close()
+    
+    return render_template('hostel_edit.html', hostel=hostel)
+
+@main.route('/admin/delete_hostel/<int:hostel_id>', methods=['POST'])
+@admin_required
+def delete_hostel(hostel_id):
+    cur = mysql.connection.cursor()
+    cur.execute("DELETE FROM hostel WHERE id = %s", (hostel_id,))
+    mysql.connection.commit()
+    cur.close()
+    flash('Hostel deleted successfully!', 'success')
+    return redirect(url_for('manage_hostels'))
 
 #####################################################################
 

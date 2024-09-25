@@ -14,28 +14,36 @@
         <div class="card">
             <div class="card-content">
                 <h1>{{ total_hostels }}</h1>
-                <i class="fas fa-hotel"></i>
+                <a href="{{ url_for('manage_hostels') }}">
+                    <i class="fas fa-hotel"></i>
+                </a>
             </div>
             <p>Total Hostels</p>
         </div>
         <div class="card">
             <div class="card-content">
                 <h1>{{ students }}</h1>
-                <i class="fa-solid fa-users"></i>
+                <a href="{{ url_for('add_student') }}">
+                    <i class="fa-solid fa-users"></i>
+                </a>
             </div>
             <p>Registered Students</p>
         </div>
         <div class="card">
             <div class="card-content">
                 <h1>{{ total_rooms }}</h1>
-                <i class="fas fa-home"></i>
+                <a href="{{ url_for('manage_rooms') }}">
+                    <i class="fas fa-home"></i>
+                </a>
             </div>
             <p>Total Rooms</p>
         </div>
         <div class="card">
             <div class="card-content">
                 <h1>{{ booked_rooms }}</h1>
-                <i class="fa-solid fa-bed"></i>
+                <a href="{{ url_for('booking_listing') }}">
+                    <i class="fa-solid fa-bed"></i>
+                </a>
             </div>
             <p>Booked Rooms</p>
         </div>

@@ -1,4 +1,4 @@
-.manage-group-wrapper {
+.manage-room-wrapper {
     background-color: #ffffff;
     max-width: 800px;
     border-radius: 15px;
@@ -41,6 +41,19 @@
 
 .menu-item:hover {
     background-color: #30334f;
+}
+
+.text {
+    font-size: 16px;
+    font-weight: bold; 
+    margin-top: 10px;
+    margin-bottom: 20px;
+    color: #b3b3b3;
+    text-align: center;
+}
+
+.menu-item p.text:hover {
+    background-color: transparent; /* No background change */
 }
 
 .content {

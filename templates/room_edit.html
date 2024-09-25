@@ -6,9 +6,12 @@
 {% endblock %}
 
 {% block content %}
-<div class="manage-group-wrapper">
+<div class="manage-room-wrapper">
   <!-- Sidebar -->
   <nav class="sidebar">
+    <div class="text">
+        <p>Room</p>
+    </div>
     <div class="menu-item inactive" id="statusBtn" onclick="location.href='{{ url_for('admin_room_change_requests') }}';">
         <p class="fas fa-repeat"></p>
     </div>
@@ -19,6 +22,15 @@
         <p class="fas fa-plus"></p>
     </div>
     <div class="menu-item inactive" id="editBtn" onclick="location.href='{{ url_for('manage_rooms') }}';">
+        <p class="fas fa-edit"></p>
+    </div>
+    <div class="text">
+        <p>Hostel</p>
+    </div>
+    <div class="menu-item inactive" id="addBtn" onclick="location.href='{{ url_for('add_hostel') }}';">
+        <p class="fas fa-plus"></p>
+    </div>
+    <div class="menu-item inactive" id="editBtn" onclick="location.href='{{ url_for('manage_hostels') }}';">
         <p class="fas fa-edit"></p>
     </div>
   </nav>

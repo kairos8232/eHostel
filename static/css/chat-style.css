@@ -24,7 +24,7 @@ h2{
   width: 30%;
   border-right: 1px solid #ccc;
   overflow-y: auto;
-  background-color: #fafafa;
+  background-color: #ffffff;
 }
 
 .conversation-item {
@@ -101,7 +101,6 @@ form {
   display: flex;
   justify-content: center;  /* Center the form horizontally */ 
   padding-top: 20px;            
-  border-top: 1px solid #ccc;
 }
 
 /* Form Styles */
@@ -126,5 +125,53 @@ button {
 }
 
 button:hover {
+  background-color: #45a049;
+}
+
+/* Centering Container for the Paragraph */
+.empty-chat {
+  flex-grow: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;     
+}
+
+/* Paragraph Style for No Conversation Selected */
+.empty-chat p {
+  font-size: 16px;
+  color: #000000;
+  text-align: center;
+  margin: 20px 0;
+  padding: 15px;
+  background-color: #f9f9f9; 
+  border-radius: 10px;
+  border: 1px solid #ddd;
+}
+
+.search-form {
+  display: flex;
+  justify-content: center;  /* Center the search form */
+  margin-bottom: 20px;      /* Space below the search form */
+  margin-right: 10px;
+}
+
+.search-form input {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 14px;
+  margin-right: 10px;       /* Space between input and button */
+}
+
+.search-form button {
+  padding: 10px 20px;
+  border: none;
+  background-color: #4CAF50;
+  color: white;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.search-form button:hover {
   background-color: #45a049;
 }
