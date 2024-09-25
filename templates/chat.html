@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static' , filename = 'css/chat-style.css' ) }}">
+{% endblock %}
+
+{% block content %}
+<div class="wrapper">
+    <div class="chat-container">
+        <div class="conversation-list">
+            <h2>Conversations</h2>
+            <form action="{{ url_for('search_user') }}" method="post" class="search-form">
+                <input type="text" name="search_id" placeholder="Student ID" required>
+                <button type="submit">Search</button>
+            </form>
+            {% for conv in individual_conversations %}
+                <div class="conversation-item {% if chat_partner and chat_partner.id == conv.partner_id %}active{% endif %}" 
+                        onclick="window.location.href='{{ url_for('individual_chat', partner_id=conv.partner_id) }}'">
+                    <img src="{{ conv.partner_profile_pic or url_for('static', filename='images/default_profile_pic.jpg') }}" alt="{{ conv.partner_name }}" class="profile-pic">
+                    {{ conv.partner_name }}
+                </div>
+            {% endfor %}
+            {% for group in group_conversations %}
+            <div class="conversation-item"
+                    onclick="window.location.href='{{ url_for('group_chat', group_id=group.group_id) }}'">
+                <img src="{{ group.profile_pic or url_for('static', filename='images/default_group_pic.jpg') }}" alt="{{ group.group_name }}" class="profile-pic">
+                Group: {{ group.group_name }}
+            </div>
+        {% endfor %}
+        </div>
+    
+        <div class="chat-area">
+            {% if chat_partner %}
+                <h2>{{ chat_partner.name }}</h2>
+                <div class="message-list">
+                    {% for message in messages %}
+                        <div class="chat-message {% if message.sender_id == session['id'] %}sent{% else %}received{% endif %}">
+                            {% if message.sender_id != session['id'] %}
+                                <img src="{{ message.sender_profile_pic or url_for('static', filename='images/default_profile_pic.jpg') }}" alt="{{ message.sender_name }}" class="profile-pic">
+                                <div class="message-content">
+                                    <strong>{{ message.sender_name }}</strong>: {{ message.message }}
+                                </div>
+                            {% endif %}
+                            {% if message.sender_id == session['id'] %}
+                            <div class="message-content">
+                                {{ message.message }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+                <form action="{{ url_for('send_message') }}" method="post">
+                    <input type="hidden" name="receiver_id" value="{{ chat_partner.id }}">
+                    <input type="text" name="message" placeholder="Type your message...">
+                    <button type="submit">Send</button>
+                </form>
+            {% elif user_group %}
+                <h2>{{ user_group.name }}</h2>
+                <div class="message-list">
+                    {% for message in messages %}
+                        <div class="chat-message {% if message.sender_id == session['id'] %}sent{% else %}received{% endif %}">
+                            {% if message.sender_id != session['id'] %}
+                                <img src="{{ message.sender_profile_pic or url_for('static', filename='images/default_profile_pic.jpg') }}" alt="{{ message.sender_name }}" class="profile-pic">
+                                <div class="message-content">
+                                    <strong>{{ message.sender_name }}</strong>: {{ message.message }}
+                                </div>
+                            {% else %}
+                                <div class="message-content">
+                                    {{ message.message }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>                
+                <form action="{{ url_for('send_group_message') }}" method="post">
+                    <input type="hidden" name="group_id" value="{{ user_group.group_id }}">
+                    <input type="text" name="message" placeholder="Type your message...">
+                    <button type="submit">Send</button>
+                </form>
+            {% else %}
+                <div class="empty-chat">
+                    <p>Select a conversation to start chatting</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/add_admin-style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="manage-group-wrapper">
+    <nav class="sidebar">
+        <div class="menu-item" id="addBtn" onclick="location.href='{{ url_for('admin_profile') }}'">
+            <p class="fas fa-user"></p>
+        </div>
+        <div class="menu-item" id="editBtn" onclick="location.href='{{ url_for('admin_change_password') }}'">
+            <p class="fas fa-key"></p>
+        </div>
+        <div class="menu-item" id="addBtn" onclick="location.href='{{ url_for('add_admin') }}'">
+            <p class="fas fa-plus"></p>
+        </div>
+        <div class="menu-item" id="editBtn" onclick="location.href='{{ url_for('manage_admins') }}'">
+            <p class="fas fa-edit"></p>
+        </div>
+    </nav>
+
+    <main class="content">
+        <h1>Add New Admin</h1>
+        <form action="{{ url_for('add_admin') }}" method="POST">
+            <div class="form-group">
+                <label for="admin_id">Admin ID:</label>
+                <input id="admin_id" name="admin_id" type="number" required>
+            </div>
+            <div class="form-group">
+                <label for="name">Name:</label>
+                <input id="name" name="name" type="text" required>
+            </div>
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input id="email" name="email" type="email" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input id="password" name="password" type="password" required>
+            </div>
+            <div class="form-group">
+                <button type="submit">Add Section</button>
+            </div>
+        </form>
+    </main>
+</div>
+{% endblock %}

@@ -7,6 +7,7 @@ from flask_bcrypt import Bcrypt
 import os
 from scipy.spatial.distance import cosine
 import numpy as np
+from datetime import datetime
 
 main = Flask(__name__)
 
@@ -24,9 +25,12 @@ mysql = MySQL(main)
 def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if not session.get('is_admin', False):
+        if not session.get('is_admin', False):  # Default to False
             flash('Access denied. Admin privileges required.', 'error')
-            return redirect(url_for('home'))
+            return redirect(url_for('index'))
+        if not session.get('loggedin', False):
+            flash('Please log in to access this page.', 'error')
+            return redirect(url_for('index'))
         return f(*args, **kwargs)
     return decorated_function
 
@@ -36,10 +40,10 @@ def student_required(f):
     def decorated_function(*args, **kwargs):
         if session.get('is_admin', False):
             flash('Access denied. This area is for students only.', 'error')
-            return redirect(url_for('admin_dashboard'))
+            return redirect(url_for('index'))
         if not session.get('loggedin', False):
             flash('Please log in to access this page.', 'error')
-            return redirect(url_for('login'))
+            return redirect(url_for('index'))
         return f(*args, **kwargs)
     return decorated_function
 
@@ -57,6 +61,13 @@ def get_profile_pic_url(user_id):
     cur.close()
     return user['profile_pic'] if user and user['profile_pic'] else url_for('static', filename='images/default_profile_pic.jpg')
 
+def get_group_profile_pic_url(group_id):
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    cur.execute("SELECT profile_pic FROM `groups` WHERE group_id = %s", (group_id,))
+    group = cur.fetchone()
+    cur.close()
+    return group['profile_pic'] if group and group['profile_pic'] else url_for('static', filename='images/default_group_pic.jpg')
+
 # Comparision between User and User
 def calculate_similarity(ratings1, ratings2):
     v1 = np.array(ratings1)    # Convert ratings to numpy arrays
@@ -64,7 +75,6 @@ def calculate_similarity(ratings1, ratings2):
     
     similarity = (1 - cosine(v1, v2))*100     # Calculate cosine similarity
     return similarity
-
 
 @main.route('/')
 def index():
@@ -91,7 +101,7 @@ def login():
             session['id'] = user['id']
             session['is_admin'] = True
             cur.close()
-            return redirect(url_for('admin'))
+            return redirect(url_for('admin_dashboard'))
         
         # If not an admin, try to authenticate as a student
         cur.execute('SELECT * FROM users WHERE id=%s', (id,))
@@ -153,14 +163,263 @@ def home():
                            has_back=total_announcements > 1,
                            invitation=invitation)
 
-# Chatbox
-@main.route("/student/chatbox")
+@main.route('/chat/')
 @student_required
-def chatbox():
-    return render_template('chatbox.html')
+def chat_home():
+    user_id = session.get('id')
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
+    # Fetch all individual conversations for the current user
+    cur.execute("""
+        SELECT DISTINCT 
+            CASE 
+                WHEN cm.sender_id = %s THEN cm.receiver_id 
+                ELSE cm.sender_id 
+            END AS partner_id,
+            u.name AS partner_name,
+            u.profile_pic AS partner_profile_pic
+        FROM chat_messages cm
+        JOIN users u ON u.id = CASE 
+            WHEN cm.sender_id = %s THEN cm.receiver_id 
+            ELSE cm.sender_id 
+        END
+        WHERE %s IN (cm.sender_id, cm.receiver_id) AND cm.group_id IS NULL
+    """, (user_id, user_id, user_id))
+    individual_conversations = cur.fetchall()
+
+    # Fetch all group conversations for the current user
+    cur.execute("""
+        SELECT g.group_id, g.name AS group_name, g.profile_pic AS group_profile_pic
+        FROM `groups` g 
+        JOIN group_members gm ON g.group_id = gm.group_id 
+        WHERE gm.user_id = %s
+    """, (user_id,))
+    group_conversations = cur.fetchall()
+
+    cur.close()
+
+    return render_template('chat.html', 
+                           individual_conversations=individual_conversations,
+                           group_conversations=group_conversations,
+                           messages=[],
+                           chat_partner=None,
+                           user_group=None,
+                           user_profile_pic=get_profile_pic_url(user_id))
+
+@main.route('/chat/individual/<int:partner_id>')
+@student_required
+def individual_chat(partner_id):
+    user_id = session.get('id')
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
+    # Fetch messages for the selected individual conversation
+    cur.execute("""
+        SELECT cm.*, u.name as sender_name, u.profile_pic as sender_profile_pic
+        FROM chat_messages cm 
+        JOIN users u ON cm.sender_id = u.id 
+        WHERE ((cm.sender_id = %s AND cm.receiver_id = %s) 
+        OR (cm.sender_id = %s AND cm.receiver_id = %s))
+        AND cm.group_id IS NULL
+        ORDER BY cm.timestamp
+    """, (user_id, partner_id, partner_id, user_id))
+    messages = cur.fetchall()
+
+    cur.execute("SELECT id, name, profile_pic FROM users WHERE id = %s", (partner_id,))
+    chat_partner = cur.fetchone()
+
+    # Fetch all individual conversations (for sidebar)
+    cur.execute("""
+        SELECT DISTINCT 
+            CASE 
+                WHEN cm.sender_id = %s THEN cm.receiver_id 
+                ELSE cm.sender_id 
+            END AS partner_id,
+            u.name AS partner_name,
+            u.profile_pic AS partner_profile_pic
+        FROM chat_messages cm
+        JOIN users u ON u.id = CASE 
+            WHEN cm.sender_id = %s THEN cm.receiver_id 
+            ELSE cm.sender_id 
+        END
+        WHERE %s IN (cm.sender_id, cm.receiver_id) AND cm.group_id IS NULL
+    """, (user_id, user_id, user_id))
+    individual_conversations = cur.fetchall()
+
+    # Fetch all group conversations (for sidebar)
+    cur.execute("""
+        SELECT g.group_id, g.name AS group_name, g.profile_pic AS group_profile_pic
+        FROM `groups` g 
+        JOIN group_members gm ON g.group_id = gm.group_id 
+        WHERE gm.user_id = %s
+    """, (user_id,))
+    group_conversations = cur.fetchall()
+
+    cur.close()
+
+    return render_template('chat.html', 
+                           individual_conversations=individual_conversations,
+                           group_conversations=group_conversations,
+                           messages=messages,
+                           chat_partner=chat_partner,
+                           user_group=None,
+                           user_profile_pic=get_profile_pic_url(user_id))
+
+@main.route('/chat/group/<int:group_id>')
+@student_required
+def group_chat(group_id):
+    user_id = session.get('id')
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
+    # Fetch messages for the selected group conversation
+    cur.execute("""
+        SELECT cm.*, u.name as sender_name, u.profile_pic as sender_profile_pic
+        FROM chat_messages cm 
+        JOIN users u ON cm.sender_id = u.id 
+        WHERE cm.group_id = %s 
+        ORDER BY cm.timestamp
+    """, (group_id,))
+    messages = cur.fetchall()
+
+    # Fetch group info
+    cur.execute("SELECT * FROM `groups` WHERE group_id = %s", (group_id,))
+    user_group = cur.fetchone()
+
+    # Fetch all individual conversations (for sidebar)
+    cur.execute("""
+        SELECT DISTINCT 
+            CASE 
+                WHEN cm.sender_id = %s THEN cm.receiver_id 
+                ELSE cm.sender_id 
+            END AS partner_id,
+            u.name AS partner_name,
+            u.profile_pic AS partner_profile_pic
+        FROM chat_messages cm
+        JOIN users u ON u.id = CASE 
+            WHEN cm.sender_id = %s THEN cm.receiver_id 
+            ELSE cm.sender_id 
+        END
+        WHERE %s IN (cm.sender_id, cm.receiver_id) AND cm.group_id IS NULL
+    """, (user_id, user_id, user_id))
+    individual_conversations = cur.fetchall()
+
+    # Fetch all group conversations (for sidebar)
+    cur.execute("""
+        SELECT g.group_id, g.name AS group_name, g.profile_pic AS group_profile_pic
+        FROM `groups` g 
+        JOIN group_members gm ON g.group_id = gm.group_id 
+        WHERE gm.user_id = %s
+    """, (user_id,))
+    group_conversations = cur.fetchall()
+
+    cur.close()
+
+    return render_template('chat.html', 
+                           individual_conversations=individual_conversations,
+                           group_conversations=group_conversations,
+                           messages=messages,
+                           chat_partner=None,
+                           user_group=user_group,
+                           user_profile_pic=get_profile_pic_url(user_id))
+
+@main.route('/search_user', methods=['POST'])
+@student_required
+def search_user():
+    user_id = session.get('id')
+    search_id = request.form['search_id']
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
+    # Fetch all individual conversations for the current user
+    cur.execute("""
+        SELECT DISTINCT 
+            CASE 
+                WHEN cm.sender_id = %s THEN cm.receiver_id 
+                ELSE cm.sender_id 
+            END AS partner_id,
+            u.name AS partner_name,
+            u.profile_pic AS partner_profile_pic
+        FROM chat_messages cm
+        JOIN users u ON u.id = CASE 
+            WHEN cm.sender_id = %s THEN cm.receiver_id 
+            ELSE cm.sender_id 
+        END
+        WHERE %s IN (cm.sender_id, cm.receiver_id) AND cm.group_id IS NULL
+    """, (user_id, user_id, user_id))
+    individual_conversations = cur.fetchall()
+
+    # Fetch all group conversations for the current user
+    cur.execute("""
+        SELECT g.group_id, g.name AS group_name, g.profile_pic AS group_profile_pic
+        FROM `groups` g 
+        JOIN group_members gm ON g.group_id = gm.group_id 
+        WHERE gm.user_id = %s
+    """, (user_id,))
+    group_conversations = cur.fetchall()
+
+    # Fetch the chat partner based on user ID
+    cur.execute("SELECT id, name FROM users WHERE id = %s", (search_id,))
+    chat_partner = cur.fetchone()
+
+    messages = []  # Initialize messages
+
+    if chat_partner:
+        # Fetch chat history if chat partner is found
+        cur.execute("""
+            SELECT cm.*, u.name as sender_name 
+            FROM chat_messages cm 
+            JOIN users u ON cm.sender_id = u.id 
+            WHERE (cm.sender_id = %s AND cm.receiver_id = %s) 
+            OR (cm.sender_id = %s AND cm.receiver_id = %s) 
+            ORDER BY cm.timestamp
+        """, (user_id, chat_partner['id'], chat_partner['id'], user_id))
+        messages = cur.fetchall()
+
+    cur.close()
+
+    return render_template('chat.html', chat_partner=chat_partner, messages=messages, individual_conversations=individual_conversations, group_conversations=group_conversations)
+
+@main.route('/send_message', methods=['POST'])
+@student_required
+def send_message():
+    sender_id = session.get('id')
+    receiver_id = request.form['receiver_id']
+    message = request.form['message']
+
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
+    cur.execute("""
+        INSERT INTO chat_messages (sender_id, receiver_id, message)
+        VALUES (%s, %s, %s)
+    """, (sender_id, receiver_id, message))
+
+    mysql.connection.commit()
+    cur.close()
+
+    return redirect(url_for('individual_chat', partner_id=receiver_id))
+
+@main.route('/send_group_message', methods=['POST'])
+@student_required
+def send_group_message():
+
+    sender_id = session.get('id')
+    group_id = request.form['group_id']
+    message = request.form['message']
+
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
+    cur.execute("""
+        INSERT INTO chat_messages (sender_id, group_id, message)
+        VALUES (%s, %s, %s)
+    """, (sender_id, group_id, message))
+
+    mysql.connection.commit()
+    cur.close()
+
+    return redirect(url_for('group_chat', group_id=group_id))
+
 
 # Student Profile
 @main.route('/student/profile', methods=['GET', 'POST'])
+@student_required
 def profile():
     user_id = session.get('id')
     
@@ -176,7 +435,7 @@ def profile():
         gender=user[2],
         email=user[3],
         faculty=user[5],
-        image_url=user[6] or url_for('static', filename='default_profile.jpg'),
+        image_url=user[6],
         url_for=url_for,
         status=status
     )
@@ -1074,28 +1333,44 @@ def respond_to_swap():
 
 #########################################ADMIN#############################################
 
-# Admin Home
-@main.route("/admin")
+@main.route('/admin')
 @admin_required
-def admin():
-        return render_template('admin_page.html')
+def admin_dashboard():
+    admin_id = session.get('id')
 
-# Admin Signup Route (Implement to the Admin System) #########################################ADMIN#############################################
-@main.route('/signup', methods=['POST', 'GET'])
-def signup():
-    if request.method == 'POST':
-        userDetails = request.form
-        id = userDetails['id']
-        name = userDetails['name']
-        email = userDetails['email']
-        password = userDetails['password']
-        hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
-        cur = mysql.connection.cursor()
-        cur.execute("INSERT INTO admin(id, name, email, password) VALUES(%s, %s, %s, %s)", (id, name, email, hashed_password))
-        mysql.connection.commit()
-        cur.close()
-        return redirect(url_for('admin'))
-    return render_template('signup.html')
+    current_hour = datetime.now().hour
+    if current_hour < 12:
+        greeting = "Good Morning"
+    elif 12 <= current_hour < 18:
+        greeting = "Good Afternoon"
+    else:
+        greeting = "Good Evening"
+
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT name FROM admin WHERE id = %s", (admin_id,))
+    admin_name = cur.fetchone()[0]
+
+    # Query to count registered students
+    cur.execute("SELECT COUNT(*) FROM users")
+    students = cur.fetchone()[0]
+
+    # Query to count total rooms
+    cur.execute("SELECT COUNT(*) FROM rooms")
+    total_rooms = cur.fetchone()[0]
+
+    # Query to count booked rooms
+    cur.execute("""
+        SELECT COUNT(DISTINCT room_no) 
+        FROM booking
+    """)
+    booked_rooms = cur.fetchone()[0]
+
+    cur.execute("SELECT COUNT(*) FROM hostel")
+    total_hostels = cur.fetchone()[0]
+
+    cur.close()
+
+    return render_template('admin_dashboard.html', students=students, total_rooms=total_rooms, booked_rooms=booked_rooms, total_hostels=total_hostels, greeting=greeting, admin_name=admin_name)
 
 # Post Annoucement Route
 @main.route('/admin/post_annoucement', methods=['GET', 'POST'])
@@ -1131,11 +1406,7 @@ def edit_trimester():
 # Admin Add Student
 @main.route('/admin/add_student', methods=['GET', 'POST'])
 @admin_required
-def add_student():
-    admin_id = session.get('id')
-    if not admin_id:
-        return redirect(url_for('admin_login'))
-    
+def add_student():    
     if request.method == 'POST':
         userDetails = request.form
         id = userDetails['id']
@@ -1160,10 +1431,8 @@ def add_student():
 
 # Admin Delete Student
 @main.route('/admin/delete_student/<student_id>', methods=['POST'])
+@admin_required
 def delete_student(student_id):
-    admin_id = session.get('id')
-    if not admin_id:
-        return redirect(url_for('admin_login'))
 
     cur = mysql.connection.cursor()
     cur.execute("DELETE FROM users WHERE id = %s", (student_id,))
@@ -1345,29 +1614,19 @@ def manage_rooms():
 def delete_room(room_number):
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
 
-    try:
-        # Check if the room exists
-        cur.execute('SELECT * FROM rooms WHERE number = %s', (room_number,))
-        room = cur.fetchone()
-        
-        if not room:
-            flash(f'Room {room_number} not found.', 'error')
-            return redirect(url_for('manage_rooms'))
-
-        # Delete associated beds first
-        cur.execute('DELETE FROM beds WHERE room_number = %s', (room_number,))
-        
-        # Now delete the room
-        cur.execute('DELETE FROM rooms WHERE number = %s', (room_number,))
-        
-        mysql.connection.commit()
-        flash(f'Room {room_number} and associated beds deleted successfully!', 'success')
-    except MySQLdb.Error as err:
-        mysql.connection.rollback()
-        flash(f"Error deleting room: {err}", 'error')
-    finally:
-        cur.close()
-
+    # Check if the room exists
+    cur.execute('SELECT * FROM rooms WHERE number = %s', (room_number,))
+    room = cur.fetchone()
+    
+    # Delete associated beds first
+    cur.execute('DELETE FROM beds WHERE room_number = %s', (room_number,))
+    
+    # Now delete the room
+    cur.execute('DELETE FROM rooms WHERE number = %s', (room_number,))
+    
+    mysql.connection.commit()    
+    cur.close()
+    flash(f'Room {room_number} and associated beds deleted successfully!', 'success')
     return redirect(url_for('manage_rooms'))
 
 # Admin Room Change Request Approval
@@ -1569,13 +1828,12 @@ def process_room_swap():
             WHERE id = %s
         """, (swap_request_id,))
         
-        # Set notification message for the requester
-        cur.execute("""
-            UPDATE users u
-            JOIN room_swap_requests rsr ON u.id = rsr.user_id
-            SET u.notification_message = 'Your room swap request has been rejected by the admin.'
-            WHERE rsr.id = %s
-        """, (swap_request_id,))
+        # # Set notification message for the requester
+        # cur.execute("""
+        #     UPDATE users u
+        #     JOIN room_swap_requests rsr ON u.id = rsr.user_id
+        #     WHERE rsr.id = %s
+        # """, (swap_request_id,))
         
         mysql.connection.commit()
         flash('Room swap request has been rejected.', 'info')
@@ -1592,7 +1850,7 @@ def manage_sections():
     cur.close()
     return render_template('section_manage.html', sections=sections)
 
-@main.route('/admin/manage_questions', methods=['GET'])
+@main.route('/admin/manage_questions', methods=['GET', 'POST'])
 @admin_required
 def manage_questions():
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
@@ -1601,17 +1859,32 @@ def manage_questions():
     cur.execute("SELECT * FROM ques_sections ORDER BY id")
     sections = cur.fetchall()
     
-    # Fetch all questions with their corresponding section names
-    cur.execute("""
-        SELECT q.*, s.name as section_name 
-        FROM questions q 
-        JOIN ques_sections s ON q.section_id = s.id 
-        ORDER BY s.id, q.id
-    """)
+    # Fetch questions based on the selected section filter
+    selected_section_id = request.form.get('section_id') if request.method == 'POST' else None
+
+    # Fetch questions based on the selected section filter
+    if selected_section_id and selected_section_id != 'all':
+        # If a specific section is selected, filter questions by section_id
+        cur.execute('''
+            SELECT q.*, s.name as section_name 
+            FROM questions q
+            JOIN ques_sections s ON q.section_id = s.id 
+            WHERE q.section_id = %s
+            ORDER BY q.id
+        ''', (selected_section_id,))
+    else:
+        # If 'All Sections' is selected or no section is selected, fetch all questions
+        cur.execute('''
+            SELECT q.*, s.name as section_name 
+            FROM questions q
+            JOIN ques_sections s ON q.section_id = s.id 
+            ORDER BY s.id, q.id
+        ''')
+
     questions = cur.fetchall()
-    
     cur.close()
-    return render_template('question_manage.html', sections=sections, questions=questions)
+
+    return render_template('question_manage.html', sections=sections, questions=questions, selected_section_id=selected_section_id)
 
 @main.route('/admin/add_section', methods=['GET', 'POST'])
 @admin_required
@@ -1640,7 +1913,7 @@ def edit_section(section_id):
     cur.execute("SELECT * FROM ques_sections WHERE id = %s", (section_id,))
     section = cur.fetchone()
     cur.close()
-    return render_template('section_add.html', section=section)
+    return render_template('section_edit.html', section=section)
 
 @main.route('/admin/delete_section/<int:section_id>', methods=['POST'])
 @admin_required
@@ -1708,6 +1981,263 @@ def delete_question(question_id):
     cur.close()
     flash('Question deleted successfully!', 'success')
     return redirect(url_for('manage_questions'))
+
+@main.route('/admin/profile', methods=['GET', 'POST'])
+def admin_profile():
+    admin_id = session.get('id')
+    
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT * FROM admin WHERE id = %s", (admin_id,))
+    admin = cur.fetchone()
+    
+    return render_template('admin_profile.html',
+        admin_id=admin[0],                         
+        name=admin[1],
+        email=admin[2],
+    )
+
+@main.route('/admin/change_password', methods=['GET', 'POST'])
+@admin_required
+def admin_change_password():
+    admin_id = session.get('id')
+    
+    if request.method == 'POST':
+        current_password = request.form['current_password']
+        new_password = request.form['new_password']
+        confirm_password = request.form['confirm_password']
+
+        cur = mysql.connection.cursor()
+        cur.execute("SELECT password FROM admin WHERE id=%s", [admin_id])
+        admin_data = cur.fetchone()
+        cur.close()
+
+        if admin_data and bcrypt.check_password_hash(admin_data[0], current_password):
+            if new_password == confirm_password:
+                hashed_password = bcrypt.generate_password_hash(new_password).decode('utf-8')
+                cur = mysql.connection.cursor()
+                cur.execute("UPDATE admin SET password=%s WHERE id=%s", (hashed_password, admin_id))
+                mysql.connection.commit()
+                cur.close()
+                return redirect(url_for('admin_change_password', status='Changed successfully!'))
+            else:
+                return redirect(url_for('admin_change_password', error='Passwords do not match.'))
+        else:
+            return redirect(url_for('admin_change_password', error='Current password is incorrect.'))
+
+    error = request.args.get('error')
+    status = request.args.get('status')
+    return render_template('admin_change_password.html', error=error, status=status)
+
+# Admin Add Student
+@main.route('/admin/add_admin', methods=['GET', 'POST'])
+@admin_required
+def add_admin():
+    
+    if request.method == 'POST':
+        admin_id = request.form['admin_id']
+        name = request.form['name']
+        email = request.form['email']
+        password = request.form['password']
+        hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+
+        cur = mysql.connection.cursor()
+        cur.execute("INSERT INTO admin(id, name, email, password) VALUES(%s, %s, %s, %s)", (admin_id, name, email, hashed_password))
+        mysql.connection.commit()
+        cur.close()
+
+        flash('Admin added successfully!')
+
+    return render_template('add_admin.html')
+
+# Admin Manage Admins
+@main.route('/admin/manage_admins', methods=['GET'])
+@admin_required
+def manage_admins():
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    cur.execute("SELECT * FROM admin")
+    admins = cur.fetchall()
+    cur.close()
+    return render_template('admin_manage.html', admins=admins)
+
+# Admin Delete Admin
+@main.route('/admin/delete_admin/<int:admin_id>', methods=['POST'])
+@admin_required
+def delete_admin(admin_id):
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    cur.execute("DELETE FROM admin WHERE id = %s", (admin_id,))
+    mysql.connection.commit()
+    cur.close()
+    flash('Admin deleted successfully!')
+    return redirect(url_for('manage_admins'))
+
+# Booking Listing
+@main.route('/admin/booking_listing', methods=['GET'])
+@admin_required
+def booking_listing():
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
+    cur.execute("""
+        SELECT 
+            b.booking_no,
+            t.term AS trimester_term,
+            u.name AS student_name,
+            h.name AS hostel_name,
+            b.room_no,
+            b.bed_number
+        FROM booking b
+        JOIN users u ON b.user_id = u.id
+        JOIN trimester t ON b.trimester_id = t.id
+        JOIN hostel h ON b.hostel_id = h.id
+        ORDER BY b.booking_no DESC
+    """)
+    bookings = cur.fetchall()
+
+    cur.close()
+    return render_template('booking_listing.html', bookings=bookings)
+
+# Delete Booking Route
+@main.route('/admin/delete_booking/<int:booking_no>', methods=['POST'])
+@admin_required
+def delete_booking(booking_no):
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    
+    # Retrieve booking details based on booking_no
+    cur.execute("""
+        SELECT 
+            b.room_no, 
+            b.bed_number, 
+            r.category AS room_category
+        FROM booking b
+        JOIN rooms r ON b.room_no = r.number
+        WHERE b.booking_no = %s
+    """, (booking_no,))
+    booking = cur.fetchone()
+    
+    room_no = booking['room_no']
+    bed_letter = booking['bed_number']
+    room_category = booking['room_category']
+    
+    # Delete the booking from the 'booking' table
+    cur.execute("DELETE FROM booking WHERE booking_no = %s", (booking_no,))
+    
+    # Mark the bed as 'Available'
+    cur.execute("""
+        UPDATE beds
+        SET status = 'Available'
+        WHERE room_number = %s AND bed_letter = %s
+    """, (room_no, bed_letter))
+
+    # Check the occupancy status of the room
+    cur.execute("""
+        SELECT COUNT(*) AS occupied_beds
+        FROM beds
+        WHERE room_number = %s AND status = 'Occupied'
+    """, (room_no,))
+    occupied_beds = cur.fetchone()['occupied_beds']
+    
+    # Determine the new room status based on bed occupancy and room category
+    if occupied_beds == 0:
+        new_room_status = 'Available'
+    elif (room_category == 'Double' and occupied_beds == 1) or (room_category == 'Triple' and occupied_beds < 3):
+        new_room_status = 'Partially Occupied'
+    else:
+        new_room_status = 'Occupied'
+    
+    # Update the room's status
+    cur.execute("""
+        UPDATE rooms
+        SET status = %s
+        WHERE number = %s
+    """, (new_room_status, room_no))
+    
+    # Commit changes to the database
+    mysql.connection.commit()
+    
+    # Close the cursor
+    cur.close()
+
+    # Redirect back to the booking listing page with a success message
+    flash('Booking successfully deleted.', 'success')
+    return redirect(url_for('booking_listing'))
+
+@main.route('/admin/add_hostel', methods=['GET', 'POST'])
+@admin_required
+def add_hostel():
+    if request.method == 'POST':
+        hostel_name = request.form['hostel_name']
+        gender = request.form['gender']
+
+        cur = mysql.connection.cursor()
+        cur.execute("INSERT INTO hostel (name, gender) VALUES (%s, %s)", (hostel_name, gender))
+        mysql.connection.commit()
+        cur.close()
+
+        flash('Hostel added successfully!', 'success')
+        return redirect(url_for('manage_hostels'))
+    return render_template('hostel_add.html')
+
+@main.route('/admin/manage_hostels', methods=['GET', 'POST'])
+@admin_required
+def manage_hostels():
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    
+    # Fetch distinct genders from the hostel table for the dropdown
+    cur.execute("SELECT DISTINCT gender FROM hostel ORDER BY gender")
+    genders = cur.fetchall()
+
+    # Fetch hostels based on the selected gender filter
+    selected_gender = request.form.get('gender') if request.method == 'POST' else None
+
+    if selected_gender and selected_gender != 'all':
+        # If a specific gender is selected, filter hostels by gender
+        cur.execute('''
+            SELECT * FROM hostel
+            WHERE gender = %s
+            ORDER BY id
+        ''', (selected_gender,))
+    else:
+        # If 'All Genders' is selected or no gender is selected, fetch all hostels
+        cur.execute('''
+            SELECT * FROM hostel
+            ORDER BY id
+        ''')
+
+    hostels = cur.fetchall()
+    cur.close()
+
+    return render_template('hostel_manage.html', genders=genders, hostels=hostels, selected_gender=selected_gender)
+
+@main.route('/admin/edit_hostel/<int:hostel_id>', methods=['GET', 'POST'])
+@admin_required
+def edit_hostel(hostel_id):
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    
+    if request.method == 'POST':
+        hostel_name = request.form['hostel_name']
+        gender = request.form['gender']
+        
+        # Update the hostel details in the database
+        cur.execute("UPDATE hostel SET name = %s, gender = %s WHERE id = %s", (hostel_name, gender, hostel_id))
+        mysql.connection.commit()
+        flash('Hostel updated successfully!', 'success')
+        return redirect(url_for('manage_hostels'))
+    
+    # Fetch the existing hostel details for the form
+    cur.execute("SELECT * FROM hostel WHERE id = %s", (hostel_id,))
+    hostel = cur.fetchone()
+    cur.close()
+    
+    return render_template('hostel_edit.html', hostel=hostel)
+
+@main.route('/admin/delete_hostel/<int:hostel_id>', methods=['POST'])
+@admin_required
+def delete_hostel(hostel_id):
+    cur = mysql.connection.cursor()
+    cur.execute("DELETE FROM hostel WHERE id = %s", (hostel_id,))
+    mysql.connection.commit()
+    cur.close()
+    flash('Hostel deleted successfully!', 'success')
+    return redirect(url_for('manage_hostels'))
 
 #####################################################################
 

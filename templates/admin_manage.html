@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_manage-style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="manage-room-wrapper">
+    <!-- Sidebar -->
+    <nav class="sidebar">
+        <div class="menu-item" id="addBtn" onclick="location.href='{{ url_for('admin_profile') }}'">
+            <p class="fas fa-user"></p>
+        </div>
+        <div class="menu-item" id="editBtn" onclick="location.href='{{ url_for('admin_change_password') }}'">
+            <p class="fas fa-key"></p>
+        </div>
+        <div class="menu-item" id="addBtn" onclick="location.href='{{ url_for('add_admin') }}'">
+            <p class="fas fa-plus"></p>
+        </div>
+        <div class="menu-item" id="editBtn" onclick="location.href='{{ url_for('manage_sections') }}'">
+            <p class="fas fa-edit"></p>
+        </div>
+    </nav>
+    
+    <!-- Main Content -->
+    <main class="content">
+        <h1>Manage Admin</h1>
+        <table>
+            <thead>
+                <tr>
+                    <th>Admin ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Options</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for admin in admins %}
+                <tr>
+                    <td>{{ admin.id }}</td>
+                    <td>{{ admin.name }}</td>
+                    <td>{{ admin.email }}</td>
+                    <td>
+                        <form action="{{ url_for('delete_admin', admin_id=admin.id) }}" method="POST">
+                            <button type="submit" onclick="return confirm('Are you sure you want to delete this admin?')">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </main>
+</div>
+{% endblock %}
+

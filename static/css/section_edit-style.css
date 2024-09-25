@@ -1,18 +1,11 @@
-.manage-room-wrapper {
+.manage-section-wrapper {
     background-color: #ffffff;
-    max-width: 900px;
+    max-width: 800px;
     border-radius: 15px;
-    margin: 0 auto;
+    margin: 50px auto;
     padding: 30px;
     box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.1);
     display: flex;
-    margin-top: 50px;
-}
-
-h1 {
-    margin-bottom: 20px;
-    font-weight: bold;
-    text-align: center;
 }
 
 /* Sidebar */
@@ -63,58 +56,30 @@ h1 {
     background-color: transparent; /* No background change */
 }
 
+/* Content Area */
 .content {
     flex-grow: 1;
     padding-left: 30px;
 }
 
-.request-table {
-    width: 100%;
-    border-collapse: collapse;
+h1 {
     margin-bottom: 20px;
-}
-
-.request-table th, .request-table td {
-    border: 1px solid #ccc;
-    padding: 10px;
-}
-
-.request-table th {
-    background-color: #f4f4f4;
     font-weight: bold;
-}
-
-.request-table td {
-    background-color: #fff;
-}
-
-.button-row {
-    gap: 10px;
-    display: flex;
-    justify-content: center;
-}
-
-.approve-options {
-    display: none; /* Hidden by default */
     text-align: center;
-    font-size: 1em;
 }
 
-.btn {
-    padding: 10px 20px;
-    background-color: #1a1b2d;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 1em;
+form {
+    font-size: 1.1em;
+    max-width: 800px;
+    margin-top: 20px;
 }
 
-.btn:hover {
-    background-color: #30334f;
+form div {
+    margin-bottom: 15px;
 }
 
 label {
+    display: block;
     font-weight: bold;
     margin-bottom: 5px;
 }
@@ -124,9 +89,38 @@ input, select {
     padding: 10px;
     border: 1px solid #ccc;
     border-radius: 5px;
+    box-sizing: border-box;
     font-size: 1em;
 }
 
-.no-requests-message {
-    text-align: center;
+/* Update button */
+button {
+    padding: 10px 20px;
+    background-color: #1a1b2d;
+    color: #ffffff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    font-size: 1em;
+}
+
+button:hover {
+    background-color: #30334f;
+}
+
+.status-message {
+    padding: 10px;
+    margin-bottom: 15px;
+    border-radius: 5px;
+}
+
+.status-message.success {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.status-message.error {
+    background-color: #f8d7da;
+    color: #721c24;
 }

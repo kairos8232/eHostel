@@ -1,58 +1,235 @@
+/* Reset */
 * {
-	margin: 0;
-	padding: 0;
-	font-family: 'Poppins', sans-serif;
-	box-sizing: border-box;
-  }
-  .header {
-    display: flex;
-    min-height: 100vh;
-    width: 100%;
-    background-image: linear-gradient(rgba(4, 9, 30, 0.7), rgba(4, 9, 30, 0.7)), 
-    url('/static/images/inst-profile-header-mmu.jpg');
-    background-position: center;
-    background-size: cover;
-    justify-content: center; /* center the sign-in container */
-    align-items: center; /* center the sign-in container */
-  }
-  
-  .glass-blur-container {
-	width: 400px;
-	background-color: rgba(255, 255, 255, 0.2);
-	backdrop-filter: blur(10px);
-	border-radius: 15px;
-	padding: 20px;
-	text-align: center;
-	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  }
-  
-  .logo {
-	width: 250px;
-	margin: 20px;
-  }
-  
-  .button-container {
-	display: flex;
-	justify-content: space-between;
-	margin: 20px;
-  }
-  
-  .button-container a {
-	width: 100%; /* Ensure both buttons take equal space */
-  }
-  
-  .button-container button {
-	width: 100%;
-	padding: 15px;
-	font-size: 16px;
-	font-weight: bold;
-	background-color: #337ab7;
-	color: #fff;
-	border: none;
-	border-radius: 5px;
-	cursor: pointer;
-	transition: background-color 0.3s, transform 0.2s, box-shadow 0.2s;
-  }
-  
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
 
-  
+html, body {
+    height: 100%;
+    overflow-x: hidden;
+    scroll-behavior: smooth;
+}
+
+/* Section base styles */
+.section {
+    width: 100%;
+    height: 100vh; /* Full viewport height */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
+/* First Section (Index/Home) */
+#home {
+    background-image: linear-gradient(rgba(4, 9, 30, 0.7), rgba(4, 9, 30, 0.7)), url('/static/images/inst-profile-header-mmu.jpg');
+    background-size: cover;
+    background-position: center;
+    color: white;
+}
+
+.navbar {
+    width: 100%;
+    height: 80px;
+    position: fixed; /* Fix the navbar to the top */
+    top: 0;
+    left: 0;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding: 30px;
+    z-index: 100;
+    background: transparent;
+}
+
+.navbar .logo {
+    width: 150px;
+}
+
+.nav {
+    display: flex;
+}
+
+.nav a {
+    color: white;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 18px;
+    padding: 8px 16px;
+    transition: background-color 0.3s ease;
+    border-radius: 100px;
+}
+
+.nav a:hover {
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.title-container {
+    text-align: center;
+}
+
+.title h1 {
+    font-size: 50px;
+    margin-bottom: 20px;
+    font-weight: bold;
+}
+
+.title p {
+    font-size: 20px;
+    margin-bottom: 30px;
+}
+
+.button-container {
+    margin-top: 20px;
+}
+
+.button-container a button {
+	background-color: #337ab7;
+    color: #ffffff;
+    padding: 15px 50px;
+    font-size: 18px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+.button-container a button:hover {
+    background-color: #095da7;
+}
+
+/* Second Section (About) */
+#about {
+    padding: 80px 20px; /* Adjust padding to prevent overlap with navbar */
+	background-image: linear-gradient(rgba(4, 9, 30, 0.7), rgba(4, 9, 30, 0.7)), url('/static/images/inst-profile-header-mmu.jpg');
+    background-size: cover;
+    background-position: center;
+    color: white;
+}
+
+h2 {
+    color: #2c3e50;
+}
+
+/* Container 1 Styles */
+.container1, .container2 {
+    background-color: rgba(255, 255, 255, 0.85);
+    padding: 20px;
+    border-radius: 8px;
+    margin: 20px auto;
+    width: 85%; /* Ensuring both containers have the same width */
+    max-width: 1200px; /* Set a max width for both containers */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    display: flex; /* Flexbox layout for both containers */
+    flex-wrap: wrap;
+    justify-content: space-between; /* Ensure spacing between elements inside */
+}
+
+.container1 img {
+    width: 40%; /* Image width adjusted for Container 1 */
+    margin-right: 20px;
+    border-radius: 8px;
+}
+
+.content {
+	color: #2c3e50;
+    flex: 1;
+}
+
+.note, .contact {
+    margin-bottom: 20px;
+}
+.note, .contact, .location {
+    padding-left: 20px;
+}
+
+.room_facilities {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+}
+
+/* Styles for both slideshow containers */
+.slideshow-container, .slideshow-container2 {
+    width: 45%; /* Set each slideshow width to 45% */
+    position: relative;
+    height: 300px;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+.slide {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transition: opacity 1s ease-in-out;
+}
+
+.slide img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.slide-caption {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    padding: 10px;
+    text-align: center;
+}
+
+/* Slideshow animation for the first container */
+.slideshow-container > div:nth-child(1) {
+    opacity: 1;
+}
+.slideshow-container > div:nth-child(2) {
+    animation: slideshow 20s linear infinite;
+}
+.slideshow-container > div:nth-child(3) {
+    animation: slideshow 20s linear infinite 2.5s;
+}
+.slideshow-container > div:nth-child(4) {
+    animation: slideshow 20s linear infinite 5s;
+}
+.slideshow-container > div:nth-child(5) {
+    animation: slideshow 20s linear infinite 7.5s;
+}
+.slideshow-container > div:nth-child(6) {
+    animation: slideshow 20s linear infinite 10s;
+}
+.slideshow-container > div:nth-child(7) {
+    animation: slideshow 20s linear infinite 12.5s;
+}
+.slideshow-container > div:nth-child(8) {
+    animation: slideshow 20s linear infinite 15s;
+}
+
+/* Slideshow animation for the second container */
+.slideshow-container2 > div:nth-child(1) {
+    opacity: 1;
+}
+.slideshow-container2 > div:nth-child(2) {
+    animation: slideshow 8s linear infinite;
+}
+.slideshow-container2 > div:nth-child(3) {
+    animation: slideshow 8s linear infinite 2s;
+}
+.slideshow-container2 > div:nth-child(4) {
+    animation: slideshow 8s linear infinite 4s;
+}
+
+/* Keyframes for both slideshows */
+@keyframes slideshow {
+    0%, 16%, 100% { opacity: 0; }
+    20%, 36% { opacity: 1; }
+}
