@@ -1,29 +1,65 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit Question</title>
-</head>
-<body>
-    <h1>Edit Question</h1>
-    <form action="{{ url_for('edit_question', question_id=question.id) }}" method="POST">
-        <label for="section_id">Section:</label>
-        <select id="section_id" name="section_id" required>
-            {% for section in sections %}
-            <option value="{{ section.id }}" {% if section.id == question.section_id %}selected{% endif %}>
-                {{ section.name }}
-            </option>
-            {% endfor %}
-        </select><br>
-        <label for="question_text">Question Text:</label>
-        <textarea id="question_text" name="question_text" required>{{ question.text }}</textarea><br>
-        <label for="min_rating">Min Rating:</label>
-        <input type="number" id="min_rating" name="min_rating" value="{{ question.min_rating }}" min="1" required><br>
-        <label for="max_rating">Max Rating:</label>
-        <input type="number" id="max_rating" name="max_rating" value="{{ question.max_rating }}" min="1" required><br>
-        <input type="submit" value="Update Question">
-    </form>
-    <a href="{{ url_for('manage_questions') }}">Back to Questions</a>
-</body>
-</html>
+{% extends 'base.html' %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/question_edit-style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="manage-question-wrapper">
+    <!-- Sidebar -->
+    <nav class="sidebar">
+        <div class="text">
+            <p>Question</p>
+        </div>
+        <div class="menu-item" id="addBtn" onclick="location.href='{{ url_for('add_question') }}'">
+            <p class="fas fa-plus"></p>
+        </div>
+        <div class="menu-item" id="editBtn" onclick="location.href='{{ url_for('manage_questions') }}'">
+            <p class="fas fa-edit"></p>
+        </div>
+        <div class="text">
+            <p>Section</p>
+        </div>
+        <div class="menu-item" id="addBtn" onclick="location.href='{{ url_for('add_section') }}'">
+            <p class="fas fa-plus"></p>
+        </div>
+        <div class="menu-item" id="editBtn" onclick="location.href='{{ url_for('manage_sections') }}'">
+            <p class="fas fa-edit"></p>
+        </div>
+    </nav>
+
+    <!-- Main content area -->
+    <div class="content">
+        <h1>Edit Question</h1>
+        
+        <!-- Status message area -->
+        {% if status_message %}
+        <div class="status-message {% if 'Error' in status_message %}error{% else %}success{% endif %}">
+            {{ status_message }}
+        </div>
+        {% endif %}
+        
+        <!-- Question editing form -->
+        <form method="POST" action="{{ url_for('edit_question', question_id=question.id) }}">
+            <div>
+                <label for="section_id">Section:</label>
+                <select id="section_id" name="section_id" required>
+                    {% for section in sections %}
+                    <option value="{{ section.id }}" {% if section.id == question.section_id %}selected{% endif %}>
+                        {{ section.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="question_text">Question Text:</label>
+                <input type="text" id="question_text" name="question_text" value="{{ question.text }}" required>
+            </div>
+            <div>
+                <button type="submit">Update Question</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

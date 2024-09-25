@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_profile-style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+{% endblock %}
+
+{% block content %}
+
+<div class="manage-profile-wrapper">
+    <nav class="sidebar">
+        <div class="menu-item" id="addBtn" onclick="location.href='{{ url_for('admin_profile') }}'">
+            <p class="fas fa-user"></p>
+        </div>
+        <div class="menu-item" id="editBtn" onclick="location.href='{{ url_for('admin_change_password') }}'">
+            <p class="fas fa-key"></p>
+        </div>
+        <div class="menu-item" id="addBtn" onclick="location.href='{{ url_for('add_admin') }}'">
+            <p class="fas fa-plus"></p>
+        </div>
+        <div class="menu-item" id="editBtn" onclick="location.href='{{ url_for('manage_admins') }}'">
+            <p class="fas fa-edit"></p>
+        </div>
+    </nav>
+
+    <main class="content">
+        <h1 class="page-title">Admin Profile</h1>
+        <div class="profile-header">
+            <img src="{{ profile_pic_url }}" class="profile-image" alt="Profile Image">
+            <div class="profile-info">
+                <h1>{{ name }}</h1>
+            </div>
+        </div>
+        <div class="profile-content">
+            <h2>Admin ID</h2>
+            <p>{{ admin_id }}</p>
+            <h2>Email</h2>
+            <p>{{ email }}</p>
+        </div>
+    </main>
+</div>
+
+{% endblock %}

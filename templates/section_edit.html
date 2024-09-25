@@ -1,17 +1,55 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit Section</title>
-</head>
-<body>
-    <h1>Edit Section</h1>
-    <form action="{{ url_for('edit_section', section_id=section.id) }}" method="POST">
-        <label for="section_name">Section Name:</label>
-        <input type="text" id="section_name" name="section_name" value="{{ section.name }}" required>
-        <input type="submit" value="Update Section">
-    </form>
-    <a href="{{ url_for('manage_sections') }}">Back to Sections</a>
-</body>
-</html>
+{% extends 'base.html' %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/section_edit-style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="manage-section-wrapper">
+
+    <!-- Sidebar -->
+    <nav class="sidebar">
+        <div class="text">
+            <p>Question</p>
+        </div>
+        <div class="menu-item" id="addBtn" onclick="location.href='{{ url_for('add_question') }}'">
+            <p class="fas fa-plus"></p>
+        </div>
+        <div class="menu-item" id="editBtn" onclick="location.href='{{ url_for('manage_questions') }}'">
+            <p class="fas fa-edit"></p>
+        </div>
+        <div class="text">
+            <p>Section</p>
+        </div>
+        <div class="menu-item" id="addBtn" onclick="location.href='{{ url_for('add_section') }}'">
+            <p class="fas fa-plus"></p>
+        </div>
+        <div class="menu-item" id="editBtn" onclick="location.href='{{ url_for('manage_sections') }}'">
+            <p class="fas fa-edit"></p>
+        </div>
+    </nav>
+
+    <!-- Main content area -->
+    <div class="content">
+        <h1>Edit Section</h1>
+
+        <!-- Status message area -->
+        {% if status_message %}
+        <div class="status-message {% if 'Error' in status_message %}error{% else %}success{% endif %}">
+            {{ status_message }}
+        </div>
+        {% endif %}
+
+        <form method="POST" action="{{ url_for('edit_section', section_id=section.id) }}">
+            <div>
+                <label for="section_name">Section Name:</label>
+                <input type="text" id="section_name" name="section_name" value="{{ section.name }}" required>
+            </div>
+            <div>
+                <button type="submit">Update Section</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

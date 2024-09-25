@@ -52,6 +52,7 @@ header {
 
 .user-pic{
     width: 50px;
+    height: 50px;
     border: solid;
     border-color: gray;
     border-width: 1px;

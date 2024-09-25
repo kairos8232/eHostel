@@ -6,68 +6,75 @@
 {% endblock %}
 
 {% block content %}
-  <div class="manage-group-wrapper">
-      <!-- Sidebar -->
-      <div class="sidebar">
-        <div class="menu-item inactive" id="statusBtn" onclick="location.href='{{ url_for('admin_room_change_requests') }}';">
-          <i class="fas fa-repeat"></i>
-        </div>
-        <div class="menu-item inactive" id="swapBtn" onclick="location.href='{{ url_for('admin_room_swap_requests') }}';">
-          <i class="fas fa-exchange"></i>
-        </div>
-        <div class="menu-item inactive" id="addBtn" onclick="location.href='{{ url_for('add_room') }}';">
-          <i class="fas fa-plus"></i>
-        </div>
-        <div class="menu-item inactive" id="editBtn" onclick="location.href='{{ url_for('manage_rooms') }}';">
-          <i class="fas fa-edit"></i>
-        </div>
-      </div>
-  
-      <!-- Main content area -->
-      <div class="content">
+<div class="manage-room-wrapper">
+  <!-- Sidebar -->
+  <nav class="sidebar">
+    <div class="text">
+        <p>Room</p>
+    </div>
+    <div class="menu-item inactive" id="statusBtn" onclick="location.href='{{ url_for('admin_room_change_requests') }}';">
+        <p class="fas fa-repeat"></p>
+    </div>
+    <div class="menu-item inactive" id="swapBtn" onclick="location.href='{{ url_for('admin_room_swap_requests') }}';">
+        <p class="fas fa-exchange"></p>
+    </div>
+    <div class="menu-item inactive" id="addBtn" onclick="location.href='{{ url_for('add_room') }}';">
+        <p class="fas fa-plus"></p>
+    </div>
+    <div class="menu-item inactive" id="editBtn" onclick="location.href='{{ url_for('manage_rooms') }}';">
+        <p class="fas fa-edit"></p>
+    </div>
+    <div class="text">
+        <p>Hostel</p>
+    </div>
+    <div class="menu-item inactive" id="addBtn" onclick="location.href='{{ url_for('add_hostel') }}';">
+        <p class="fas fa-plus"></p>
+    </div>
+    <div class="menu-item inactive" id="editBtn" onclick="location.href='{{ url_for('manage_hostels') }}';">
+        <p class="fas fa-edit"></p>
+    </div>
+  </nav>
 
-  
-          <!-- Status message area -->
-          {% if status_message %}
-          <div class="status-message {% if 'Error' in status_message %}error{% else %}success{% endif %}">
-              {{ status_message }}
-          </div>
-          {% endif %}
-  
-          <form method="POST" action="{{ url_for('edit_room', room_number=room.number) }}">
-            <div>
-              <h2>Room Number: {{ room.number }}</h2>
-            </div>
-            
-            <div>
-              <label for="hostel_id">Hostel:</label>
-              <select id="hostel_id" name="hostel_id" required>
-                {% for hostel in hostels %}
-                  <option value="{{ hostel.id }}" {% if hostel.id == room.hostel_id %}selected{% endif %}>
-                    {{ hostel.name }} ({{ hostel.gender }})
-                  </option>
-                {% endfor %}
-              </select>
-            </div>
-          
-            <div>
-              <label for="category">Category:</label>
-              <select id="category" name="category" required>
-                <option value="Single" {% if room.category == 'Single' %}selected{% endif %}>Single</option>
-                <option value="Double" {% if room.category == 'Double' %}selected{% endif %}>Double</option>
-                <option value="Triple" {% if room.category == 'Triple' %}selected{% endif %}>Triple</option>
-              </select>
-            </div>
-          
-            <div>
-              <label for="price">Price:</label>
-              <input type="number" id="price" name="price" value="{{ room.price }}" required>
-            </div>
-          
-            <div>
-              <button type="submit">Update Room</button>
-            </div>
-          </form>
+  <!-- Main content area -->
+  <div class="content">
+    <h1>Room Number: {{ room.number }}</h1>
+      <!-- Status message area -->
+      {% if status_message %}
+      <div class="status-message {% if 'Error' in status_message %}error{% else %}success{% endif %}">
+          {{ status_message }}
       </div>
+      {% endif %}
+
+      <form method="POST" action="{{ url_for('edit_room', room_number=room.number) }}">
+        <div>
+          <label for="hostel_id">Hostel:</label>
+          <select id="hostel_id" name="hostel_id" required>
+            {% for hostel in hostels %}
+              <option value="{{ hostel.id }}" {% if hostel.id == room.hostel_id %}selected{% endif %}>
+                {{ hostel.name }} ({{ hostel.gender }})
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+      
+        <div>
+          <label for="category">Category:</label>
+          <select id="category" name="category" required>
+            <option value="Single" {% if room.category == 'Single' %}selected{% endif %}>Single</option>
+            <option value="Double" {% if room.category == 'Double' %}selected{% endif %}>Double</option>
+            <option value="Triple" {% if room.category == 'Triple' %}selected{% endif %}>Triple</option>
+          </select>
+        </div>
+      
+        <div>
+          <label for="price">Price:</label>
+          <input type="number" id="price" name="price" value="{{ room.price }}" required>
+        </div>
+      
+        <div>
+          <button type="submit">Update Room</button>
+        </div>
+      </form>
   </div>
+</div>
 {% endblock %}

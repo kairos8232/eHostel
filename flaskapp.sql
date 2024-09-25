@@ -25,13 +25,15 @@ DROP TABLE IF EXISTS `admin`;
 CREATE TABLE IF NOT EXISTS `admin` (
   `id` int NOT NULL,
   `name` varchar(50) NOT NULL,
+  `email` varchar(50) NOT NULL,
   `password` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Dumping data for table flaskapp.admin: ~1 rows (approximately)
-INSERT INTO `admin` (`id`, `name`, `password`) VALUES
-	(1234, 'AdminUser', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi');
+INSERT INTO `admin` (`id`, `name`, `email`, `password`) VALUES
+	(1234, 'Kairos', 'admin@example.com', '$2b$12$296Zc5hnoYBlVYMOWi7QWu9LTKe5N8w05oZXPMIwT5afDcAkVwD0e'),
+	(2468284, 'Lee', 'admin2@example.com', '$2b$12$296Zc5hnoYBlVYMOWi7QWu9LTKe5N8w05oZXPMIwT5afDcAkVwD0e');
 
 -- Dumping structure for table flaskapp.announcement
 DROP TABLE IF EXISTS `announcement`;
@@ -66,7 +68,7 @@ CREATE TABLE IF NOT EXISTS `beds` (
 -- Dumping data for table flaskapp.beds: ~17 rows (approximately)
 INSERT INTO `beds` (`id`, `room_number`, `bed_letter`, `status`) VALUES
 	(1, 101, 'A', 'Available'),
-	(3, 103, 'A', 'Occupied'),
+	(3, 103, 'A', 'Available'),
 	(4, 104, 'A', 'Available'),
 	(6, 202, 'A', 'Available'),
 	(7, 203, 'A', 'Available'),
@@ -74,7 +76,7 @@ INSERT INTO `beds` (`id`, `room_number`, `bed_letter`, `status`) VALUES
 	(9, 302, 'A', 'Available'),
 	(10, 303, 'A', 'Available'),
 	(12, 103, 'B', 'Available'),
-	(13, 104, 'B', 'Occupied'),
+	(13, 104, 'B', 'Available'),
 	(14, 202, 'B', 'Available'),
 	(15, 203, 'B', 'Available'),
 	(16, 302, 'B', 'Available'),
@@ -109,9 +111,86 @@ CREATE TABLE IF NOT EXISTS `booking` (
 ) ENGINE=InnoDB AUTO_INCREMENT=99 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
 -- Dumping data for table flaskapp.booking: ~2 rows (approximately)
-INSERT INTO `booking` (`booking_no`, `user_id`, `trimester_id`, `group_individual`, `group_id`, `hostel_id`, `room_no`, `cost`, `bed_number`) VALUES
-	(97, 1, 1, 0, NULL, 1, 103, 200.00, 'A'),
-	(98, 3, 1, 0, NULL, 1, 104, 200.00, 'B');
+
+-- Dumping structure for table flaskapp.chat_messages
+DROP TABLE IF EXISTS `chat_messages`;
+CREATE TABLE IF NOT EXISTS `chat_messages` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `sender_id` int NOT NULL,
+  `receiver_id` int DEFAULT NULL,
+  `group_id` int DEFAULT NULL,
+  `message` text COLLATE utf8mb4_unicode_520_ci NOT NULL,
+  `timestamp` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `FK_chat_messages_sender` (`sender_id`),
+  KEY `FK_chat_messages_receiver` (`receiver_id`),
+  KEY `FK_chat_messages_group` (`group_id`),
+  CONSTRAINT `FK_chat_messages_group` FOREIGN KEY (`group_id`) REFERENCES `groups` (`group_id`),
+  CONSTRAINT `FK_chat_messages_receiver` FOREIGN KEY (`receiver_id`) REFERENCES `users` (`id`),
+  CONSTRAINT `FK_chat_messages_sender` FOREIGN KEY (`sender_id`) REFERENCES `users` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=60 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+
+-- Dumping data for table flaskapp.chat_messages: ~55 rows (approximately)
+INSERT INTO `chat_messages` (`id`, `sender_id`, `receiver_id`, `group_id`, `message`, `timestamp`) VALUES
+	(1, 1, 3, NULL, 'sddsd', '2024-09-22 22:03:04'),
+	(2, 1, 3, NULL, 'fdfdfdf', '2024-09-22 22:03:07'),
+	(3, 7, NULL, 54, 'ssf', '2024-09-22 22:12:40'),
+	(4, 7, NULL, 54, 'dsfsfsf', '2024-09-22 22:12:43'),
+	(5, 7, NULL, 54, 'fsffsfsf', '2024-09-22 22:12:45'),
+	(6, 7, 3, NULL, 'sfsfsf', '2024-09-22 22:12:51'),
+	(7, 7, 3, NULL, 'sdfsfs', '2024-09-22 22:12:54'),
+	(8, 3, 3, NULL, 'sdsdsf', '2024-09-22 22:13:09'),
+	(9, 3, 1, NULL, 'sdsfsfsf', '2024-09-22 22:13:34'),
+	(10, 3, 7, NULL, 'sfsffs', '2024-09-22 22:14:04'),
+	(11, 3, 7, NULL, 'asdsfs', '2024-09-22 22:21:36'),
+	(12, 3, 1, NULL, 'dadadd', '2024-09-22 22:21:40'),
+	(13, 3, 3, NULL, 'hfyhjfgh\r\n', '2024-09-22 22:22:20'),
+	(14, 7, NULL, 54, 'saadd', '2024-09-22 22:23:03'),
+	(15, 7, 3, NULL, 'saqsdad', '2024-09-22 22:28:49'),
+	(16, 7, 3, NULL, 'adaddad', '2024-09-22 22:28:55'),
+	(17, 1, 3, NULL, 'adada', '2024-09-23 21:19:12'),
+	(18, 1, 3, NULL, 'assgsdgd', '2024-09-23 21:19:17'),
+	(19, 3, 3, NULL, 'adadd', '2024-09-23 21:38:53'),
+	(20, 3, 1, NULL, 'adfadad', '2024-09-23 21:40:37'),
+	(21, 3, 7, NULL, 'adasda', '2024-09-23 21:40:42'),
+	(22, 3, 3, NULL, 'wddsd', '2024-09-23 21:41:07'),
+	(23, 7, NULL, 54, 'adadad', '2024-09-23 22:01:32'),
+	(24, 7, 3, NULL, 'qddadad', '2024-09-23 22:01:35'),
+	(25, 7, 3, NULL, 'addadad', '2024-09-23 22:01:38'),
+	(26, 1, 3, NULL, 'addad', '2024-09-23 22:01:57'),
+	(27, 1, 3, NULL, 'HAHAHA what u speak', '2024-09-23 22:02:05'),
+	(28, 1, 3, NULL, 'dada', '2024-09-23 22:34:55'),
+	(29, 1, 3, NULL, 'daadd', '2024-09-23 22:40:52'),
+	(30, 7, 3, NULL, 'sasdad', '2024-09-23 22:52:45'),
+	(31, 3, NULL, 54, 'dadaad', '2024-09-23 23:00:14'),
+	(32, 1, 3, NULL, 'adad', '2024-09-23 23:17:32'),
+	(33, 1, 3, NULL, 'adad', '2024-09-23 23:17:43'),
+	(34, 1, 3, NULL, 'addad', '2024-09-23 23:17:47'),
+	(35, 1, 3, NULL, 'addad', '2024-09-23 23:18:50'),
+	(36, 1, 3, NULL, 'addada', '2024-09-23 23:18:52'),
+	(37, 1, 3, NULL, 'addada', '2024-09-23 23:18:59'),
+	(38, 1, 3, NULL, 'sas', '2024-09-23 23:20:45'),
+	(39, 1, 3, NULL, 'sas', '2024-09-23 23:21:35'),
+	(40, 1, 3, NULL, 'dada', '2024-09-23 23:21:37'),
+	(41, 3, 7, NULL, 'add', '2024-09-23 23:21:55'),
+	(42, 3, 3, NULL, 'dadd', '2024-09-23 23:21:57'),
+	(43, 3, 1, NULL, 'daaddasda', '2024-09-23 23:21:59'),
+	(44, 3, 1, NULL, 'dadaadd', '2024-09-23 23:22:04'),
+	(45, 3, 1, NULL, 'dadada', '2024-09-23 23:22:06'),
+	(46, 7, NULL, 54, 'add', '2024-09-23 23:31:09'),
+	(47, 7, NULL, 54, 'add', '2024-09-23 23:31:39'),
+	(48, 7, NULL, 54, 'add', '2024-09-23 23:31:58'),
+	(49, 7, NULL, 54, 'adsad', '2024-09-23 23:32:09'),
+	(50, 7, NULL, 54, 'adda', '2024-09-23 23:32:26'),
+	(51, 7, NULL, 54, 'dafdhtfjfnbxczcfgdf', '2024-09-23 23:32:35'),
+	(52, 7, NULL, 54, 'adddd', '2024-09-23 23:36:14'),
+	(53, 7, NULL, 54, 'adsgjhkj.', '2024-09-23 23:36:16'),
+	(54, 7, NULL, 54, 'asdasd', '2024-09-23 23:43:09'),
+	(55, 7, 3, NULL, 'dada', '2024-09-23 23:43:11'),
+	(56, 7, 3, NULL, 'fsfgf', '2024-09-23 23:43:54'),
+	(57, 1, 3, NULL, 'fsfsfsfsf', '2024-09-24 11:57:33'),
+	(58, 1, 3, NULL, 'sfsfs', '2024-09-24 12:00:49'),
+	(59, 1, 3, NULL, 'asfsf', '2024-09-24 12:04:11');
 
 -- Dumping structure for table flaskapp.groups
 DROP TABLE IF EXISTS `groups`;
@@ -120,14 +199,17 @@ CREATE TABLE IF NOT EXISTS `groups` (
   `leader_id` int NOT NULL,
   `trimester_id` int NOT NULL,
   `name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
+  `profile_pic` varchar(255) COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
   PRIMARY KEY (`group_id`),
   KEY `leader_id` (`leader_id`),
   KEY `FK_groups_trimester` (`trimester_id`),
   CONSTRAINT `FK_groups_trimester` FOREIGN KEY (`trimester_id`) REFERENCES `trimester` (`id`),
   CONSTRAINT `groups_ibfk_1` FOREIGN KEY (`leader_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=54 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=55 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
--- Dumping data for table flaskapp.groups: ~0 rows (approximately)
+-- Dumping data for table flaskapp.groups: ~1 rows (approximately)
+INSERT INTO `groups` (`group_id`, `leader_id`, `trimester_id`, `name`, `profile_pic`) VALUES
+	(54, 7, 1, NULL, NULL);
 
 -- Dumping structure for table flaskapp.group_members
 DROP TABLE IF EXISTS `group_members`;
@@ -140,9 +222,12 @@ CREATE TABLE IF NOT EXISTS `group_members` (
   KEY `user_id` (`user_id`),
   CONSTRAINT `group_members_ibfk_1` FOREIGN KEY (`group_id`) REFERENCES `groups` (`group_id`),
   CONSTRAINT `group_members_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=119 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=121 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
--- Dumping data for table flaskapp.group_members: ~0 rows (approximately)
+-- Dumping data for table flaskapp.group_members: ~1 rows (approximately)
+INSERT INTO `group_members` (`id`, `group_id`, `user_id`) VALUES
+	(119, 54, 7),
+	(120, 54, 3);
 
 -- Dumping structure for table flaskapp.hostel
 DROP TABLE IF EXISTS `hostel`;
@@ -191,9 +276,9 @@ CREATE TABLE IF NOT EXISTS `questions` (
   PRIMARY KEY (`id`) USING BTREE,
   KEY `FK_questions_ques_sections` (`section_id`),
   CONSTRAINT `FK_questions_ques_sections` FOREIGN KEY (`section_id`) REFERENCES `ques_sections` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=31 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=33 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
--- Dumping data for table flaskapp.questions: ~29 rows (approximately)
+-- Dumping data for table flaskapp.questions: ~30 rows (approximately)
 INSERT INTO `questions` (`id`, `section_id`, `text`, `min_rating`, `max_rating`) VALUES
 	(1, 1, 'I prefer a quiet environment when studying.', 1, 5),
 	(2, 1, 'I usually study early in the morning.', 1, 5),
@@ -232,7 +317,7 @@ CREATE TABLE IF NOT EXISTS `ques_sections` (
   `id` int NOT NULL AUTO_INCREMENT,
   `name` varchar(50) COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
 -- Dumping data for table flaskapp.ques_sections: ~6 rows (approximately)
 INSERT INTO `ques_sections` (`id`, `name`) VALUES
@@ -257,11 +342,11 @@ CREATE TABLE IF NOT EXISTS `rooms` (
   CONSTRAINT `rooms_ibfk_1` FOREIGN KEY (`hostel_id`) REFERENCES `hostel` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table flaskapp.rooms: ~16 rows (approximately)
+-- Dumping data for table flaskapp.rooms: ~17 rows (approximately)
 INSERT INTO `rooms` (`number`, `hostel_id`, `category`, `capacity`, `status`, `price`) VALUES
 	(101, 1, 'Single', 1, 'Available', 100.00),
-	(103, 1, 'Triple', 3, 'Partially Occupied', 200.00),
-	(104, 1, 'Double', 2, 'Partially Occupied', 200.00),
+	(103, 1, 'Triple', 3, 'Available', 200.00),
+	(104, 1, 'Double', 2, 'Available', 200.00),
 	(202, 2, 'Double', 2, 'Available', 160.00),
 	(203, 2, 'Triple', 3, 'Available', 210.00),
 	(204, 2, 'Single', 1, 'Available', 110.00),
@@ -273,8 +358,7 @@ INSERT INTO `rooms` (`number`, `hostel_id`, `category`, `capacity`, `status`, `p
 	(304, 3, 'Single', 1, 'Available', 120.00),
 	(305, 3, 'Double', 2, 'Available', 170.00),
 	(306, 3, 'Triple', 3, 'Available', 220.00),
-	(308, 3, 'Double', 2, 'Available', 170.00),
-	(309, 3, 'Triple', 3, 'Available', 220.00);
+	(308, 3, 'Double', 2, 'Available', 170.00);
 
 -- Dumping structure for table flaskapp.room_change_requests
 DROP TABLE IF EXISTS `room_change_requests`;
@@ -289,10 +373,10 @@ CREATE TABLE IF NOT EXISTS `room_change_requests` (
   CONSTRAINT `fk_room_change_requests_users` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=27 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table flaskapp.room_change_requests: ~3 rows (approximately)
+-- Dumping data for table flaskapp.room_change_requests: ~2 rows (approximately)
 INSERT INTO `room_change_requests` (`request_id`, `user_id`, `reason`, `status`, `created_at`) VALUES
 	(24, 1, 'sfsfsfsf', 'rejected', '2024-09-20 14:52:50'),
-	(25, 1, 'ascdfsdscfs', 'pending', '2024-09-20 15:11:46'),
+	(25, 1, 'ascdfsdscfs', 'rejected', '2024-09-20 15:11:46'),
 	(26, 3, 'sfffsczx', 'pending', '2024-09-20 15:46:04');
 
 -- Dumping structure for table flaskapp.room_swap_requests
@@ -311,7 +395,7 @@ CREATE TABLE IF NOT EXISTS `room_swap_requests` (
   CONSTRAINT `room_swap_requests_ibfk_2` FOREIGN KEY (`other_user_id`) REFERENCES `users` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
--- Dumping data for table flaskapp.room_swap_requests: ~1 rows (approximately)
+-- Dumping data for table flaskapp.room_swap_requests: ~0 rows (approximately)
 INSERT INTO `room_swap_requests` (`id`, `user_id`, `other_user_id`, `reason`, `status`, `created_at`) VALUES
 	(6, 1, 3, 'acsfsvgxx', 'approved_by_student', '2024-09-20 16:32:23');
 
@@ -336,7 +420,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `id` int NOT NULL,
   `name` varchar(100) DEFAULT NULL,
   `gender` enum('Male','Female') CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `email` varchar(50) NOT NULL,
+  `email` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `password` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `faculty` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
   `profile_pic` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
@@ -346,9 +430,9 @@ CREATE TABLE IF NOT EXISTS `users` (
 
 -- Dumping data for table flaskapp.users: ~16 rows (approximately)
 INSERT INTO `users` (`id`, `name`, `gender`, `email`, `password`, `faculty`, `profile_pic`, `survey_completed`) VALUES
-	(1, 'John Wick', 'Male', '1@www.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi', 'Computing', '/static/uploads/IMG_9520.JPG', 0),
+	(1, 'John Wick', 'Male', '1@www.com', '$2b$12$296Zc5hnoYBlVYMOWi7QWu9LTKe5N8w05oZXPMIwT5afDcAkVwD0e', 'Computing', '/static/uploads/IMG_9520.JPG', 0),
 	(2, 'Jane Smith', 'Female', 'user2@example.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi', 'Science', '', 0),
-	(3, 'Bob Johnson', 'Male', 'user3@example.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi', 'Arts', '', 0),
+	(3, 'Bob Johnson', 'Male', 'user3@example.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi', 'Arts', '/static/uploads/IMG_9523.JPG', 0),
 	(4, 'Alice Cooper', 'Female', 'alice.cooper@example.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi', 'Business', '', 0),
 	(5, 'David Miller', 'Male', 'david.miller@example.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi', 'Mathematics', '', 0),
 	(6, 'Emma Watson', 'Female', 'emma.watson@example.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi', 'Computer Science', '', 0),
@@ -360,8 +444,7 @@ INSERT INTO `users` (`id`, `name`, `gender`, `email`, `password`, `faculty`, `pr
 	(12, 'Isabella Garcia', 'Female', 'isabella.garcia@example.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi', 'Psychology', '', 0),
 	(13, 'James Wilson', 'Male', 'james.wilson@example.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi', 'Philosophy', '', 0),
 	(14, 'Charlotte Martinez', 'Female', 'charlotte.martinez@example.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi', 'Art', '', 0),
-	(15, 'Michael Anderson', 'Male', 'michael.anderson@example.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi', 'Business', '', 0),
-	(16, 'WAKABAKA', 'Male', 'userNick@example.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi', 'Engineering', '', 0);
+	(15, 'Michael Anderson', 'Male', 'michael.anderson@example.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi', 'Business', '', 0);
 
 -- Dumping structure for table flaskapp.user_ratings
 DROP TABLE IF EXISTS `user_ratings`;
@@ -375,7 +458,7 @@ CREATE TABLE IF NOT EXISTS `user_ratings` (
   CONSTRAINT `user_ratings_ibfk_1` FOREIGN KEY (`question_id`) REFERENCES `questions` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=93 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
--- Dumping data for table flaskapp.user_ratings: ~60 rows (approximately)
+-- Dumping data for table flaskapp.user_ratings: ~55 rows (approximately)
 INSERT INTO `user_ratings` (`rating_id`, `user_id`, `question_id`, `rating`) VALUES
 	(3, 3, 1, 3),
 	(4, 3, 2, 3),
