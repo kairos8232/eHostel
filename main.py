@@ -328,6 +328,33 @@ def search_user():
     search_id = request.form['search_id']
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
 
+    # Fetch all individual conversations for the current user
+    cur.execute("""
+        SELECT DISTINCT 
+            CASE 
+                WHEN cm.sender_id = %s THEN cm.receiver_id 
+                ELSE cm.sender_id 
+            END AS partner_id,
+            u.name AS partner_name,
+            u.profile_pic AS partner_profile_pic
+        FROM chat_messages cm
+        JOIN users u ON u.id = CASE 
+            WHEN cm.sender_id = %s THEN cm.receiver_id 
+            ELSE cm.sender_id 
+        END
+        WHERE %s IN (cm.sender_id, cm.receiver_id) AND cm.group_id IS NULL
+    """, (user_id, user_id, user_id))
+    individual_conversations = cur.fetchall()
+
+    # Fetch all group conversations for the current user
+    cur.execute("""
+        SELECT g.group_id, g.name AS group_name, g.profile_pic AS group_profile_pic
+        FROM `groups` g 
+        JOIN group_members gm ON g.group_id = gm.group_id 
+        WHERE gm.user_id = %s
+    """, (user_id,))
+    group_conversations = cur.fetchall()
+
     # Fetch the chat partner based on user ID
     cur.execute("SELECT id, name FROM users WHERE id = %s", (search_id,))
     chat_partner = cur.fetchone()
@@ -348,7 +375,7 @@ def search_user():
 
     cur.close()
 
-    return render_template('chat.html', chat_partner=chat_partner, messages=messages)
+    return render_template('chat.html', chat_partner=chat_partner, messages=messages, individual_conversations=individual_conversations, group_conversations=group_conversations)
 
 @main.route('/send_message', methods=['POST'])
 @student_required

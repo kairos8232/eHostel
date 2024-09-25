@@ -8,11 +8,11 @@
 <div class="wrapper">
     <div class="chat-container">
         <div class="conversation-list">
+            <h2>Conversations</h2>
             <form action="{{ url_for('search_user') }}" method="post" class="search-form">
                 <input type="text" name="search_id" placeholder="Student ID" required>
                 <button type="submit">Search</button>
             </form>
-            <h2>Conversations</h2>
             {% for conv in individual_conversations %}
                 <div class="conversation-item {% if chat_partner and chat_partner.id == conv.partner_id %}active{% endif %}" 
                         onclick="window.location.href='{{ url_for('individual_chat', partner_id=conv.partner_id) }}'">
@@ -21,12 +21,12 @@
                 </div>
             {% endfor %}
             {% for group in group_conversations %}
-                <div class="conversation-item"
+            <div class="conversation-item"
                     onclick="window.location.href='{{ url_for('group_chat', group_id=group.group_id) }}'">
-                    <img src="{{ user_group.profile_pic or url_for('static', filename='images/default_profile_pic.jpg') }}" alt="{{ user_group.name }}" class="profile-pic">
-                    Group: {{ group.group_name }}
-                </div>
-            {% endfor %}
+                <img src="{{ group.profile_pic or url_for('static', filename='images/default_group_pic.jpg') }}" alt="{{ group.group_name }}" class="profile-pic">
+                Group: {{ group.group_name }}
+            </div>
+        {% endfor %}
         </div>
     
         <div class="chat-area">
@@ -75,7 +75,7 @@
                 <form action="{{ url_for('send_group_message') }}" method="post">
                     <input type="hidden" name="group_id" value="{{ user_group.group_id }}">
                     <input type="text" name="message" placeholder="Type your message...">
-                    <button type="submit">Send to Group</button>
+                    <button type="submit">Send</button>
                 </form>
             {% else %}
                 <div class="empty-chat">
