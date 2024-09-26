@@ -6,6 +6,17 @@
 {% endblock %}
 
 {% block content %}
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+  <div class="flash-container">
+    {% for category, message in messages %}
+      <div class="flash-message flash-{{ category }}">{{ message }}</div>
+    {% endfor %}
+  </div>
+{% endif %}
+{% endwith %}
+
 <div class="manage-room-wrapper">
     <nav class="sidebar">
         <div class="text">
@@ -33,7 +44,6 @@
             <p class="fas fa-edit"></p>
         </div>
     </nav>
-
 
     <!-- Main Content -->
     <main class="content">
@@ -78,4 +88,15 @@
         </form>
     </main>
 </div>
+
+<script>
+    const flashMessages = document.querySelectorAll('.flash-message');
+    flashMessages.forEach(message => {
+      message.style.display = 'block';
+      setTimeout(() => {
+        message.style.display = 'none';
+      }, 3000); // Hide after 3 seconds
+    });
+</script>
+
 {% endblock %}

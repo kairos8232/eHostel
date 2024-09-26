@@ -5,11 +5,19 @@
 {% endblock %}
 
 {% block content %}
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<div class="flash-container">
+    {% for category, message in messages %}
+    <div class="flash-message flash-{{ category }}">{{ message }}</div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endwith %}
+
     <h1 class="page-title">Student Profile</h1>
     <div class="container">
-        {% if status == 'success' %}
-            <p class="status-message">Password changed successfully!</p>
-        {% endif %}
         <div class="profile-header">
             <img src="{{ profile_pic_url }}" class="profile-image" alt="Profile Image">
             <div class="profile-info">
@@ -30,5 +38,16 @@
             <a href="{{ url_for('change_password') }}" class="btn">Change Password</a>
         </div>
     </div>
+
+    <script>
+        const flashMessages = document.querySelectorAll('.flash-message');
+        flashMessages.forEach(message => {
+          message.style.display = 'block';
+          setTimeout(() => {
+            message.style.display = 'none';
+          }, 3000); // Hide after 3 seconds
+        });
+    </script>
+
 
 {% endblock %}

@@ -18,14 +18,34 @@
         </nav>
     </header>
 
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash-container">
+        {% for category, message in messages %}
+          <div class="flash-message flash-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+    {% endwith %}
+
     <div class="login-container">
         <form method="POST" action="{{ url_for('login') }}">
             <h1>Login</h1>
-            <input type="id" name="id" placeholder="Student ID/Admin ID" required="">
+            <input type="number" name="id" placeholder="Student ID/Admin ID" required="">
             <input type="password" name="password" placeholder="Password" required="">
             <a href="{{ url_for('index') }}">Forgot Your Password?</a>
             <button type="submit" value="Login">Login</button>
         </form>
     </div>
 </body>
+<script>
+    const flashMessages = document.querySelectorAll('.flash-message');
+    flashMessages.forEach(message => {
+      message.style.display = 'block';
+      setTimeout(() => {
+        message.style.display = 'none';
+      }, 3000); // Hide after 3 seconds
+    });
+</script>
+  
 </html>
