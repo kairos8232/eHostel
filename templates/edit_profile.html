@@ -5,28 +5,50 @@
 {% endblock %}
 
 {% block content %}
-    <h1 class="page-title">Edit Student Profile</h1>
-    <form action="{{ url_for('edit_profile') }}" method="POST" enctype="multipart/form-data">
-    <div class="container">
-        <div class="profile-header">
-            <img src="{{ image_url }}" class="profile-image" alt="Profile Image">
-            <div class="profile-info">
-                <h1>{{ name }}</h1>
-                <h3>{{ student_id }}</h3>
-            </div>
-            <input type="file" id="profile_pic" name="profile_pic">
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<div class="flash-container">
+    {% for category, message in messages %}
+    <div class="flash-message flash-{{ category }}">{{ message }}</div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endwith %}
+
+<h1 class="page-title">Edit Student Profile</h1>
+<form action="{{ url_for('edit_profile') }}" method="POST" enctype="multipart/form-data">
+<div class="container">
+    <div class="profile-header">
+        <img src="{{ image_url }}" class="profile-image" alt="Profile Image">
+        <div class="profile-info">
+            <h1>{{ name }}</h1>
+            <h3>{{ student_id }}</h3>
         </div>
-            <div class="profile-content">
-                <h2>Gender</h2>
-                <p>{{ gender }}</p>
-                <h2>Faculty</h2>
-                <p>{{ faculty }}</p>
-                <h2>Email</h2>
-                <input type="email" id="email" name="email" value="{{ email }}" required>
-            </div>
-            <div class="button-container">
-                <button type="submit">Save Changes</button>
-            </div>
-        </form>
+        <input type="file" id="profile_pic" name="profile_pic">
     </div>
+        <div class="profile-content">
+            <h2>Gender</h2>
+            <p>{{ gender }}</p>
+            <h2>Faculty</h2>
+            <p>{{ faculty }}</p>
+            <h2>Email</h2>
+            <input type="email" id="email" name="email" value="{{ email }}" required>
+        </div>
+        <div class="button-container">
+            <button type="submit">Save Changes</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    const flashMessages = document.querySelectorAll('.flash-message');
+    flashMessages.forEach(message => {
+      message.style.display = 'block';
+      setTimeout(() => {
+        message.style.display = 'none';
+      }, 3000); // Hide after 3 seconds
+    });
+</script>
+
 {% endblock %}

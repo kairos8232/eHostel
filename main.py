@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import Flask, render_template, request, redirect, url_for, session, flash, get_flashed_messages
 from flask_mysqldb import MySQL
 from functools import wraps
 import MySQLdb.cursors
@@ -416,6 +416,25 @@ def send_group_message():
 
     return redirect(url_for('group_chat', group_id=group_id))
 
+# Student Profile
+# @main.route('/student/profile', methods=['GET', 'POST'])
+# @student_required
+# def profile():
+#     user_id = session.get('id')
+    
+#     cur = mysql.connection.cursor()
+#     cur.execute("SELECT * FROM users WHERE id = %s", (user_id,))
+#     user = cur.fetchone()
+
+#     return render_template('profile.html',
+#         name=user[1],
+#         student_id=user[0],
+#         gender=user[2],
+#         email=user[3],
+#         faculty=user[5],
+#         image_url=user[6],
+#         url_for=url_for,
+#     )
 
 # Student Profile
 @main.route('/student/profile', methods=['GET', 'POST'])
@@ -426,8 +445,7 @@ def profile():
     cur = mysql.connection.cursor()
     cur.execute("SELECT * FROM users WHERE id = %s", (user_id,))
     user = cur.fetchone()
-    
-    status = request.args.get('status')
+    cur.close()  # Close the cursor after fetching user data
 
     return render_template('profile.html',
         name=user[1],
@@ -437,10 +455,63 @@ def profile():
         faculty=user[5],
         image_url=user[6],
         url_for=url_for,
-        status=status
+        messages=get_flashed_messages(with_categories=True)  # Pass flash messages to the template
     )
 
 # Edit Profile
+# @main.route('/student/edit_profile', methods=['GET', 'POST'])
+# @student_required
+# def edit_profile():
+#     user_id = session.get('id')
+    
+#     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    
+#     if request.method == 'POST':
+#         email = request.form['email']
+#         profile_pic = request.files.get('profile_pic')
+
+#         try:
+#             if profile_pic:
+#                 profile_pic_path = os.path.join(main.config['UPLOAD_FOLDER'], profile_pic.filename)
+#                 profile_pic.save(profile_pic_path)
+#                 profile_pic_url = url_for('static', filename=f"uploads/{profile_pic.filename}")
+#             else:
+#                 profile_pic_url = None
+
+#             cur.execute("""
+#                 UPDATE users SET email=%s, profile_pic=%s
+#                 WHERE id=%s
+#                 """, (email, profile_pic_url, user_id))
+#             mysql.connection.commit()
+
+#             # Flash success message
+#             flash('Profile updated successfully!', 'success')
+#         except Exception as e:
+#             # Handle any errors and flash a failure message
+#             flash('An error occurred while updating your profile. Please try again.', 'error')
+#             mysql.connection.rollback()
+#         finally:
+#             cur.close()
+
+#         return redirect(url_for('profile'))
+
+#     cur.execute("SELECT name, id, gender, faculty, email, profile_pic FROM users WHERE id=%s", [user_id])
+#     user_data = cur.fetchone()
+#     cur.close()
+
+#     if user_data:
+#         user_profile = {
+#             'name': user_data['name'],
+#             'student_id': user_data['id'],
+#             'gender': user_data['gender'],
+#             'faculty': user_data['faculty'],
+#             'email': user_data['email'],
+#             'image_url': user_data['profile_pic'] if user_data['profile_pic'] else url_for('static', filename='images/default_profile_pic.jpg')
+#         }
+#         return render_template('edit_profile.html', **user_profile)
+#     else:
+#         return redirect(url_for('home'))
+
 @main.route('/student/edit_profile', methods=['GET', 'POST'])
 @student_required
 def edit_profile():
@@ -452,20 +523,35 @@ def edit_profile():
         email = request.form['email']
         profile_pic = request.files.get('profile_pic')
 
-        if profile_pic:
-            profile_pic_path = os.path.join(main.config['UPLOAD_FOLDER'], profile_pic.filename)
-            profile_pic.save(profile_pic_path)
-            profile_pic_url = url_for('static', filename=f"uploads/{profile_pic.filename}")
-        else:
-            profile_pic_url = None
+        try:
+            if profile_pic:
+                # Save the uploaded profile picture
+                profile_pic_path = os.path.join(main.config['UPLOAD_FOLDER'], profile_pic.filename)
+                profile_pic.save(profile_pic_path)
+                profile_pic_url = url_for('static', filename=f"uploads/{profile_pic.filename}")
+            else:
+                profile_pic_url = None
 
-        cur.execute("""
-            UPDATE users SET email=%s, profile_pic=%s
-            WHERE id=%s
-            """, (email, profile_pic_url, user_id))
-        mysql.connection.commit()
+            # Update the user's profile data
+            cur.execute("""
+                UPDATE users SET email=%s, profile_pic=%s
+                WHERE id=%s
+                """, (email, profile_pic_url, user_id))
+            mysql.connection.commit()
+
+            # Flash success message
+            flash('Profile updated successfully!', 'success')
+        except Exception as e:
+            # Handle any errors and flash a failure message
+            flash('An error occurred while updating your profile. Please try again.', 'error')
+            mysql.connection.rollback()
+        finally:
+            cur.close()
+
+        # Redirect to the profile route
         return redirect(url_for('profile'))
 
+    # Fetch the user's current data for the edit form
     cur.execute("SELECT name, id, gender, faculty, email, profile_pic FROM users WHERE id=%s", [user_id])
     user_data = cur.fetchone()
     cur.close()
@@ -506,15 +592,16 @@ def change_password():
                 cur.execute("UPDATE users SET password=%s WHERE id=%s", (hashed_password, user_id))
                 mysql.connection.commit()
                 cur.close()
-                return redirect(url_for('profile', status='success'))
+                flash('Your password has been updated successfully!', 'success')
+                return redirect(url_for('profile'))
             else:
-                return redirect(url_for('change_password', error='Passwords do not match.'))
+                flash('Passwords do not match.', 'error')
+                return redirect(url_for('change_password'))
         else:
-            return redirect(url_for('change_password', error='Current password is incorrect.'))
+            flash('Current password is incorrect.', 'error')
+            return redirect(url_for('change_password'))
 
-    error = request.args.get('error')
-    status = request.args.get('status')
-    return render_template('change_password.html', error=error, status=status)
+    return render_template('change_password.html')
 
 # Room Setting
 @main.route('/student/room_setting')
@@ -559,14 +646,13 @@ def room_setting():
     if not booking:
         return redirect(url_for('select_trimester'))
 
-    status_message = None
     if request_status:
         if request_status['status'] == 'approved':
-            status_message = "Room changed successfully"
+            flash('Room changed successfully!', 'success')
         elif request_status['status'] == 'rejected':
-            status_message = "Room change request rejected by admin"
+            flash('Room change request rejected by admin.', 'error')
 
-    return render_template('room_setting.html', booking=booking, status_message=status_message, pending_swaps=pending_swaps)
+    return render_template('room_setting.html', booking=booking, pending_swaps=pending_swaps)
     
 # Select Trimester Route
 @main.route('/student/select_trimester', methods=['GET', 'POST'])
