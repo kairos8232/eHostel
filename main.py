@@ -417,26 +417,6 @@ def send_group_message():
     return redirect(url_for('group_chat', group_id=group_id))
 
 # Student Profile
-# @main.route('/student/profile', methods=['GET', 'POST'])
-# @student_required
-# def profile():
-#     user_id = session.get('id')
-    
-#     cur = mysql.connection.cursor()
-#     cur.execute("SELECT * FROM users WHERE id = %s", (user_id,))
-#     user = cur.fetchone()
-
-#     return render_template('profile.html',
-#         name=user[1],
-#         student_id=user[0],
-#         gender=user[2],
-#         email=user[3],
-#         faculty=user[5],
-#         image_url=user[6],
-#         url_for=url_for,
-#     )
-
-# Student Profile
 @main.route('/student/profile', methods=['GET', 'POST'])
 @student_required
 def profile():
@@ -459,59 +439,6 @@ def profile():
     )
 
 # Edit Profile
-# @main.route('/student/edit_profile', methods=['GET', 'POST'])
-# @student_required
-# def edit_profile():
-#     user_id = session.get('id')
-    
-#     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    
-#     if request.method == 'POST':
-#         email = request.form['email']
-#         profile_pic = request.files.get('profile_pic')
-
-#         try:
-#             if profile_pic:
-#                 profile_pic_path = os.path.join(main.config['UPLOAD_FOLDER'], profile_pic.filename)
-#                 profile_pic.save(profile_pic_path)
-#                 profile_pic_url = url_for('static', filename=f"uploads/{profile_pic.filename}")
-#             else:
-#                 profile_pic_url = None
-
-#             cur.execute("""
-#                 UPDATE users SET email=%s, profile_pic=%s
-#                 WHERE id=%s
-#                 """, (email, profile_pic_url, user_id))
-#             mysql.connection.commit()
-
-#             # Flash success message
-#             flash('Profile updated successfully!', 'success')
-#         except Exception as e:
-#             # Handle any errors and flash a failure message
-#             flash('An error occurred while updating your profile. Please try again.', 'error')
-#             mysql.connection.rollback()
-#         finally:
-#             cur.close()
-
-#         return redirect(url_for('profile'))
-
-#     cur.execute("SELECT name, id, gender, faculty, email, profile_pic FROM users WHERE id=%s", [user_id])
-#     user_data = cur.fetchone()
-#     cur.close()
-
-#     if user_data:
-#         user_profile = {
-#             'name': user_data['name'],
-#             'student_id': user_data['id'],
-#             'gender': user_data['gender'],
-#             'faculty': user_data['faculty'],
-#             'email': user_data['email'],
-#             'image_url': user_data['profile_pic'] if user_data['profile_pic'] else url_for('static', filename='images/default_profile_pic.jpg')
-#         }
-#         return render_template('edit_profile.html', **user_profile)
-#     else:
-#         return redirect(url_for('home'))
-
 @main.route('/student/edit_profile', methods=['GET', 'POST'])
 @student_required
 def edit_profile():
@@ -849,9 +776,6 @@ def leave_group(group_id):
     # Check if the user is the leader
     cur.execute("SELECT leader_id FROM `groups` WHERE group_id = %s", (group_id,))
     group = cur.fetchone()
-    
-    if group and group['leader_id'] == user_id:
-        return render_template('error.html', message="As the leader, you cannot leave the group. You must transfer leadership or disband the group.")
 
     # Remove the user from the group
     cur.execute("DELETE FROM group_members WHERE group_id = %s AND user_id = %s", (group_id, user_id))
@@ -867,7 +791,6 @@ def leave_group(group_id):
         mysql.connection.commit()
 
     cur.close()
-
     return redirect(url_for('choose_mode'))
 
 # Invite Member Route
@@ -1140,45 +1063,25 @@ def booking_summary(mode, hostel_id, room_type, room_number, bed_ids, user_ids):
 @main.route('/student/transfer_leadership/<int:group_id>/<int:new_leader_id>', methods=['POST'])
 @student_required
 def transfer_leadership(group_id, new_leader_id):
-    user_id = session.get('id')
-
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     
     # Check if the current user is the leader
     cur.execute("SELECT leader_id FROM `groups` WHERE group_id = %s", (group_id,))
-    group = cur.fetchone()
-    
-    if not group or group['leader_id'] != user_id:
-        cur.close()
-        return render_template('error.html', message="You are not authorized to transfer leadership.")
 
     # Update the leader_id in the groups table
     cur.execute("UPDATE `groups` SET leader_id = %s WHERE group_id = %s", (new_leader_id, group_id))
     mysql.connection.commit()
-
-    # If the current user was the leader, update the session data
-    if user_id == session['id']:
-        session['id'] = new_leader_id  # Update the session id to the new leader's id
-
     cur.close()
 
     session['group_id'] = group_id
 
-    # Redirect the user back to the manage_group page
     return redirect(url_for('manage_group', group_id=group_id))
 
 # Remove Member
 @main.route('/student/remove_member/<int:group_id>/<int:member_id>', methods=['POST'])
 @student_required
 def remove_member(group_id, member_id):
-    user_id = session.get('id')
-
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    cur.execute("SELECT * FROM `groups` WHERE group_id = %s AND leader_id = %s", (group_id, user_id))
-    group = cur.fetchone()
-    if not group:
-        return render_template('error.html', message="You are not the leader of this group.")
-
     cur.execute("DELETE FROM group_members WHERE group_id = %s AND user_id = %s", (group_id, member_id))
     mysql.connection.commit()
     cur.close()
@@ -1196,9 +1099,6 @@ def disband_group(group_id):
     session.pop('group_id', None)
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     cur.execute("SELECT * FROM `groups` WHERE group_id = %s AND leader_id = %s", (group_id, user_id))
-    group = cur.fetchone()
-    if not group:
-        return render_template('error.html', message="You are not the leader of this group.")
 
     cur.execute("DELETE FROM invitations WHERE group_id = %s", (group_id,))
     cur.execute("DELETE FROM group_members WHERE group_id = %s", (group_id,))
@@ -1486,7 +1386,8 @@ def edit_trimester():
         cur.execute("INSERT INTO trimester(name, term) VALUES(%s  , %s)", (trimesters, term))
         mysql.connection.commit()
         cur.close()
-        return redirect(url_for('home'))
+        flash('Trimester added successfully!', 'success')
+        return redirect(url_for('edit_trimester'))
     return render_template('admin_trimester.html')
 
 # Admin Add Student
@@ -1506,7 +1407,8 @@ def add_student():
         cur.execute("INSERT INTO users(id, name, gender, email, password, faculty) VALUES(%s, %s, %s, %s, %s, %s)", (id, name, gender, email, hashed_password, faculty))
         mysql.connection.commit()
         cur.close()
-        flash('Student added successfully!')
+        flash('Student added successfully!', 'success')
+        return redirect(url_for('add_student'))
 
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     cur.execute("SELECT * FROM users")
@@ -1525,7 +1427,7 @@ def delete_student(student_id):
     mysql.connection.commit()
     cur.close()
 
-    flash('Student deleted successfully!')
+    flash('Student deleted successfully!', 'success')
     return redirect(url_for('add_student'))
 
 # Add room route
@@ -1536,8 +1438,6 @@ def add_room():
 
     cur.execute("SELECT id, name, gender FROM hostel")
     hostels = cur.fetchall()
-
-    status_message = None  # Initialize status message variable
 
     if request.method == 'POST':
         number = request.form['number']
@@ -1562,34 +1462,35 @@ def add_room():
         existing_room = cur.fetchone()
 
         if existing_room:
-            status_message = f"Room number {number} already exists in this hostel."
-        else:
-            try:
-                # Insert new room into the database
-                cur.execute('''
-                    INSERT INTO rooms (number, hostel_id, category, capacity, price, status)
-                    VALUES (%s, %s, %s, %s, %s, %s)
-                ''', (number, hostel_id, category, capacity, price, status))
-
-                # Create beds for the room
-                for bed in beds:
-                    cur.execute('''
-                        INSERT INTO beds (room_number, bed_letter, status)
-                        VALUES (%s, %s, %s)
-                    ''', (number, bed, 'Available'))
-
-                mysql.connection.commit()
-                status_message = 'Room and beds added successfully!'
-            except mysql.connect.Error as err:
-                mysql.connection.rollback()
-                status_message = f"Error: {err}"
-            finally:
-                cur.close()
-
+            flash(f"Room number {number} already exists in this hostel.", 'error')
             return redirect(url_for('add_room'))
 
-    # Render template and pass hostels and status_message to the form
-    return render_template('room_add.html', hostels=hostels, status_message=status_message)
+        try:
+            # Insert new room into the database
+            cur.execute(''' 
+                INSERT INTO rooms (number, hostel_id, category, capacity, price, status) 
+                VALUES (%s, %s, %s, %s, %s, %s) 
+            ''', (number, hostel_id, category, capacity, price, status))
+
+            # Create beds for the room
+            for bed in beds:
+                cur.execute('''
+                    INSERT INTO beds (room_number, bed_letter, status) 
+                    VALUES (%s, %s, %s) 
+                ''', (number, bed, 'Available'))
+
+            mysql.connection.commit()
+            flash('Room and beds added successfully!', 'success')
+        except mysql.connection.Error as err:
+            mysql.connection.rollback()
+            flash('An error occurred. Please try again.', 'error')
+        finally:
+            cur.close()
+
+        return redirect(url_for('add_room'))
+
+    # Render template and pass hostels to the form
+    return render_template('room_add.html', hostels=hostels)
 
 # Admin Edit Room
 @main.route('/admin/edit_room/<int:room_number>', methods=['GET', 'POST'])
@@ -1601,45 +1502,28 @@ def edit_room(room_number):
     cur.execute("SELECT * FROM rooms WHERE number = %s", (room_number,))
     room = cur.fetchone()
 
-    if not room:
-        flash("Room not found", "error")
-        return redirect(url_for('rooms'))
-
     # Fetch all hostels for the dropdown
     cur.execute("SELECT id, name, gender FROM hostel")
     hostels = cur.fetchall()
 
     if request.method == 'POST':
-        new_number = request.form['number']
         hostel_id = request.form['hostel_id']
         category = request.form['category']
         price = request.form['price']
-        status = 'Available'
 
         # Determine the capacity based on the category
         capacity = {'Single': 1, 'Double': 2, 'Triple': 3}[category]
-
-        # Check if the new room number already exists (if it's different from the current number)
-        if int(new_number) != room_number:
-            cur.execute("SELECT * FROM rooms WHERE number = %s", (new_number,))
-            existing_room = cur.fetchone()
-            if existing_room:
-                flash(f"Room number {new_number} already exists.", "error")
-                return render_template('room_edit.html', room=room, hostels=hostels)
 
         try:
             # Update room details in the database
             cur.execute('''
                 UPDATE rooms 
-                SET number = %s, hostel_id = %s, category = %s, capacity = %s, price = %s, status = %s
+                SET hostel_id = %s, category = %s, capacity = %s, price = %s
                 WHERE number = %s
-            ''', (new_number, hostel_id, category, capacity, price, status, room_number))
-
-            # Update beds
-            cur.execute("UPDATE beds SET room_number = %s WHERE room_number = %s", (new_number, room_number))
+            ''', (hostel_id, category, capacity, price, room_number))
 
             # Adjust the number of beds if the category has changed
-            cur.execute("SELECT COUNT(*) as bed_count FROM beds WHERE room_number = %s", (new_number,))
+            cur.execute("SELECT COUNT(*) as bed_count FROM beds WHERE room_number = %s", (room_number,))
             current_beds = cur.fetchone()['bed_count']
 
             if current_beds < capacity:
@@ -1648,17 +1532,17 @@ def edit_room(room_number):
                     cur.execute('''
                         INSERT INTO beds (room_number, bed_letter, status)
                         VALUES (%s, %s, 'Available')
-                    ''', (new_number, bed_letter))
+                    ''', (room_number, bed_letter))
             elif current_beds > capacity:
                 cur.execute("DELETE FROM beds WHERE room_number = %s ORDER BY bed_letter DESC LIMIT %s", 
-                            (new_number, current_beds - capacity))
+                            (room_number, current_beds - capacity))
 
             mysql.connection.commit()
             flash('Room and beds updated successfully!', 'success')
-            return redirect(url_for('edit_room', room_number=new_number))
+            return redirect(url_for('edit_room', room_number=room_number))
         except MySQLdb.Error as err:
             mysql.connection.rollback()
-            flash(f"Error: {err}", "error")
+            flash('An error occurred. Please try again.', 'error')
 
     cur.close()
     return render_template('room_edit.html', room=room, hostels=hostels)
@@ -1778,7 +1662,7 @@ def admin_room_change_requests():
         elif action == 'reject':
             # Update the request status
             cur.execute("UPDATE room_change_requests SET status = 'rejected' WHERE request_id = %s", (request_id,))
-            flash('Room change request rejected.', 'success')
+            flash('Room change request rejected.', 'info')
         
         mysql.connection.commit()
 
@@ -1914,13 +1798,6 @@ def process_room_swap():
             WHERE id = %s
         """, (swap_request_id,))
         
-        # # Set notification message for the requester
-        # cur.execute("""
-        #     UPDATE users u
-        #     JOIN room_swap_requests rsr ON u.id = rsr.user_id
-        #     WHERE rsr.id = %s
-        # """, (swap_request_id,))
-        
         mysql.connection.commit()
         flash('Room swap request has been rejected.', 'info')
     
@@ -1994,7 +1871,7 @@ def edit_section(section_id):
         cur.execute("UPDATE ques_sections SET name = %s WHERE id = %s", (section_name, section_id))
         mysql.connection.commit()
         flash('Section updated successfully!', 'success')
-        return redirect(url_for('manage_sections'))
+        return redirect(url_for('edit_section'))
     
     cur.execute("SELECT * FROM ques_sections WHERE id = %s", (section_id,))
     section = cur.fetchone()
@@ -2104,17 +1981,18 @@ def admin_change_password():
                 cur.execute("UPDATE admin SET password=%s WHERE id=%s", (hashed_password, admin_id))
                 mysql.connection.commit()
                 cur.close()
-                return redirect(url_for('admin_change_password', status='Changed successfully!'))
+                flash('Your password has been changed successfully!', 'success')
+                return redirect(url_for('admin_profile'))
             else:
-                return redirect(url_for('admin_change_password', error='Passwords do not match.'))
+                flash('Passwords do not match.', 'error')
+                return redirect(url_for('admin_change_password'))
         else:
-            return redirect(url_for('admin_change_password', error='Current password is incorrect.'))
+            flash('Current password is incorrect.', 'error')
+            return redirect(url_for('admin_change_password'))
+        
+    return render_template('admin_change_password.html')
 
-    error = request.args.get('error')
-    status = request.args.get('status')
-    return render_template('admin_change_password.html', error=error, status=status)
-
-# Admin Add Student
+# Admin Add Admin
 @main.route('/admin/add_admin', methods=['GET', 'POST'])
 @admin_required
 def add_admin():
@@ -2131,7 +2009,7 @@ def add_admin():
         mysql.connection.commit()
         cur.close()
 
-        flash('Admin added successfully!')
+        flash('Admin added successfully!', 'success')
 
     return render_template('add_admin.html')
 
@@ -2153,7 +2031,7 @@ def delete_admin(admin_id):
     cur.execute("DELETE FROM admin WHERE id = %s", (admin_id,))
     mysql.connection.commit()
     cur.close()
-    flash('Admin deleted successfully!')
+    flash('Admin deleted successfully!', 'success')
     return redirect(url_for('manage_admins'))
 
 # Booking Listing
@@ -2236,13 +2114,10 @@ def delete_booking(booking_no):
         WHERE number = %s
     """, (new_room_status, room_no))
     
-    # Commit changes to the database
     mysql.connection.commit()
     
-    # Close the cursor
     cur.close()
 
-    # Redirect back to the booking listing page with a success message
     flash('Booking successfully deleted.', 'success')
     return redirect(url_for('booking_listing'))
 

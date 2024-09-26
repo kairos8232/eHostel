@@ -5,6 +5,16 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 {% endblock %}
 
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+  <div class="flash-container">
+    {% for category, message in messages %}
+      <div class="flash-message flash-{{ category }}">{{ message }}</div>
+    {% endfor %}
+  </div>
+{% endif %}
+{% endwith %}
+
 {% block content %}
 <div class="manage-hostel-wrapper">
     <nav class="sidebar">
@@ -37,14 +47,6 @@
     <!-- Main content area -->
     <div class="content">
         <h1>Edit Hostel: {{ hostel.name }}</h1>
-
-        <!-- Status message area -->
-        {% if status_message %}
-        <div class="status-message {% if 'Error' in status_message %}error{% else %}success{% endif %}">
-            {{ status_message }}
-        </div>
-        {% endif %}
-
         <form method="POST" action="{{ url_for('edit_hostel', hostel_id=hostel.id) }}">
             <div>
                 <label for="hostel_name">Hostel Name:</label>
@@ -63,4 +65,15 @@
         </form>
     </div>
 </div>
+
+<script>
+    const flashMessages = document.querySelectorAll('.flash-message');
+    flashMessages.forEach(message => {
+      message.style.display = 'block';
+      setTimeout(() => {
+        message.style.display = 'none';
+      }, 3000); // Hide after 3 seconds
+    });
+</script>
+
 {% endblock %}

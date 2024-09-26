@@ -6,6 +6,17 @@
 {% endblock %}
 
 {% block content %}
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+  <div class="flash-container">
+    {% for category, message in messages %}
+      <div class="flash-message flash-{{ category }}">{{ message }}</div>
+    {% endfor %}
+  </div>
+{% endif %}
+{% endwith %}
+
 <div class="manage-hostel-wrapper">
     <nav class="sidebar">
         <div class="text">
@@ -34,7 +45,6 @@
         </div>
       </nav>
 
-
     <main class="content">
         <h1>Add New Hostel</h1>
         <form action="{{ url_for('add_hostel') }}" method="post">
@@ -42,7 +52,6 @@
                 <label for="hostel_name">Hostel Name:</label>
                 <input id="hostel_name" name="hostel_name" type="text" placeholder="Enter hostel name" required>
             </div>
-
             <div class="form-group">
                 <label for="gender">Gender</label>
                 <select class="form-control" id="gender" name="gender" required>
@@ -50,11 +59,21 @@
                     <option value="Female">Female</option>
                 </select>
             </div>
-
             <div class="form-group">
                 <button type="submit">Add Hostel</button>
             </div>
         </form>
     </main>
 </div>
+
+<script>
+    const flashMessages = document.querySelectorAll('.flash-message');
+    flashMessages.forEach(message => {
+      message.style.display = 'block';
+      setTimeout(() => {
+        message.style.display = 'none';
+      }, 3000); // Hide after 3 seconds
+    });
+</script>
+
 {% endblock %}
