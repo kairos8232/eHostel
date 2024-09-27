@@ -14,7 +14,7 @@
             <img src="{{ url_for('static', filename='images/Multimedia_University_logo.png') }}" alt="Multimedia University" class="logo" style="width: 150px; height: 50px;">
         </div>
         <nav class="nav">
-            <div class="divider"></div>
+            <div class="divider">
             {% if session.get('is_admin', False) %}
                 <!-- Admin Navigation -->
                 <a href="{{ url_for('admin_dashboard') }}">Home</a>
@@ -29,27 +29,27 @@
                 <a href="{{ url_for('home') }}">Home</a>
                 <a href="{{ url_for('room_setting') }}">Room</a>
                 <a href="{{ url_for('chat_home') }}">Chat</a>
-                <a href="{{ url_for('home') }}">Contact</a>
             {% endif %}
+            </div>
         </nav>
 
         {% if not session.get('is_admin', False) %}
-        <div class="user-form-group">
-            <img src="{{ profile_pic_url }}" alt="User" class="user-pic" onclick="togglemenu()">
+            <div class="user-form-group">
+                <img src="{{ profile_pic_url }}" alt="User" class="user-pic" onclick="togglemenu()">
 
-            <div id="sub-menu-wrap" class="sub-menu-wrap">
-                <div class="sub-menu">
-                    <a href="{{ url_for('profile') }}" class="sub-menu-link">
-                        <img src="{{ url_for('static', filename='images/account.png') }}" alt="Edit Profile">
-                        <p>Edit Profile</p>
-                    </a>
-                    <a href="{{ url_for('logout') }}" class="sub-menu-link">
-                        <img src="{{ url_for('static', filename='images/logout.png') }}" alt="Logout">
-                        <p>Logout</p>
-                    </a>
+                <div id="sub-menu-wrap" class="sub-menu-wrap">
+                    <div class="sub-menu">
+                        <a href="{{ url_for('profile') }}" class="sub-menu-link">
+                            <img src="{{ url_for('static', filename='images/account.png') }}" alt="Edit Profile">
+                            <p>Edit Profile</p>
+                        </a>
+                        <a href="{{ url_for('logout') }}" class="sub-menu-link">
+                            <img src="{{ url_for('static', filename='images/logout.png') }}" alt="Logout">
+                            <p>Logout</p>
+                        </a>
+                    </div>
                 </div>
             </div>
-        </div>
         {% else %}
         <div class="user-form-group">
             <img src="{{ profile_pic_url }}" alt="User" class="user-pic" onclick="togglemenu()">

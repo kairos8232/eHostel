@@ -47,6 +47,21 @@ def student_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+# Check survey done
+def survey_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        user_id = session.get('id')
+        if user_id:
+            cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+            cur.execute('SELECT * FROM users WHERE id = %s', (user_id,))
+            user = cur.fetchone()
+            cur.close()
+            if user and user['survey_completed'] == 0:
+                return redirect(url_for('survey'))
+        return f(*args, **kwargs)
+    return decorated_function
+
 # Get image url, to ensure every route catch the profile picture correctly
 @main.context_processor
 def inject_profile_pic():
@@ -90,47 +105,57 @@ def login():
         userDetails = request.form
         id = userDetails['id']
         password = userDetails['password']
-        
-        # First, try to authenticate as an admin
+
         cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cur.execute('SELECT * FROM admin WHERE id=%s', (id,))
-        user = cur.fetchone()
+        cur.execute('SELECT * FROM roles WHERE SoA_id=%s', (id,))
+        role_entry = cur.fetchone()
         
-        if user and bcrypt.check_password_hash(user['password'], password):
-            session['loggedin'] = True
-            session['id'] = user['id']
-            session['is_admin'] = True
-            cur.close()
-            return redirect(url_for('admin_dashboard'))
-        
-        # If not an admin, try to authenticate as a student
-        cur.execute('SELECT * FROM users WHERE id=%s', (id,))
-        user = cur.fetchone()
-        
-        if user and bcrypt.check_password_hash(user['password'], password):
-            session['loggedin'] = True
-            session['id'] = user['id']
-            session['is_admin'] = False
-            cur.close()
-            return redirect(url_for('home'))
-        
-        # If authentication fails for both admin and student
+        if role_entry:
+            if role_entry['role'] == 'admin':
+                cur.execute('SELECT * FROM admin WHERE id=%s', (id,))
+                user = cur.fetchone()
+                
+                if user and bcrypt.check_password_hash(user['password'], password):
+                    session['loggedin'] = True
+                    session['id'] = user['id']
+                    session['is_admin'] = True
+                    cur.close()
+                    return redirect(url_for('admin_dashboard'))
+            
+            elif role_entry['role'] == 'user':
+                cur.execute('SELECT * FROM users WHERE id=%s', (id,))
+                user = cur.fetchone()
+                
+                if user and bcrypt.check_password_hash(user['password'], password):
+                    session['loggedin'] = True
+                    session['id'] = user['id']
+                    session['is_admin'] = False
+                    cur.close()
+                    return redirect(url_for('home'))
+
         cur.close()
-        flash('Incorrect username/password. Try again!', 'error')
+        flash('Incorrect ID or password. Please try again!', 'error')
         return redirect(url_for('login'))
     
     return render_template('login.html')
+
 
 #########################################STUDENT#############################################
 
 #Student Home
 @main.route("/student")
 @student_required
+@survey_required
 def home():
     user_id = session.get('id')
-
-    # Fetch any pending invitations for this user
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    # cur.execute("SELECT survey_completed FROM users WHERE id = %s", (user_id,))
+    # user = cur.fetchone()
+
+    # if user['survey_completed'] == 0:
+    #     cur.close()
+    #     return redirect(url_for('survey')) 
+    
     cur.execute("""
         SELECT invitations.invitation_id, `groups`.name AS group_name, users.name AS leader_name
         FROM invitations
@@ -161,10 +186,13 @@ def home():
                            announcement=current_announcement, 
                            has_next=total_announcements > 1,
                            has_back=total_announcements > 1,
-                           invitation=invitation)
+                           invitation=invitation,
+                        #    survey_completed=user['survey_completed'])
+    )
 
 @main.route('/chat/')
 @student_required
+@survey_required
 def chat_home():
     user_id = session.get('id')
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
@@ -584,6 +612,7 @@ def room_setting():
 # Select Trimester Route
 @main.route('/student/select_trimester', methods=['GET', 'POST'])
 @student_required
+@survey_required
 def select_trimester():
     
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
@@ -647,21 +676,27 @@ def group_page():
     
     if request.method == 'POST':
         group_action = request.form['group_action']
+        
         if group_action == 'create':
             selected_trimester = session.get('trimester_id')
+            group_name = request.form['group_name']  # Get the group name from the form
 
             cur = mysql.connection.cursor()
-            cur.execute("INSERT INTO `groups`(leader_id, trimester_id) VALUES(%s, %s)", (user_id, selected_trimester))
+            cur.execute(
+                "INSERT INTO `groups`(leader_id, trimester_id, name) VALUES(%s, %s, %s)", 
+                (user_id, selected_trimester, group_name)
+            )
             mysql.connection.commit()
             group_id = cur.lastrowid
+
             cur.execute("INSERT INTO group_members(group_id, user_id) VALUES(%s, %s)", (group_id, user_id))
             mysql.connection.commit()
             cur.close()
+
             session['group_id'] = group_id
             return redirect(url_for('manage_group', group_id=group_id))
 
     return render_template('group_page.html')
-
 # Manage Group route with student filtering and suggested roommate
 @main.route('/student/manage_group/<int:group_id>', methods=['GET', 'POST'])
 @student_required
@@ -1393,7 +1428,7 @@ def edit_trimester():
 # Admin Add Student
 @main.route('/admin/add_student', methods=['GET', 'POST'])
 @admin_required
-def add_student():    
+def add_student():
     if request.method == 'POST':
         userDetails = request.form
         id = userDetails['id']
@@ -1403,12 +1438,26 @@ def add_student():
         password = userDetails['password']
         faculty = userDetails['faculty']
         hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+
         cur = mysql.connection.cursor()
-        cur.execute("INSERT INTO users(id, name, gender, email, password, faculty) VALUES(%s, %s, %s, %s, %s, %s)", (id, name, gender, email, hashed_password, faculty))
+
+        cur.execute("SELECT * FROM roles WHERE SoA_id=%s", (id,))
+        existing_role = cur.fetchone()
+
+        if existing_role:
+            flash('ID already exists in system.', 'error')
+            cur.close()
+            return redirect(url_for('add_student'))
+
+        cur.execute("INSERT INTO users(id, name, gender, email, password, faculty) VALUES(%s, %s, %s, %s, %s, %s)", 
+                    (id, name, gender, email, hashed_password, faculty))
+
+        cur.execute("INSERT INTO roles(SoA_id, role) VALUES(%s, %s)", (id, 'user'))
+
         mysql.connection.commit()
-        cur.close()
         flash('Student added successfully!', 'success')
-        return redirect(url_for('add_student'))
+
+        cur.close()
 
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     cur.execute("SELECT * FROM users")
@@ -1417,18 +1466,20 @@ def add_student():
 
     return render_template('add_student.html', students=students)
 
+
 # Admin Delete Student
-@main.route('/admin/delete_student/<student_id>', methods=['POST'])
+@main.route('/admin/delete_student/<int:student_id>', methods=['POST'])
 @admin_required
 def delete_student(student_id):
-
     cur = mysql.connection.cursor()
+    cur.execute("DELETE FROM roles WHERE SoA_id = %s AND role = 'user'", (student_id,))
     cur.execute("DELETE FROM users WHERE id = %s", (student_id,))
+    
     mysql.connection.commit()
     cur.close()
-
     flash('Student deleted successfully!', 'success')
     return redirect(url_for('add_student'))
+
 
 # Add room route
 @main.route('/admin/add_room', methods=['GET', 'POST'])
@@ -1490,20 +1541,22 @@ def add_room():
         return redirect(url_for('add_room'))
 
     # Render template and pass hostels to the form
-    return render_template('room_add.html', hostels=hostels)
-
-# Admin Edit Room
 @main.route('/admin/edit_room/<int:room_number>', methods=['GET', 'POST'])
 @admin_required
 def edit_room(room_number):
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
 
-    # Fetch room details based on the room number
-    cur.execute("SELECT * FROM rooms WHERE number = %s", (room_number,))
+    # Fetch room details along with its hostel gender based on the room number
+    cur.execute('''
+        SELECT r.*, h.gender AS hostel_gender 
+        FROM rooms r 
+        JOIN hostel h ON r.hostel_id = h.id 
+        WHERE r.number = %s
+    ''', (room_number,))
     room = cur.fetchone()
 
-    # Fetch all hostels for the dropdown
-    cur.execute("SELECT id, name, gender FROM hostel")
+    # Fetch only hostels with the same gender as the room's hostel
+    cur.execute("SELECT id, name, gender FROM hostel WHERE gender = %s", (room['hostel_gender'],))
     hostels = cur.fetchall()
 
     if request.method == 'POST':
@@ -1996,7 +2049,6 @@ def admin_change_password():
 @main.route('/admin/add_admin', methods=['GET', 'POST'])
 @admin_required
 def add_admin():
-    
     if request.method == 'POST':
         admin_id = request.form['admin_id']
         name = request.form['name']
@@ -2005,13 +2057,27 @@ def add_admin():
         hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
 
         cur = mysql.connection.cursor()
-        cur.execute("INSERT INTO admin(id, name, email, password) VALUES(%s, %s, %s, %s)", (admin_id, name, email, hashed_password))
-        mysql.connection.commit()
-        cur.close()
 
+        cur.execute("SELECT * FROM roles WHERE SoA_id=%s", (admin_id,))
+        existing_role = cur.fetchone()
+        
+        if existing_role:
+            flash('ID already exists in system.', 'error')
+            cur.close()
+            return redirect(url_for('add_admin'))
+
+        cur.execute("INSERT INTO admin(id, name, email, password) VALUES(%s, %s, %s, %s)", 
+                    (admin_id, name, email, hashed_password))
+
+        cur.execute("INSERT INTO roles(SoA_id, role) VALUES(%s, %s)", (admin_id, 'admin'))
+
+        mysql.connection.commit()
         flash('Admin added successfully!', 'success')
 
+        cur.close()
+
     return render_template('add_admin.html')
+
 
 # Admin Manage Admins
 @main.route('/admin/manage_admins', methods=['GET'])
@@ -2028,7 +2094,9 @@ def manage_admins():
 @admin_required
 def delete_admin(admin_id):
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    cur.execute("DELETE FROM roles WHERE SoA_id = %s AND role = 'admin'", (admin_id,))
     cur.execute("DELETE FROM admin WHERE id = %s", (admin_id,))
+    
     mysql.connection.commit()
     cur.close()
     flash('Admin deleted successfully!', 'success')

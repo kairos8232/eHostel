@@ -78,19 +78,6 @@ header {
     padding: 10px;
     margin: 5px;
 }
-.user-info{
-    display: flex;
-    align-items: center;
-}
-.user-info h1{
-    font-size: 20px;
-    font-weight: 500;
-}
-.user-info img{
-    width: 50px;
-    border-radius: 50%;
-    margin-right: 15px;
-}
 .sub-menu hr{
     border: 0;
     height: 1px;
@@ -115,31 +102,9 @@ header {
     padding: 8px;
     margin-right: 15px;
 }
-.sub-menu-link span{
-    font-size: 22px;
-    transition: transform 0.5s;
-}
-.sub-menu-link:hover span{
-    transform: translateX(5px);
-}
+
 .sub-menu-link:hover p{
     font-weight: 600;
-}
-
-.nav .logo{
-    background-color: white;
-    display: none;
-}
-
-#check {
-    display: none;
-}
-.user-form-group label {
-    display: none;
-}
-.exit-button{
-    position: absolute;
-    right: 5%;
 }
 .exit{
     width: 30px;
