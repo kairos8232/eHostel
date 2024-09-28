@@ -23,7 +23,7 @@
             {% for group in group_conversations %}
             <div class="conversation-item"
                     onclick="window.location.href='{{ url_for('group_chat', group_id=group.group_id) }}'">
-                <img src="{{ group.profile_pic or url_for('static', filename='images/default_group_pic.jpg') }}" alt="{{ group.group_name }}" class="profile-pic">
+                <img src="{{ group.group_profile_pic or url_for('static', filename='images/default_group_pic.jpg') }}" alt="{{ group.group_name }}" class="profile-pic">
                 Group: {{ group.group_name }}
             </div>
         {% endfor %}

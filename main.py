@@ -680,11 +680,21 @@ def group_page():
         if group_action == 'create':
             selected_trimester = session.get('trimester_id')
             group_name = request.form['group_name']  # Get the group name from the form
+            profile_pic = request.files.get('profile_pic')
 
             cur = mysql.connection.cursor()
+
+            if profile_pic:
+                # Save the uploaded profile picture
+                profile_pic_path = os.path.join(main.config['UPLOAD_FOLDER'], profile_pic.filename)
+                profile_pic.save(profile_pic_path)
+                profile_pic_url = url_for('static', filename=f"uploads/{profile_pic.filename}")
+            else:
+                profile_pic_url = None
+
             cur.execute(
-                "INSERT INTO `groups`(leader_id, trimester_id, name) VALUES(%s, %s, %s)", 
-                (user_id, selected_trimester, group_name)
+                "INSERT INTO `groups`(leader_id, trimester_id, name, profile_pic) VALUES(%s, %s, %s, %s)", 
+                (user_id, selected_trimester, group_name, profile_pic_url)
             )
             mysql.connection.commit()
             group_id = cur.lastrowid
@@ -697,6 +707,50 @@ def group_page():
             return redirect(url_for('manage_group', group_id=group_id))
 
     return render_template('group_page.html')
+
+@main.route('/student/edit_group/<int:group_id>', methods=['GET', 'POST'])
+@student_required
+def edit_group(group_id):
+    user_id = session.get('id')
+
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
+    # Fetch group details for the given group_id and check if the user is the leader
+    cur.execute("SELECT * FROM `groups` WHERE group_id = %s AND leader_id = %s", (group_id, user_id))
+    group = cur.fetchone()
+
+    if not group:
+        return redirect(url_for('group_page'))
+
+    # If the form is submitted via POST
+    if request.method == 'POST':
+        group_name = request.form['group_name']  # Get the updated group name
+        profile_pic = request.files.get('profile_pic')
+
+        if profile_pic:
+            # Save the new profile picture
+            profile_pic_path = os.path.join(main.config['UPLOAD_FOLDER'], profile_pic.filename)
+            profile_pic.save(profile_pic_path)
+            profile_pic_url = url_for('static', filename=f"uploads/{profile_pic.filename}")
+        else:
+            # Keep the existing profile picture
+            profile_pic_url = group['profile_pic']
+
+        # Update the group in the database
+        cur.execute("""
+            UPDATE `groups`
+            SET name = %s, profile_pic = %s
+            WHERE group_id = %s AND leader_id = %s
+        """, (group_name, profile_pic_url, group_id, user_id))
+
+        mysql.connection.commit()
+        cur.close()
+
+        return redirect(url_for('manage_group', group_id=group_id))
+
+    cur.close()
+    return render_template('group_edit.html', group=group)
+
 # Manage Group route with student filtering and suggested roommate
 @main.route('/student/manage_group/<int:group_id>', methods=['GET', 'POST'])
 @student_required
@@ -715,10 +769,6 @@ def manage_group(group_id):
 
     cur.execute("SELECT * FROM `groups` WHERE group_id = %s", (group_id,))
     group = cur.fetchone()
-
-    if not group:
-        cur.close()
-        return render_template('error.html', message="Group not found.")
 
     is_leader = group['leader_id'] == user_id
 
@@ -798,7 +848,7 @@ def manage_group(group_id):
 
     cur.close()
 
-    return render_template('manage_group.html', members=members, group_id=group_id, students=students, is_leader=is_leader, current_user_id=user_id, leader_gender=leader_gender)
+    return render_template('manage_group.html', members=members, group_id=group_id, group_name=group['name'], students=students, is_leader=is_leader, current_user_id=user_id, leader_gender=leader_gender)
 
 # Leave Group
 @main.route('/student/leave_group/<int:group_id>', methods=['POST'])

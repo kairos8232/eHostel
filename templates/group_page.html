@@ -7,13 +7,14 @@
 {% block content %}
 <div class="container">
     <h1>Group Booking</h1>
-    <form action="{{ url_for('group_page') }}" method="POST">
+    <form action="{{ url_for('group_page') }}" method="POST" enctype="multipart/form-data">
         <!-- Group Name Input -->
         <div class="form-group">
             <label for="group_name">Group Name</label>
             <input type="text" id="group_name" name="group_name" class="form-control" placeholder="Enter group name" required>
+            <label for="profile_pic">Profile Picture</label>
+            <input type="file" id="profile_pic" name="profile_pic">
         </div>
-        
         <!-- Create Group Button -->
         <button type="submit" name="group_action" value="create">Create Group</button>
     </form>
