@@ -569,16 +569,6 @@ def room_setting():
         LIMIT 1
     """, (user_id,))
     booking = cur.fetchone()
-    
-    # Fetch the status of the latest room change request
-    cur.execute("""
-        SELECT status
-        FROM room_change_requests
-        WHERE user_id = %s
-        ORDER BY request_id DESC
-        LIMIT 1
-    """, (user_id,))
-    request_status = cur.fetchone()
 
     # Fetch pending swap requests for this user
     cur.execute("""
@@ -594,12 +584,6 @@ def room_setting():
 
     if not booking:
         return redirect(url_for('select_trimester'))
-
-    if request_status:
-        if request_status['status'] == 'approved':
-            flash('Room changed successfully!', 'success')
-        elif request_status['status'] == 'rejected':
-            flash('Room change request rejected by admin.', 'error')
 
     return render_template('room_setting.html', booking=booking, pending_swaps=pending_swaps)
     
@@ -1396,12 +1380,14 @@ def confirm_room_swap():
     user_id = session.get('id')
     other_student_id = request.form.get('other_student_id')
     reason = request.form.get('reason')
-    
+
     cur = mysql.connection.cursor()
+    
     cur.execute("""
         INSERT INTO room_swap_requests (user_id, other_user_id, reason, status)
         VALUES (%s, %s, %s, 'pending')
     """, (user_id, other_student_id, reason))
+    
     mysql.connection.commit()
     cur.close()
     
@@ -1419,7 +1405,7 @@ def respond_to_swap():
     if response == 'approve':
         cur.execute("""
             UPDATE room_swap_requests
-            SET status = 'approved_by_student'
+            SET status = 'pending'
             WHERE id = %s AND other_user_id = %s
         """, (swap_request_id, user_id))
         flash('You have approved the room swap request. It will now be reviewed by the admin.', 'success')
@@ -1875,7 +1861,7 @@ def admin_room_swap_requests():
         JOIN booking b1 ON rsr.user_id = b1.user_id
         JOIN booking b2 ON rsr.other_user_id = b2.user_id
         JOIN hostel h ON b1.hostel_id = h.id
-        WHERE rsr.status = 'approved_by_student'
+        WHERE rsr.status = 'pending'
         ORDER BY rsr.created_at ASC
     """)
     swap_requests = cur.fetchall()
@@ -1915,7 +1901,7 @@ def process_room_swap():
             # Update the swap request status
             cur.execute("""
                 UPDATE room_swap_requests
-                SET status = 'approved_by_admin'
+                SET status = 'approved'
                 WHERE id = %s
             """, (swap_request_id,))
             
@@ -2201,6 +2187,13 @@ def booking_listing():
         JOIN users u ON b.user_id = u.id
         JOIN trimester t ON b.trimester_id = t.id
         JOIN hostel h ON b.hostel_id = h.id
+        LEFT JOIN room_change_requests rcr ON b.user_id = rcr.user_id
+        LEFT JOIN room_swap_requests rsr ON (b.user_id = rsr.user_id OR b.user_id = rsr.other_user_id)
+        WHERE (
+            (rcr.status IS NULL OR rcr.status != 'pending') -- Room change not pending
+            AND 
+            (rsr.status IS NULL OR rsr.status != 'pending') -- Room swap not pending for either user
+        )
         ORDER BY b.booking_no DESC
     """)
     bookings = cur.fetchall()

@@ -15,12 +15,12 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 
--- Dumping database structure for flaskapp
-DROP DATABASE IF EXISTS `flaskapp`;
-CREATE DATABASE IF NOT EXISTS `flaskapp` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
-USE `flaskapp`;
+-- Dumping database structure for ehostel
+DROP DATABASE IF EXISTS `ehostel`;
+CREATE DATABASE IF NOT EXISTS `ehostel` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
+USE `ehostel`;
 
--- Dumping structure for table flaskapp.admin
+-- Dumping structure for table ehostel.admin
 DROP TABLE IF EXISTS `admin`;
 CREATE TABLE IF NOT EXISTS `admin` (
   `id` int NOT NULL,
@@ -30,11 +30,11 @@ CREATE TABLE IF NOT EXISTS `admin` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table flaskapp.admin: ~2 rows (approximately)
+-- Dumping data for table ehostel.admin: ~1 rows (approximately)
 INSERT INTO `admin` (`id`, `name`, `email`, `password`) VALUES
 	(1234, 'Kairos', 'admin@example.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi');
 
--- Dumping structure for table flaskapp.announcement
+-- Dumping structure for table ehostel.announcement
 DROP TABLE IF EXISTS `announcement`;
 CREATE TABLE IF NOT EXISTS `announcement` (
   `id` int NOT NULL AUTO_INCREMENT,
@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS `announcement` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=45 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
--- Dumping data for table flaskapp.announcement: ~6 rows (approximately)
+-- Dumping data for table ehostel.announcement: ~6 rows (approximately)
 INSERT INTO `announcement` (`id`, `title`, `context`) VALUES
 	(39, 'How do I organize a paragraph?', 'There are many different ways to organize a paragraph. The organization you choose will depend on the controlling idea of the paragraph. Below are a few possibilities for organization, with links to brief examples:\r\n\r\nNarration: Tell a story. Go chronologically, from start to finish. (See an example.)\r\nDescription: Provide specific details about what something looks, smells, tastes, sounds, or feels like. Organize spatially, in order of appearance, or by topic. (See an example.)\r\nProcess: Explain how something works, step by step. Perhaps follow a sequence—first, second, third. (See an example.)\r\nClassification: Separate into groups or explain the various parts of a topic. (See an example.)\r\nIllustration: Give examples and explain how those examples support your point. (See an example in the 5-step process '),
 	(40, 'Lorem', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec interdum aliquam nulla, dapibus scelerisque orci auctor at. Mauris id rhoncus orci. Nunc ac porttitor orci. Sed arcu ex, eleifend nec dapibus a, pharetra at sapien. Aenean ultrices tincidunt arcu sed vehicula. Nulla ac erat lorem. Proin eget ipsum consectetur, bibendum nisi ut, placerat ante. In hac habitasse platea dictumst. Nam eu nisl lectus. Nullam pretium erat diam, quis bibendum nisi dapibus at. Nulla facilisi. Aliquam vel dignissim lorem.'),
@@ -52,7 +52,7 @@ INSERT INTO `announcement` (`id`, `title`, `context`) VALUES
 	(43, 'wdcd', 'dscs'),
 	(44, 'asdasd', 'sdsadasd');
 
--- Dumping structure for table flaskapp.beds
+-- Dumping structure for table ehostel.beds
 DROP TABLE IF EXISTS `beds`;
 CREATE TABLE IF NOT EXISTS `beds` (
   `id` int NOT NULL AUTO_INCREMENT,
@@ -64,7 +64,7 @@ CREATE TABLE IF NOT EXISTS `beds` (
   CONSTRAINT `fk_beds_rooms` FOREIGN KEY (`room_number`) REFERENCES `rooms` (`number`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=37 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table flaskapp.beds: ~17 rows (approximately)
+-- Dumping data for table ehostel.beds: ~17 rows (approximately)
 INSERT INTO `beds` (`id`, `room_number`, `bed_letter`, `status`) VALUES
 	(1, 101, 'A', 'Available'),
 	(3, 103, 'A', 'Available'),
@@ -84,7 +84,7 @@ INSERT INTO `beds` (`id`, `room_number`, `bed_letter`, `status`) VALUES
 	(19, 203, 'C', 'Available'),
 	(20, 303, 'C', 'Available');
 
--- Dumping structure for table flaskapp.booking
+-- Dumping structure for table ehostel.booking
 DROP TABLE IF EXISTS `booking`;
 CREATE TABLE IF NOT EXISTS `booking` (
   `booking_no` int NOT NULL AUTO_INCREMENT,
@@ -107,11 +107,11 @@ CREATE TABLE IF NOT EXISTS `booking` (
   CONSTRAINT `FK_booking_rooms` FOREIGN KEY (`room_no`) REFERENCES `rooms` (`number`),
   CONSTRAINT `FK_booking_trimester` FOREIGN KEY (`trimester_id`) REFERENCES `trimester` (`id`),
   CONSTRAINT `FK_booking_users` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=109 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=113 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
--- Dumping data for table flaskapp.booking: ~0 rows (approximately)
+-- Dumping data for table ehostel.booking: ~0 rows (approximately)
 
--- Dumping structure for table flaskapp.chat_messages
+-- Dumping structure for table ehostel.chat_messages
 DROP TABLE IF EXISTS `chat_messages`;
 CREATE TABLE IF NOT EXISTS `chat_messages` (
   `id` int NOT NULL AUTO_INCREMENT,
@@ -127,17 +127,11 @@ CREATE TABLE IF NOT EXISTS `chat_messages` (
   CONSTRAINT `FK_chat_messages_group` FOREIGN KEY (`group_id`) REFERENCES `groups` (`group_id`) ON DELETE CASCADE,
   CONSTRAINT `FK_chat_messages_receiver` FOREIGN KEY (`receiver_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
   CONSTRAINT `FK_chat_messages_sender` FOREIGN KEY (`sender_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
--- Dumping data for table flaskapp.chat_messages: ~8 rows (approximately)
-INSERT INTO `chat_messages` (`id`, `sender_id`, `receiver_id`, `group_id`, `message`, `timestamp`) VALUES
-	(3, 1, 1, NULL, 'adadsad', '2024-09-25 12:24:58'),
-	(4, 1, 1, NULL, 'adad', '2024-09-25 12:25:42'),
-	(5, 1, 2, NULL, 'ouso', '2024-09-25 14:37:26'),
-	(9, 7, 1, NULL, 'sfsfsfs', '2024-09-25 16:06:34'),
-	(10, 1, 7, NULL, 'fsdfdsf', '2024-09-25 17:51:32');
+-- Dumping data for table ehostel.chat_messages: ~0 rows (approximately)
 
--- Dumping structure for table flaskapp.groups
+-- Dumping structure for table ehostel.groups
 DROP TABLE IF EXISTS `groups`;
 CREATE TABLE IF NOT EXISTS `groups` (
   `group_id` int NOT NULL AUTO_INCREMENT,
@@ -152,12 +146,9 @@ CREATE TABLE IF NOT EXISTS `groups` (
   CONSTRAINT `groups_ibfk_1` FOREIGN KEY (`leader_id`) REFERENCES `users` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=71 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
--- Dumping data for table flaskapp.groups: ~2 rows (approximately)
-INSERT INTO `groups` (`group_id`, `leader_id`, `trimester_id`, `name`, `profile_pic`) VALUES
-	(69, 3, 1, 'rwfsfvxc', NULL),
-	(70, 1, 1, 'rehfsaf', NULL);
+-- Dumping data for table ehostel.groups: ~0 rows (approximately)
 
--- Dumping structure for table flaskapp.group_members
+-- Dumping structure for table ehostel.group_members
 DROP TABLE IF EXISTS `group_members`;
 CREATE TABLE IF NOT EXISTS `group_members` (
   `id` int NOT NULL AUTO_INCREMENT,
@@ -173,12 +164,9 @@ CREATE TABLE IF NOT EXISTS `group_members` (
   CONSTRAINT `group_members_ibfk_3` FOREIGN KEY (`trimester_id`) REFERENCES `trimester` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=151 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
--- Dumping data for table flaskapp.group_members: ~3 rows (approximately)
-INSERT INTO `group_members` (`id`, `group_id`, `user_id`, `trimester_id`) VALUES
-	(144, 69, 3, 1),
-	(146, 70, 1, 1);
+-- Dumping data for table ehostel.group_members: ~0 rows (approximately)
 
--- Dumping structure for table flaskapp.hostel
+-- Dumping structure for table ehostel.hostel
 DROP TABLE IF EXISTS `hostel`;
 CREATE TABLE IF NOT EXISTS `hostel` (
   `id` int NOT NULL AUTO_INCREMENT,
@@ -187,14 +175,14 @@ CREATE TABLE IF NOT EXISTS `hostel` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table flaskapp.hostel: ~4 rows (approximately)
+-- Dumping data for table ehostel.hostel: ~4 rows (approximately)
 INSERT INTO `hostel` (`id`, `name`, `gender`) VALUES
 	(1, 'Hostel A', 'Male'),
 	(2, 'Hostel B', 'Female'),
 	(3, 'Hostel C', 'Male'),
 	(4, 'Hostel D', 'Female');
 
--- Dumping structure for table flaskapp.invitations
+-- Dumping structure for table ehostel.invitations
 DROP TABLE IF EXISTS `invitations`;
 CREATE TABLE IF NOT EXISTS `invitations` (
   `invitation_id` int NOT NULL AUTO_INCREMENT,
@@ -213,18 +201,11 @@ CREATE TABLE IF NOT EXISTS `invitations` (
   CONSTRAINT `FK_invitations_trimester` FOREIGN KEY (`trimester_id`) REFERENCES `trimester` (`id`),
   CONSTRAINT `FK_invitations_users` FOREIGN KEY (`inviter_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
   CONSTRAINT `FK_invitations_users_2` FOREIGN KEY (`invitee_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=38 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=40 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
--- Dumping data for table flaskapp.invitations: ~6 rows (approximately)
-INSERT INTO `invitations` (`invitation_id`, `group_id`, `inviter_id`, `invitee_id`, `status`, `invitation_date`, `trimester_id`) VALUES
-	(32, 69, 3, 1, 'accepted', '2024-09-28 08:30:49', 1),
-	(33, 70, 1, 7, 'accepted', '2024-09-28 08:32:29', 1),
-	(34, 70, 1, 7, 'accepted', '2024-09-28 08:36:09', 1),
-	(35, 70, 1, 7, 'accepted', '2024-09-28 08:38:00', 1),
-	(36, 70, 1, 7, 'accepted', '2024-09-28 08:40:45', 1),
-	(37, 70, 1, 7, 'declined', '2024-09-28 08:46:10', 1);
+-- Dumping data for table ehostel.invitations: ~0 rows (approximately)
 
--- Dumping structure for table flaskapp.questions
+-- Dumping structure for table ehostel.questions
 DROP TABLE IF EXISTS `questions`;
 CREATE TABLE IF NOT EXISTS `questions` (
   `id` int NOT NULL AUTO_INCREMENT,
@@ -237,7 +218,7 @@ CREATE TABLE IF NOT EXISTS `questions` (
   CONSTRAINT `FK_questions_ques_sections` FOREIGN KEY (`section_id`) REFERENCES `ques_sections` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=35 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
--- Dumping data for table flaskapp.questions: ~30 rows (approximately)
+-- Dumping data for table ehostel.questions: ~30 rows (approximately)
 INSERT INTO `questions` (`id`, `section_id`, `text`, `min_rating`, `max_rating`) VALUES
 	(1, 1, 'I prefer a quiet environment when studying.', 1, 5),
 	(2, 1, 'I usually study early in the morning.', 1, 5),
@@ -270,7 +251,7 @@ INSERT INTO `questions` (`id`, `section_id`, `text`, `min_rating`, `max_rating`)
 	(29, 6, 'I prefer a generally quiet living environment.', 1, 5),
 	(30, 6, 'I use earplugs or noise-canceling headphones regularly.', 1, 5);
 
--- Dumping structure for table flaskapp.ques_sections
+-- Dumping structure for table ehostel.ques_sections
 DROP TABLE IF EXISTS `ques_sections`;
 CREATE TABLE IF NOT EXISTS `ques_sections` (
   `id` int NOT NULL AUTO_INCREMENT,
@@ -278,7 +259,7 @@ CREATE TABLE IF NOT EXISTS `ques_sections` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
--- Dumping data for table flaskapp.ques_sections: ~6 rows (approximately)
+-- Dumping data for table ehostel.ques_sections: ~6 rows (approximately)
 INSERT INTO `ques_sections` (`id`, `name`) VALUES
 	(1, 'Study Habits'),
 	(2, 'Cleanliness'),
@@ -287,7 +268,7 @@ INSERT INTO `ques_sections` (`id`, `name`) VALUES
 	(5, 'Communication Style'),
 	(6, 'Noice Tolerance');
 
--- Dumping structure for table flaskapp.roles
+-- Dumping structure for table ehostel.roles
 DROP TABLE IF EXISTS `roles`;
 CREATE TABLE IF NOT EXISTS `roles` (
   `id` int NOT NULL AUTO_INCREMENT,
@@ -296,7 +277,7 @@ CREATE TABLE IF NOT EXISTS `roles` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table flaskapp.roles: ~0 rows (approximately)
+-- Dumping data for table ehostel.roles: ~18 rows (approximately)
 INSERT INTO `roles` (`id`, `SoA_id`, `role`) VALUES
 	(3, 1, 'user'),
 	(4, 2, 'user'),
@@ -315,7 +296,7 @@ INSERT INTO `roles` (`id`, `SoA_id`, `role`) VALUES
 	(17, 15, 'user'),
 	(18, 1234, 'admin');
 
--- Dumping structure for table flaskapp.rooms
+-- Dumping structure for table ehostel.rooms
 DROP TABLE IF EXISTS `rooms`;
 CREATE TABLE IF NOT EXISTS `rooms` (
   `number` int NOT NULL,
@@ -329,7 +310,7 @@ CREATE TABLE IF NOT EXISTS `rooms` (
   CONSTRAINT `rooms_ibfk_1` FOREIGN KEY (`hostel_id`) REFERENCES `hostel` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table flaskapp.rooms: ~13 rows (approximately)
+-- Dumping data for table ehostel.rooms: ~15 rows (approximately)
 INSERT INTO `rooms` (`number`, `hostel_id`, `category`, `capacity`, `status`, `price`) VALUES
 	(101, 1, 'Single', 1, 'Available', 100.00),
 	(103, 1, 'Triple', 3, 'Available', 200.00),
@@ -345,7 +326,7 @@ INSERT INTO `rooms` (`number`, `hostel_id`, `category`, `capacity`, `status`, `p
 	(304, 3, 'Single', 1, 'Available', 120.00),
 	(305, 3, 'Double', 2, 'Available', 170.00);
 
--- Dumping structure for table flaskapp.room_change_requests
+-- Dumping structure for table ehostel.room_change_requests
 DROP TABLE IF EXISTS `room_change_requests`;
 CREATE TABLE IF NOT EXISTS `room_change_requests` (
   `request_id` int NOT NULL AUTO_INCREMENT,
@@ -357,11 +338,9 @@ CREATE TABLE IF NOT EXISTS `room_change_requests` (
   KEY `user_id` (`user_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=29 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table flaskapp.room_change_requests: ~1 rows (approximately)
-INSERT INTO `room_change_requests` (`request_id`, `user_id`, `reason`, `status`, `created_at`) VALUES
-	(28, 3, 'dfdfdsd', 'pending', '2024-09-28 03:47:47');
+-- Dumping data for table ehostel.room_change_requests: ~0 rows (approximately)
 
--- Dumping structure for table flaskapp.room_swap_requests
+-- Dumping structure for table ehostel.room_swap_requests
 DROP TABLE IF EXISTS `room_swap_requests`;
 CREATE TABLE IF NOT EXISTS `room_swap_requests` (
   `id` int NOT NULL AUTO_INCREMENT,
@@ -375,15 +354,11 @@ CREATE TABLE IF NOT EXISTS `room_swap_requests` (
   KEY `room_swap_requests_ibfk_2` (`other_user_id`),
   CONSTRAINT `room_swap_requests_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
   CONSTRAINT `room_swap_requests_ibfk_2` FOREIGN KEY (`other_user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
--- Dumping data for table flaskapp.room_swap_requests: ~0 rows (approximately)
-INSERT INTO `room_swap_requests` (`id`, `user_id`, `other_user_id`, `reason`, `status`, `created_at`) VALUES
-	(8, 3, 3, 'dfdssdfsfs', 'rejected', '2024-09-28 03:40:36'),
-	(9, 3, 3, 'sfdfsdfsf', 'rejected', '2024-09-28 03:45:45'),
-	(10, 3, 3, 'sffsfgedf', 'rejected', '2024-09-28 03:46:25');
+-- Dumping data for table ehostel.room_swap_requests: ~0 rows (approximately)
 
--- Dumping structure for table flaskapp.trimester
+-- Dumping structure for table ehostel.trimester
 DROP TABLE IF EXISTS `trimester`;
 CREATE TABLE IF NOT EXISTS `trimester` (
   `id` int NOT NULL AUTO_INCREMENT,
@@ -392,13 +367,13 @@ CREATE TABLE IF NOT EXISTS `trimester` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
--- Dumping data for table flaskapp.trimester: ~3 rows (approximately)
+-- Dumping data for table ehostel.trimester: ~3 rows (approximately)
 INSERT INTO `trimester` (`id`, `term`, `name`) VALUES
 	(1, 2310, 'Trimester March/April 2024'),
 	(2, 2320, 'Trimester July/August 2024'),
 	(3, 2330, 'Trimester Oct/Nov 2024');
 
--- Dumping structure for table flaskapp.users
+-- Dumping structure for table ehostel.users
 DROP TABLE IF EXISTS `users`;
 CREATE TABLE IF NOT EXISTS `users` (
   `id` int NOT NULL,
@@ -412,15 +387,15 @@ CREATE TABLE IF NOT EXISTS `users` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table flaskapp.users: ~17 rows (approximately)
+-- Dumping data for table ehostel.users: ~16 rows (approximately)
 INSERT INTO `users` (`id`, `name`, `gender`, `email`, `password`, `faculty`, `profile_pic`, `survey_completed`) VALUES
-	(1, 'John Wick', 'Male', '1@www.com', '$2b$12$wRb2yJEbiofKKRsRf8adV.jzJlbo6LwXG25B.Rd./cT4Pw.t2uC/m', 'Computing', '/static/uploads/IMG_9523.JPG', 1),
+	(1, 'John Wick', 'Male', '1@www.com', '$2b$12$wRb2yJEbiofKKRsRf8adV.jzJlbo6LwXG25B.Rd./cT4Pw.t2uC/m', 'Computing', '', 1),
 	(2, 'Jane Smith', 'Female', 'user2@example.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi', 'Science', '', 0),
-	(3, 'Bob Johnson', 'Male', 'user3@example.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi', 'Arts', '/static/uploads/IMG_9524.JPG', 1),
+	(3, 'Bob Johnson', 'Male', 'user3@example.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi', 'Arts', '', 1),
 	(4, 'Alice Cooper', 'Female', 'alice.cooper@example.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi', 'Business', '', 0),
 	(5, 'David Miller', 'Male', 'david.miller@example.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi', 'Mathematics', '', 1),
 	(6, 'Emma Watson', 'Female', 'emma.watson@example.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi', 'Computer Science', '', 0),
-	(7, 'Liam Nelson', 'Male', 'liam.nelson@example.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi', 'Physics', '/static/uploads/IMG_9522.JPG', 1),
+	(7, 'Liam Nelson', 'Male', 'liam.nelson@example.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi', 'Physics', '', 1),
 	(8, 'Sophia Lee', 'Female', 'sophia.lee@example.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi', 'Biology', '', 0),
 	(9, 'Noah Brown', 'Male', 'noah.brown@example.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi', 'History', '', 0),
 	(10, 'Olivia Martin', 'Female', 'olivia.martin@example.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi', 'Chemistry', '', 0),
@@ -430,7 +405,7 @@ INSERT INTO `users` (`id`, `name`, `gender`, `email`, `password`, `faculty`, `pr
 	(14, 'Charlotte Martinez', 'Female', 'charlotte.martinez@example3.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi', 'Art', NULL, 0),
 	(15, 'Michael Anderson', 'Male', 'michael.anderson@example.com', '$2b$12$yocdymDGgMbzktihJhXTguo7yuDDCMWSensxIX75HTBA1RkfyZ7zi', 'Business', '', 0);
 
--- Dumping structure for table flaskapp.user_ratings
+-- Dumping structure for table ehostel.user_ratings
 DROP TABLE IF EXISTS `user_ratings`;
 CREATE TABLE IF NOT EXISTS `user_ratings` (
   `rating_id` int NOT NULL AUTO_INCREMENT,
@@ -442,7 +417,7 @@ CREATE TABLE IF NOT EXISTS `user_ratings` (
   CONSTRAINT `user_ratings_ibfk_1` FOREIGN KEY (`question_id`) REFERENCES `questions` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=153 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
--- Dumping data for table flaskapp.user_ratings: ~55 rows (approximately)
+-- Dumping data for table ehostel.user_ratings: ~116 rows (approximately)
 INSERT INTO `user_ratings` (`rating_id`, `user_id`, `question_id`, `rating`) VALUES
 	(3, 3, 1, 3),
 	(4, 3, 2, 3),
