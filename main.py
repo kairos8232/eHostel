@@ -47,6 +47,21 @@ def student_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+# Check survey done
+def survey_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        user_id = session.get('id')
+        if user_id:
+            cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+            cur.execute('SELECT * FROM users WHERE id = %s', (user_id,))
+            user = cur.fetchone()
+            cur.close()
+            if user and user['survey_completed'] == 0:
+                return redirect(url_for('survey'))
+        return f(*args, **kwargs)
+    return decorated_function
+
 # Get image url, to ensure every route catch the profile picture correctly
 @main.context_processor
 def inject_profile_pic():
@@ -90,47 +105,51 @@ def login():
         userDetails = request.form
         id = userDetails['id']
         password = userDetails['password']
-        
-        # First, try to authenticate as an admin
+
         cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cur.execute('SELECT * FROM admin WHERE id=%s', (id,))
-        user = cur.fetchone()
+        cur.execute('SELECT * FROM roles WHERE SoA_id=%s', (id,))
+        role_entry = cur.fetchone()
         
-        if user and bcrypt.check_password_hash(user['password'], password):
-            session['loggedin'] = True
-            session['id'] = user['id']
-            session['is_admin'] = True
-            cur.close()
-            return redirect(url_for('admin_dashboard'))
-        
-        # If not an admin, try to authenticate as a student
-        cur.execute('SELECT * FROM users WHERE id=%s', (id,))
-        user = cur.fetchone()
-        
-        if user and bcrypt.check_password_hash(user['password'], password):
-            session['loggedin'] = True
-            session['id'] = user['id']
-            session['is_admin'] = False
-            cur.close()
-            return redirect(url_for('home'))
-        
-        # If authentication fails for both admin and student
+        if role_entry:
+            if role_entry['role'] == 'admin':
+                cur.execute('SELECT * FROM admin WHERE id=%s', (id,))
+                user = cur.fetchone()
+                
+                if user and bcrypt.check_password_hash(user['password'], password):
+                    session['loggedin'] = True
+                    session['id'] = user['id']
+                    session['is_admin'] = True
+                    cur.close()
+                    return redirect(url_for('admin_dashboard'))
+            
+            elif role_entry['role'] == 'user':
+                cur.execute('SELECT * FROM users WHERE id=%s', (id,))
+                user = cur.fetchone()
+                
+                if user and bcrypt.check_password_hash(user['password'], password):
+                    session['loggedin'] = True
+                    session['id'] = user['id']
+                    session['is_admin'] = False
+                    cur.close()
+                    return redirect(url_for('home'))
+
         cur.close()
-        flash('Incorrect username/password. Try again!', 'error')
+        flash('Incorrect ID or password. Please try again!', 'error')
         return redirect(url_for('login'))
     
     return render_template('login.html')
+
 
 #########################################STUDENT#############################################
 
 #Student Home
 @main.route("/student")
 @student_required
+@survey_required
 def home():
     user_id = session.get('id')
-
-    # Fetch any pending invitations for this user
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
     cur.execute("""
         SELECT invitations.invitation_id, `groups`.name AS group_name, users.name AS leader_name
         FROM invitations
@@ -161,10 +180,13 @@ def home():
                            announcement=current_announcement, 
                            has_next=total_announcements > 1,
                            has_back=total_announcements > 1,
-                           invitation=invitation)
+                           invitation=invitation,
+                        #    survey_completed=user['survey_completed'])
+    )
 
 @main.route('/chat/')
 @student_required
+@survey_required
 def chat_home():
     user_id = session.get('id')
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
@@ -547,16 +569,6 @@ def room_setting():
         LIMIT 1
     """, (user_id,))
     booking = cur.fetchone()
-    
-    # Fetch the status of the latest room change request
-    cur.execute("""
-        SELECT status
-        FROM room_change_requests
-        WHERE user_id = %s
-        ORDER BY request_id DESC
-        LIMIT 1
-    """, (user_id,))
-    request_status = cur.fetchone()
 
     # Fetch pending swap requests for this user
     cur.execute("""
@@ -573,17 +585,12 @@ def room_setting():
     if not booking:
         return redirect(url_for('select_trimester'))
 
-    if request_status:
-        if request_status['status'] == 'approved':
-            flash('Room changed successfully!', 'success')
-        elif request_status['status'] == 'rejected':
-            flash('Room change request rejected by admin.', 'error')
-
     return render_template('room_setting.html', booking=booking, pending_swaps=pending_swaps)
     
 # Select Trimester Route
 @main.route('/student/select_trimester', methods=['GET', 'POST'])
 @student_required
+@survey_required
 def select_trimester():
     
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
@@ -606,10 +613,11 @@ def choose_mode():
         return redirect(url_for('select_trimester'))
     
     user_id = session.get('id')
+    trimester_id = session.get('trimester_id')
 
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
 
-    cur.execute("SELECT group_id FROM group_members WHERE user_id = %s", (user_id,))
+    cur.execute("SELECT group_id FROM group_members WHERE user_id = %s AND trimester_id = %s", (user_id, trimester_id))
     user_group = cur.fetchone()
     
     if user_group:
@@ -622,7 +630,7 @@ def choose_mode():
             session['group_id'] = None
             return redirect(url_for('select_hostel', mode='individual'))
         elif mode == 'group':
-            cur.execute("SELECT group_id FROM group_members WHERE user_id = %s", (user_id,))
+            cur.execute("SELECT group_id FROM group_members WHERE user_id = %s AND trimester_id = %s", (user_id, trimester_id))
             user_group = cur.fetchone()
             if user_group:
                 session['group_id'] = user_group['group_id']
@@ -636,9 +644,10 @@ def choose_mode():
 @student_required
 def group_page():
     user_id = session.get('id')
+    trimester_id = session.get('trimester_id')
 
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    cur.execute("SELECT * FROM `groups` WHERE leader_id = %s", (user_id,))
+    cur.execute("SELECT * FROM `groups` WHERE leader_id = %s AND trimester_id = %s", (user_id, trimester_id))
     group = cur.fetchone()
     cur.close()
 
@@ -647,43 +656,100 @@ def group_page():
     
     if request.method == 'POST':
         group_action = request.form['group_action']
+        
         if group_action == 'create':
-            selected_trimester = session.get('trimester_id')
+            group_name = request.form['group_name']
+            profile_pic = request.files.get('profile_pic')
 
             cur = mysql.connection.cursor()
-            cur.execute("INSERT INTO `groups`(leader_id, trimester_id) VALUES(%s, %s)", (user_id, selected_trimester))
+
+            if profile_pic:
+                profile_pic_path = os.path.join(main.config['UPLOAD_FOLDER'], profile_pic.filename)
+                profile_pic.save(profile_pic_path)
+                profile_pic_url = url_for('static', filename=f"uploads/{profile_pic.filename}")
+            else:
+                profile_pic_url = None
+
+            cur.execute(
+                "INSERT INTO `groups`(leader_id, trimester_id, name, profile_pic) VALUES(%s, %s, %s, %s)", 
+                (user_id, trimester_id, group_name, profile_pic_url)
+            )
             mysql.connection.commit()
             group_id = cur.lastrowid
-            cur.execute("INSERT INTO group_members(group_id, user_id) VALUES(%s, %s)", (group_id, user_id))
+
+            cur.execute("INSERT INTO group_members(group_id, user_id, trimester_id) VALUES(%s, %s, %s)", (group_id, user_id, trimester_id))
             mysql.connection.commit()
             cur.close()
+
             session['group_id'] = group_id
             return redirect(url_for('manage_group', group_id=group_id))
 
     return render_template('group_page.html')
+
+@main.route('/student/edit_group/<int:group_id>', methods=['GET', 'POST'])
+@student_required
+def edit_group(group_id):
+    user_id = session.get('id')
+
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
+    # Fetch group details for the given group_id and check if the user is the leader
+    cur.execute("SELECT * FROM `groups` WHERE group_id = %s AND leader_id = %s", (group_id, user_id))
+    group = cur.fetchone()
+
+    if not group:
+        return redirect(url_for('group_page'))
+
+    # If the form is submitted via POST
+    if request.method == 'POST':
+        group_name = request.form['group_name']  # Get the updated group name
+        profile_pic = request.files.get('profile_pic')
+
+        if profile_pic:
+            # Save the new profile picture
+            profile_pic_path = os.path.join(main.config['UPLOAD_FOLDER'], profile_pic.filename)
+            profile_pic.save(profile_pic_path)
+            profile_pic_url = url_for('static', filename=f"uploads/{profile_pic.filename}")
+        else:
+            # Keep the existing profile picture
+            profile_pic_url = group['profile_pic']
+
+        # Update the group in the database
+        cur.execute("""
+            UPDATE `groups`
+            SET name = %s, profile_pic = %s
+            WHERE group_id = %s AND leader_id = %s
+        """, (group_name, profile_pic_url, group_id, user_id))
+
+        mysql.connection.commit()
+        cur.close()
+
+        return redirect(url_for('manage_group', group_id=group_id))
+
+    cur.close()
+    return render_template('group_edit.html', group=group)
 
 # Manage Group route with student filtering and suggested roommate
 @main.route('/student/manage_group/<int:group_id>', methods=['GET', 'POST'])
 @student_required
 def manage_group(group_id):
     user_id = session.get('id')
+    trimester_id = request.args.get('trimester_id') or session.get('trimester_id')
 
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    cur.execute("SELECT * FROM `groups` WHERE group_id = %s AND leader_id = %s", (group_id, user_id))
+
+    # Check if user is the group leader or a member of the group
+    cur.execute("SELECT * FROM `groups` WHERE group_id = %s AND leader_id = %s AND trimester_id = %s", (group_id, user_id, trimester_id))
     group = cur.fetchone()
 
-    cur.execute("SELECT users.id, users.email FROM users JOIN group_members ON users.id = group_members.user_id WHERE group_members.group_id = %s AND group_members.user_id = %s", (group_id, user_id))
+    cur.execute("SELECT users.id, users.email FROM users JOIN group_members ON users.id = group_members.user_id WHERE group_members.group_id = %s AND group_members.user_id = %s AND group_members.trimester_id = %s", (group_id, user_id, trimester_id))
     is_group_member = cur.fetchone()
 
     if not group and not is_group_member:
         return redirect(url_for('group_page'))
 
-    cur.execute("SELECT * FROM `groups` WHERE group_id = %s", (group_id,))
+    cur.execute("SELECT * FROM `groups` WHERE group_id = %s AND trimester_id = %s", (group_id, trimester_id))
     group = cur.fetchone()
-
-    if not group:
-        cur.close()
-        return render_template('error.html', message="Group not found.")
 
     is_leader = group['leader_id'] == user_id
 
@@ -696,8 +762,8 @@ def manage_group(group_id):
         FROM users 
         JOIN group_members ON users.id = group_members.user_id 
         JOIN `groups` ON group_members.group_id = groups.group_id
-        WHERE group_members.group_id = %s
-    """, (group_id,))
+        WHERE group_members.group_id = %s AND group_members.trimester_id = %s
+    """, (group_id, trimester_id))
     members = cur.fetchall()
 
     students = None
@@ -707,17 +773,19 @@ def manage_group(group_id):
             cur.execute("SELECT rating FROM user_ratings WHERE user_id = %s ORDER BY question_id", (user_id,))
             user_ratings = [rating['rating'] for rating in cur.fetchall()]
 
-            # Get all other users of the same gender who are not in the group
+            # Get all other users of the same gender who are not in the group, not in any other group in the same trimester, and haven't made a booking
             cur.execute("""
-                SELECT id, name, faculty, gender
-                FROM users
-                WHERE gender = %s AND id != %s AND id NOT IN (
-                    SELECT user_id FROM group_members WHERE group_id = %s
-                )
-            """, (leader_gender, user_id, group_id))
+                SELECT u.id, u.name, u.faculty, u.gender
+                FROM users u
+                LEFT JOIN group_members gm ON u.id = gm.user_id AND gm.trimester_id = %s
+                LEFT JOIN booking b ON u.id = b.user_id AND b.trimester_id = %s
+                WHERE u.gender = %s
+                AND u.id != %s
+                AND (gm.group_id IS NULL OR gm.trimester_id != %s)  -- Ensure not part of any group in the same trimester
+                AND b.user_id IS NULL
+            """, (trimester_id, trimester_id, leader_gender, user_id, trimester_id))
             potential_roommates = cur.fetchall()
 
-            # Calculate similarity for each potential roommate
             students = []
             for roommate in potential_roommates:
                 cur.execute("SELECT rating FROM user_ratings WHERE user_id = %s ORDER BY question_id", (roommate['id'],))
@@ -725,24 +793,26 @@ def manage_group(group_id):
                 
                 if len(user_ratings) == len(roommate_ratings):
                     similarity = calculate_similarity(user_ratings, roommate_ratings)
-                    roommate['similarity'] = round(similarity, 2)  # Round to 2 decimal places
+                    roommate['similarity'] = round(similarity, 2)
                     students.append(roommate)
 
             # Sort by similarity (highest first) and take top 10
-            students = sorted(students, key=lambda x: x['similarity'], reverse=True)[:10]
-            print(students)  # Print the list of students and their similarity values
+            students = sorted(students, key=lambda x: x['similarity'], reverse=True)[:1]
 
         elif 'filter_student_id' in request.form:
             filter_student_id = request.form.get('filter_student_id')
             if filter_student_id:
                 cur.execute("""
-                    SELECT id, name, faculty, gender
-                    FROM users
-                    WHERE id = %s AND gender = %s AND id != %s
-                    AND id NOT IN (
-                        SELECT user_id FROM group_members
-                    )
-                """, (filter_student_id, leader_gender, user_id))
+                    SELECT u.id, u.name, u.faculty, u.gender
+                    FROM users u
+                    LEFT JOIN group_members gm ON u.id = gm.user_id AND gm.trimester_id = %s
+                    LEFT JOIN booking b ON u.id = b.user_id AND b.trimester_id = %s
+                    WHERE u.id = %s
+                    AND u.gender = %s
+                    AND u.id != %s
+                    AND (gm.group_id IS NULL OR gm.trimester_id != %s)  -- Ensure not part of any group in the same trimester
+                    AND b.user_id IS NULL
+                """, (trimester_id, trimester_id, filter_student_id, leader_gender, user_id, trimester_id))
                 students = cur.fetchall()
 
                 if students:
@@ -755,7 +825,7 @@ def manage_group(group_id):
 
                     if len(user_ratings) == len(student_ratings):
                         similarity = calculate_similarity(user_ratings, student_ratings)
-                        students[0]['similarity'] = round(similarity, 2)  # Round to 2 decimal places
+                        students[0]['similarity'] = round(similarity, 2)
                     else:
                         students[0]['similarity'] = 0
             else:
@@ -763,7 +833,7 @@ def manage_group(group_id):
 
     cur.close()
 
-    return render_template('manage_group.html', members=members, group_id=group_id, students=students, is_leader=is_leader, current_user_id=user_id, leader_gender=leader_gender)
+    return render_template('manage_group.html', members=members, group_id=group_id, group_name=group['name'], students=students, is_leader=is_leader, current_user_id=user_id, leader_gender=leader_gender)
 
 # Leave Group
 @main.route('/student/leave_group/<int:group_id>', methods=['POST'])
@@ -793,20 +863,37 @@ def leave_group(group_id):
     cur.close()
     return redirect(url_for('choose_mode'))
 
-# Invite Member Route
 @main.route('/student/invite_user/<int:group_id>/<int:invitee_id>', methods=['POST'])
 @student_required
 def invite_user(group_id, invitee_id):
     user_id = session.get('id')  # User A (group leader) who is sending the invite
+    trimester_id = session.get('trimester_id')
 
-    cur = mysql.connection.cursor()    # Insert the invitation into the 'invitations' table
+    cur = mysql.connection.cursor()
+
+    # Check if the invitee already has a pending or accepted invitation in the same trimester
     cur.execute("""
-        INSERT INTO invitations (group_id, inviter_id, invitee_id, status)
-        VALUES (%s, %s, %s, 'pending')
-    """, (group_id, user_id, invitee_id))
+        SELECT status 
+        FROM invitations 
+        WHERE invitee_id = %s AND trimester_id = %s AND (status = 'pending' OR status = 'accepted')
+    """, (invitee_id, trimester_id))
+    
+    existing_invitation = cur.fetchone()
+
+    if existing_invitation:
+        flash('This user is already part of a group or has a pending invitation in this trimester.', 'info')
+        return redirect(url_for('manage_group', group_id=group_id))
+
+    # If no pending or accepted invitation, send a new invitation
+    cur.execute("""
+        INSERT INTO invitations (group_id, inviter_id, invitee_id, status, trimester_id)
+        VALUES (%s, %s, %s, 'pending', %s)
+    """, (group_id, user_id, invitee_id, trimester_id))
+    
     mysql.connection.commit()
     cur.close()
 
+    flash('Invitation sent successfully!', 'success')
     return redirect(url_for('manage_group', group_id=group_id))
 
 # Accept the invitation
@@ -824,20 +911,20 @@ def accept_invite(invitation_id):
         WHERE invitation_id = %s AND invitee_id = %s
     """, (invitation_id, user_id))
 
-    # Fetch the group_id from the invitation
-    cur.execute("SELECT group_id FROM invitations WHERE invitation_id = %s", (invitation_id,))
-    group = cur.fetchone()
+    # Fetch the group_id and trimester_id from the invitation
+    cur.execute("SELECT group_id, trimester_id FROM invitations WHERE invitation_id = %s", (invitation_id,))
+    invitation = cur.fetchone()
 
     # Add the user to the group members
     cur.execute("""
-        INSERT INTO group_members (group_id, user_id)
-        VALUES (%s, %s)
-    """, (group['group_id'], user_id))
+        INSERT INTO group_members (group_id, user_id, trimester_id)
+        VALUES (%s, %s, %s)
+    """, (invitation['group_id'], user_id, invitation['trimester_id']))
 
     mysql.connection.commit()
     cur.close()
 
-    return redirect(url_for('manage_group', group_id=group['group_id']))
+    return redirect(url_for('manage_group', group_id=invitation['group_id'], trimester_id=invitation['trimester_id']))
 
 # Decline the invitation
 @main.route('/student/decline_invite/<int:invitation_id>', methods=['POST'])
@@ -845,14 +932,18 @@ def accept_invite(invitation_id):
 def decline_invite(invitation_id):
     user_id = session.get('id')  # User B (invitee)
 
-    cur = mysql.connection.cursor()
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
+    # Fetch the group_id and trimester_id from the invitation
+    cur.execute("SELECT group_id, trimester_id FROM invitations WHERE invitation_id = %s", (invitation_id,))
+    invitation = cur.fetchone()
 
     # Update invitation status to 'declined'
     cur.execute("""
         UPDATE invitations
         SET status = 'declined'
-        WHERE invitation_id = %s AND invitee_id = %s
-    """, (invitation_id, user_id))
+        WHERE invitation_id = %s AND invitee_id = %s AND trimester_id = %s
+    """, (invitation_id, user_id, invitation['trimester_id']))
 
     mysql.connection.commit()
     cur.close()
@@ -890,32 +981,37 @@ def select_hostel(mode):
 @student_required
 def select_room_type(mode, hostel_id):
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-
-    group_id = session.get('group_id')
+    trimester_id = session.get('trimester_id')
 
     if mode == 'individual':
         cur.execute("""
             SELECT r.*, COUNT(b.id) as total_beds, 
-            SUM(CASE WHEN b.status = 'Available' THEN 1 ELSE 0 END) as available_beds
+            SUM(CASE WHEN b.id NOT IN (
+                SELECT bed_number FROM booking 
+                WHERE trimester_id = %s AND hostel_id = %s
+            ) THEN 1 ELSE 0 END) as available_beds
             FROM rooms r
             LEFT JOIN beds b ON r.number = b.room_number
             WHERE r.hostel_id = %s
             GROUP BY r.number
             HAVING available_beds > 0
-        """, (hostel_id,))
+        """, (trimester_id, hostel_id, hostel_id))
     elif mode == 'group':
         group_id = session.get('group_id')
         cur.execute("SELECT COUNT(*) as count FROM group_members WHERE group_id = %s", (group_id,))
         group_size = cur.fetchone()['count']
         cur.execute("""
             SELECT r.*, COUNT(b.id) as total_beds, 
-            SUM(CASE WHEN b.status = 'Available' THEN 1 ELSE 0 END) as available_beds
+            SUM(CASE WHEN b.id NOT IN (
+                SELECT bed_number FROM booking 
+                WHERE trimester_id = %s AND hostel_id = %s
+            ) THEN 1 ELSE 0 END) as available_beds
             FROM rooms r
             LEFT JOIN beds b ON r.number = b.room_number
             WHERE r.hostel_id = %s
             GROUP BY r.number
             HAVING available_beds >= %s
-        """, (hostel_id, group_size))
+        """, (trimester_id, hostel_id, hostel_id, group_size))
     
     available_rooms = cur.fetchall()
 
@@ -925,13 +1021,14 @@ def select_room_type(mode, hostel_id):
             return redirect(url_for('select_bed', mode=mode, hostel_id=hostel_id, room_type=available_rooms[0]['category'], selected_room=selected_room))
 
     cur.close()
-    return render_template('select_room_type.html', mode=mode, hostel_id=hostel_id, available_rooms=available_rooms, group_id=group_id)
+    return render_template('select_room_type.html', mode=mode, hostel_id=hostel_id, available_rooms=available_rooms, group_id=session.get('group_id'))
 
 # Select Bed Route
 @main.route('/student/select_bed/<mode>/<int:hostel_id>/<room_type>', methods=['GET', 'POST'])
 @student_required
 def select_bed(mode, hostel_id, room_type):
     user_id = session.get('id')
+    trimester_id = session.get('trimester_id')
 
     selected_room = request.args.get('selected_room')
     if not selected_room:
@@ -945,12 +1042,18 @@ def select_bed(mode, hostel_id, room_type):
         if not room_info:
             raise ValueError("Room not found.")
 
-        cur.execute("SELECT * FROM beds WHERE room_number = %s AND status = 'Available'", (selected_room,))
+        cur.execute("""
+            SELECT * FROM beds 
+            WHERE room_number = %s 
+            AND id NOT IN (
+                SELECT bed_number FROM booking 
+                WHERE trimester_id = %s AND room_no = %s
+            )
+        """, (selected_room, trimester_id, selected_room))
         available_beds = cur.fetchall()
 
         group_id = session.get('group_id')
         
-        # Always fetch the most up-to-date information from the database
         if mode == 'group' and group_id:
             cur.execute("""
                 SELECT users.id, users.name, users.email 
@@ -998,6 +1101,7 @@ def select_bed(mode, hostel_id, room_type):
 @student_required
 def booking_summary(mode, hostel_id, room_type, room_number, bed_ids, user_ids):
     user_id = session.get('id')
+    trimester_id = session.get('trimester_id')
 
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     cur.execute("SELECT * FROM rooms WHERE number = %s", (room_number,))
@@ -1032,15 +1136,12 @@ def booking_summary(mode, hostel_id, room_type, room_number, bed_ids, user_ids):
     }
 
     if request.method == 'POST':
-        trimester_id = session.get('trimester_id')
-
         for assignment in bed_assignments:
             cur.execute(
                 "INSERT INTO booking(user_id, trimester_id, group_individual, group_id, hostel_id, room_no, bed_number, cost) "
                 "VALUES(%s, %s, %s, %s, %s, %s, %s, %s)",
-                (assignment['user']['id'], trimester_id, 1 if mode == 'group' else 0, group_id, hostel_id, room_number, assignment['bed']['bed_letter'], room_info['price'])
+                (assignment['user']['id'], trimester_id, 1 if mode == 'group' else 0, group_id, hostel_id, room_number, assignment['bed']['id'], room_info['price'])
             )
-            cur.execute("UPDATE beds SET status = 'Occupied' WHERE id = %s", (assignment['bed']['id'],))
 
         # Update room status if all beds are occupied
         cur.execute("SELECT COUNT(*) as total, SUM(CASE WHEN status = 'Occupied' THEN 1 ELSE 0 END) as occupied FROM beds WHERE room_number = %s", (room_number,))
@@ -1081,8 +1182,9 @@ def transfer_leadership(group_id, new_leader_id):
 @main.route('/student/remove_member/<int:group_id>/<int:member_id>', methods=['POST'])
 @student_required
 def remove_member(group_id, member_id):
+    trimester_id = session.get('trimester_id')
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    cur.execute("DELETE FROM group_members WHERE group_id = %s AND user_id = %s", (group_id, member_id))
+    cur.execute("DELETE FROM group_members WHERE group_id = %s AND user_id = %s AND trimester_id = %s", (group_id, member_id, trimester_id))
     mysql.connection.commit()
     cur.close()
 
@@ -1095,14 +1197,15 @@ def remove_member(group_id, member_id):
 @student_required
 def disband_group(group_id):
     user_id = session.get('id')
+    trimester_id = session.get('trimester_id')
 
     session.pop('group_id', None)
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    cur.execute("SELECT * FROM `groups` WHERE group_id = %s AND leader_id = %s", (group_id, user_id))
+    cur.execute("SELECT * FROM `groups` WHERE group_id = %s AND leader_id = %s AND trimester_id = %s", (group_id, user_id, trimester_id))
 
-    cur.execute("DELETE FROM invitations WHERE group_id = %s", (group_id,))
-    cur.execute("DELETE FROM group_members WHERE group_id = %s", (group_id,))
-    cur.execute("DELETE FROM `groups` WHERE group_id = %s", (group_id,))
+    cur.execute("DELETE FROM invitations WHERE group_id = %s AND trimester_id = %s", (group_id, trimester_id))
+    cur.execute("DELETE FROM group_members WHERE group_id = %s AND trimester_id = %s", (group_id, trimester_id))
+    cur.execute("DELETE FROM `groups` WHERE group_id = %s AND trimester_id = %s", (group_id, trimester_id))
     mysql.connection.commit()
     cur.close()
 
@@ -1277,12 +1380,14 @@ def confirm_room_swap():
     user_id = session.get('id')
     other_student_id = request.form.get('other_student_id')
     reason = request.form.get('reason')
-    
+
     cur = mysql.connection.cursor()
+    
     cur.execute("""
         INSERT INTO room_swap_requests (user_id, other_user_id, reason, status)
         VALUES (%s, %s, %s, 'pending')
     """, (user_id, other_student_id, reason))
+    
     mysql.connection.commit()
     cur.close()
     
@@ -1300,7 +1405,7 @@ def respond_to_swap():
     if response == 'approve':
         cur.execute("""
             UPDATE room_swap_requests
-            SET status = 'approved_by_student'
+            SET status = 'pending'
             WHERE id = %s AND other_user_id = %s
         """, (swap_request_id, user_id))
         flash('You have approved the room swap request. It will now be reviewed by the admin.', 'success')
@@ -1393,7 +1498,7 @@ def edit_trimester():
 # Admin Add Student
 @main.route('/admin/add_student', methods=['GET', 'POST'])
 @admin_required
-def add_student():    
+def add_student():
     if request.method == 'POST':
         userDetails = request.form
         id = userDetails['id']
@@ -1403,12 +1508,26 @@ def add_student():
         password = userDetails['password']
         faculty = userDetails['faculty']
         hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+
         cur = mysql.connection.cursor()
-        cur.execute("INSERT INTO users(id, name, gender, email, password, faculty) VALUES(%s, %s, %s, %s, %s, %s)", (id, name, gender, email, hashed_password, faculty))
+
+        cur.execute("SELECT * FROM roles WHERE SoA_id=%s", (id,))
+        existing_role = cur.fetchone()
+
+        if existing_role:
+            flash('ID already exists in system.', 'error')
+            cur.close()
+            return redirect(url_for('add_student'))
+
+        cur.execute("INSERT INTO users(id, name, gender, email, password, faculty) VALUES(%s, %s, %s, %s, %s, %s)", 
+                    (id, name, gender, email, hashed_password, faculty))
+
+        cur.execute("INSERT INTO roles(SoA_id, role) VALUES(%s, %s)", (id, 'user'))
+
         mysql.connection.commit()
-        cur.close()
         flash('Student added successfully!', 'success')
-        return redirect(url_for('add_student'))
+
+        cur.close()
 
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     cur.execute("SELECT * FROM users")
@@ -1417,16 +1536,17 @@ def add_student():
 
     return render_template('add_student.html', students=students)
 
+
 # Admin Delete Student
-@main.route('/admin/delete_student/<student_id>', methods=['POST'])
+@main.route('/admin/delete_student/<int:student_id>', methods=['POST'])
 @admin_required
 def delete_student(student_id):
-
     cur = mysql.connection.cursor()
+    cur.execute("DELETE FROM roles WHERE SoA_id = %s AND role = 'user'", (student_id,))
     cur.execute("DELETE FROM users WHERE id = %s", (student_id,))
+    
     mysql.connection.commit()
     cur.close()
-
     flash('Student deleted successfully!', 'success')
     return redirect(url_for('add_student'))
 
@@ -1446,7 +1566,6 @@ def add_room():
         price = request.form['price']
         status = 'Available'
 
-        # Determine the capacity and corresponding bed letters based on the category
         if category == 'Single':
             capacity = 1
             beds = ['A']
@@ -1456,8 +1575,7 @@ def add_room():
         elif category == 'Triple':
             capacity = 3
             beds = ['A', 'B', 'C']
-
-        # Check if the room number already exists
+            
         cur.execute("SELECT * FROM rooms WHERE number = %s AND hostel_id = %s", (number, hostel_id))
         existing_room = cur.fetchone()
 
@@ -1466,15 +1584,13 @@ def add_room():
             return redirect(url_for('add_room'))
 
         try:
-            # Insert new room into the database
             cur.execute(''' 
                 INSERT INTO rooms (number, hostel_id, category, capacity, price, status) 
                 VALUES (%s, %s, %s, %s, %s, %s) 
             ''', (number, hostel_id, category, capacity, price, status))
 
-            # Create beds for the room
             for bed in beds:
-                cur.execute('''
+                cur.execute(''' 
                     INSERT INTO beds (room_number, bed_letter, status) 
                     VALUES (%s, %s, %s) 
                 ''', (number, bed, 'Available'))
@@ -1489,21 +1605,25 @@ def add_room():
 
         return redirect(url_for('add_room'))
 
-    # Render template and pass hostels to the form
     return render_template('room_add.html', hostels=hostels)
 
-# Admin Edit Room
+    # Render template and pass hostels to the form
 @main.route('/admin/edit_room/<int:room_number>', methods=['GET', 'POST'])
 @admin_required
 def edit_room(room_number):
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
 
-    # Fetch room details based on the room number
-    cur.execute("SELECT * FROM rooms WHERE number = %s", (room_number,))
+    # Fetch room details along with its hostel gender based on the room number
+    cur.execute('''
+        SELECT r.*, h.gender AS hostel_gender 
+        FROM rooms r 
+        JOIN hostel h ON r.hostel_id = h.id 
+        WHERE r.number = %s
+    ''', (room_number,))
     room = cur.fetchone()
 
-    # Fetch all hostels for the dropdown
-    cur.execute("SELECT id, name, gender FROM hostel")
+    # Fetch only hostels with the same gender as the room's hostel
+    cur.execute("SELECT id, name, gender FROM hostel WHERE gender = %s", (room['hostel_gender'],))
     hostels = cur.fetchall()
 
     if request.method == 'POST':
@@ -1741,7 +1861,7 @@ def admin_room_swap_requests():
         JOIN booking b1 ON rsr.user_id = b1.user_id
         JOIN booking b2 ON rsr.other_user_id = b2.user_id
         JOIN hostel h ON b1.hostel_id = h.id
-        WHERE rsr.status = 'approved_by_student'
+        WHERE rsr.status = 'pending'
         ORDER BY rsr.created_at ASC
     """)
     swap_requests = cur.fetchall()
@@ -1781,7 +1901,7 @@ def process_room_swap():
             # Update the swap request status
             cur.execute("""
                 UPDATE room_swap_requests
-                SET status = 'approved_by_admin'
+                SET status = 'approved'
                 WHERE id = %s
             """, (swap_request_id,))
             
@@ -1996,7 +2116,6 @@ def admin_change_password():
 @main.route('/admin/add_admin', methods=['GET', 'POST'])
 @admin_required
 def add_admin():
-    
     if request.method == 'POST':
         admin_id = request.form['admin_id']
         name = request.form['name']
@@ -2005,13 +2124,27 @@ def add_admin():
         hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
 
         cur = mysql.connection.cursor()
-        cur.execute("INSERT INTO admin(id, name, email, password) VALUES(%s, %s, %s, %s)", (admin_id, name, email, hashed_password))
-        mysql.connection.commit()
-        cur.close()
 
+        cur.execute("SELECT * FROM roles WHERE SoA_id=%s", (admin_id,))
+        existing_role = cur.fetchone()
+        
+        if existing_role:
+            flash('ID already exists in system.', 'error')
+            cur.close()
+            return redirect(url_for('add_admin'))
+
+        cur.execute("INSERT INTO admin(id, name, email, password) VALUES(%s, %s, %s, %s)", 
+                    (admin_id, name, email, hashed_password))
+
+        cur.execute("INSERT INTO roles(SoA_id, role) VALUES(%s, %s)", (admin_id, 'admin'))
+
+        mysql.connection.commit()
         flash('Admin added successfully!', 'success')
 
+        cur.close()
+
     return render_template('add_admin.html')
+
 
 # Admin Manage Admins
 @main.route('/admin/manage_admins', methods=['GET'])
@@ -2028,7 +2161,9 @@ def manage_admins():
 @admin_required
 def delete_admin(admin_id):
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    cur.execute("DELETE FROM roles WHERE SoA_id = %s AND role = 'admin'", (admin_id,))
     cur.execute("DELETE FROM admin WHERE id = %s", (admin_id,))
+    
     mysql.connection.commit()
     cur.close()
     flash('Admin deleted successfully!', 'success')
@@ -2052,6 +2187,13 @@ def booking_listing():
         JOIN users u ON b.user_id = u.id
         JOIN trimester t ON b.trimester_id = t.id
         JOIN hostel h ON b.hostel_id = h.id
+        LEFT JOIN room_change_requests rcr ON b.user_id = rcr.user_id
+        LEFT JOIN room_swap_requests rsr ON (b.user_id = rsr.user_id OR b.user_id = rsr.other_user_id)
+        WHERE (
+            (rcr.status IS NULL OR rcr.status != 'pending') -- Room change not pending
+            AND 
+            (rsr.status IS NULL OR rsr.status != 'pending') -- Room swap not pending for either user
+        )
         ORDER BY b.booking_no DESC
     """)
     bookings = cur.fetchall()

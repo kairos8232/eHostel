@@ -5,8 +5,9 @@
 {% endblock %}
 
 {% block content %}
-<h1>Room Setting</h1>
+
 <div class="wrapper">
+    <h1>Room Setting</h1>
     <div class="page-container">        
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
@@ -19,10 +20,20 @@
         {% endwith %}
 
         <div class="room-setting">
-            <p><strong>Hostel:</strong> {{ booking.hostel_name }}</p>
-            <p><strong>Room Number:</strong> {{ booking.room_no }}</p>
-            <p><strong>Room Type:</strong> {{ booking.room_type }}</p>
-            <p><strong>Bed Number:</strong> {{ booking.bed_number }}</p>
+            <table class="room-info-table">
+                <tr>
+                    <th>Hostel</th>
+                    <th>Room Number</th>
+                    <th>Room Type</th>
+                    <th>Bed Number</th>
+                </tr>
+                <tr>
+                    <td>{{ booking.hostel_name }}</td>
+                    <td>{{ booking.room_no }}</td>
+                    <td>{{ booking.room_type }}</td>
+                    <td>{{ booking.bed_number }}</td>
+                </tr>
+            </table>
             
             <div class="buttons">
                 <button onclick="toggleRoomChangeForm()" class="btn btn-primary">Request Room Change</button>
@@ -31,7 +42,7 @@
 
             <!-- Room Change Form -->
             <div id="roomChangeForm" style="display: none;">
-                <h3>Room Change Request</h3>
+                <h3 class="form-title">Room Change Request</h3>
                 <form action="{{ url_for('request_room_change') }}" method="post">
                     <div class="form-group">
                         <label for="reason">Reason for Room Change:</label>
@@ -43,7 +54,7 @@
 
             <!-- Room Swap Form -->
             <div id="swapRoomForm" style="display: none;">
-                <h3>Room Swap Request</h3>
+                <h3 class="form-title">Room Swap Request</h3>
                 <form action="{{ url_for('request_room_swap') }}" method="post">
                     <div class="form-group">
                         <label for="other_student_id">Other Student ID:</label>
@@ -58,36 +69,44 @@
             </div>
         </div>
 
-        <!-- Pending Room Swap Requests -->
-        <div class="pending-swaps">
-            {% if pending_swaps %}
-                <h3>Pending Room Swap Requests</h3>
-                <ul>
-                    {% for swap in pending_swaps %}
-                    <li>
-                        <p><strong>Requester Name:</strong> {{ swap.requester_name }}</p>
-                        <p><strong>Requester Room:</strong> {{ swap.requester_room }}</p>
-                        <p><strong>Requester Bed:</strong> {{ swap.requester_bed }}</p>
-                        
+<!-- Pending Room Swap Requests -->
+<div class="pending-swaps">
+    {% if pending_swaps %}
+        <h3>Pending Room Swap Requests</h3>
+        <table class="pending-swap-table">
+            <thead>
+                <tr>
+                    <th>Requester Name</th>
+                    <th>Requester Room</th>
+                    <th>Requester Bed</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for swap in pending_swaps %}
+                <tr>
+                    <td>{{ swap.requester_name }}</td>
+                    <td>{{ swap.requester_room }}</td>
+                    <td>{{ swap.requester_bed }}</td>
+                    <td>
                         <form action="{{ url_for('respond_to_swap') }}" method="post" style="display:inline;">
                             <input type="hidden" name="swap_request_id" value="{{ swap.id }}">
                             <input type="hidden" name="response" value="approve">
                             <button type="submit" class="btn btn-success">Approve</button>
                         </form>
-
                         <form action="{{ url_for('respond_to_swap') }}" method="post" style="display:inline;">
                             <input type="hidden" name="swap_request_id" value="{{ swap.id }}">
                             <input type="hidden" name="response" value="reject">
                             <button type="submit" class="btn btn-danger">Reject</button>
                         </form>
-                    </li>
-                    <hr>
-                    {% endfor %}
-                </ul>
-            {% else %}
-                <p>No pending room swap requests.</p>
-            {% endif %}
-        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+</div>
+
     </div>
 </div>
 

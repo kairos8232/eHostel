@@ -4,22 +4,27 @@
 {% block content %}
 
 {% if not session.get('is_admin', False) %}
+
+<div class="wrapper">
+    {% if invitation %}
+    <div class="invitation-section">
+        <div class="title-container">
+            <h2>You have been invited to join {{ invitation.group_name }} by {{ invitation.leader_name }}</h2>
+            <div class="button-container">
+                <form action="{{ url_for('accept_invite', invitation_id=invitation.invitation_id) }}" method="POST">
+                    <button type="submit" class="btn btn-success">Accept</button>
+                </form>
+                <form action="{{ url_for('decline_invite', invitation_id=invitation.invitation_id) }}" method="POST">
+                    <button type="submit" class="btn btn-danger">Decline</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
 <div class="container">
     <div class="content">
-        <!-- Display group invitation if pending -->
-        {% if invitation %}
-        <div class="invitation-section">
-            <h2>You have been invited to join {{ invitation.group_name }} by {{ invitation.leader_name }}</h2>
-            <form action="{{ url_for('accept_invite', invitation_id=invitation.invitation_id) }}" method="POST">
-                <button type="submit" class="btn btn-success">Accept</button>
-            </form>
-            <form action="{{ url_for('decline_invite', invitation_id=invitation.invitation_id) }}" method="POST">
-                <button type="submit" class="btn btn-danger">Decline</button>
-            </form>
-        </div>
-        <hr>
-        {% endif %}
-
         <!-- Announcements Section -->
         <h1>Announcements</h1>
         <hr>

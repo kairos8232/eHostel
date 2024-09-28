@@ -22,9 +22,9 @@
 }
 
 .manage-group-container {
-    /* width: 100%; */
     display: flex;
     flex-direction: column;
+    justify-content: center;
     align-items: center;
     max-width: 1000px;
 }
@@ -46,14 +46,13 @@ table {
     border-radius: 15px;       
     overflow: hidden;         
     box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
-    margin-bottom: 25px;
+    margin-bottom: 15px;
 }
 
 
 th, td {
     padding: 14px 18px;
     text-align: left;
-    border-bottom: 1px solid #e0e0e0;
 }
 
 th {
@@ -82,84 +81,40 @@ button, .btn {
     text-decoration: none;
     transition: background-color 0.3s ease;
     box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
-    margin-right: 5px;
+ 
 }
 
 button:hover {
     background-color: #0056b3;
 }
 
-.invite-section {
-    background-color: #ffffff;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
-    width: 100%;
-    margin-bottom: 30px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
 .search-form {
     display: flex;
     width: 100%;
-    margin-bottom: 20px;
+    margin-top: 10px;
 }
 
-.search-form input[type="text"] {
+.search-form input {
     flex-grow: 1;
-    padding: 12px;
     border: 1px solid #ccc;
-    border-radius: 4px 0 0 4px;
-    font-size: 1em;
-}
-
-.search-form button {
-    border-radius: 0 4px 4px 0;
-    padding: 12px 20px;
-}
-
-.available-students {
-    width: 100%;
-    margin-top: 20px;
-}
-
-.action-buttons {
-    display: flex;
-    justify-content: space-between;
-    width: 100%;
-    margin-top: 30px;
-}
-
-.action-buttons button {
-    padding: 12px 25px;
-    font-size: 1em;
-}
-
-.action-buttons .disband {
-    background-color: #dc3545;
-}
-
-.action-buttons .disband:hover {
-    background-color: #c82333;
+    border-radius: 4px;
+    padding: 10px;
 }
 
 .action-buttons-horizontal {
     display: flex;
-    gap: 5px;
+    gap: 10px;
 }
 
 .disband {
     background-color: #dc3545;
     color: #ffffff;
     padding: 10px 20px;
-    border: none;
-    border-radius: 4px;
     cursor: pointer;
     font-size: 0.9em;
     transition: background-color 0.3s ease;
     box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+    
 }
 
 .disband:hover {
@@ -173,6 +128,7 @@ button:hover {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 15px;
+    gap: 5px;
 }
 
 .manage-group-header {
@@ -180,7 +136,7 @@ button:hover {
     justify-content: space-between;
     align-items: center;
     width: 100%;
-    margin-bottom: 15px;
+    margin-bottom: 5px;
 }
 
 .invite-member-header {
@@ -188,5 +144,47 @@ button:hover {
     justify-content: space-between;
     align-items: center;
     width: 100%;
-    margin-bottom: 15px;
+    margin-bottom: 5px;
+}
+
+.button-container {
+    display: flex;
+    margin-top: 10px;
+    justify-content: center;
+}
+
+.flash-container {
+    position: fixed; /* Stick it at the top */
+    top: 7.5%;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    padding: 10px;
+  }
+  
+.flash-message {
+    width: auto;
+    padding: 12px 16px;
+    border-radius: 5px;
+    font-size: 20px;
+    text-align: center;
+    display: none;
+}
+
+.flash-success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.flash-error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.flash-info {
+    background-color: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
 }

@@ -1,0 +1,81 @@
+h1 {
+    font-size: 2em;
+    color: #ffffff;
+    margin-bottom: 20px;
+    font-weight: bold;
+    text-align: center;
+    margin-top: 40px;
+}
+
+.page-container {
+    background: #fff;
+    padding: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    max-width: 800px;
+    margin-top: 30px;
+    margin: 0 auto;
+}
+
+.swap-info-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.swap-info-table th,
+.swap-info-table td {
+    text-align: left;
+    padding: 12px 15px;
+    border: 1px solid #ddd;
+}
+
+.swap-info-table th {
+    background-color: #f4f4f4;
+    color: #000000;
+    font-weight: bold;
+}
+
+.swap-info-table td {
+    background-color: #fff;
+    color: #000000;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+textarea {
+    width: 97.5%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 16px;
+    resize: vertical;
+}
+
+.button-container {
+    display: flex;
+    justify-content: center;
+}
+
+button[type="submit"] {
+    background-color: #007bff;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+button[type="submit"]:hover {
+    background-color: #0056b3;
+}
