@@ -149,13 +149,7 @@ def login():
 def home():
     user_id = session.get('id')
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    # cur.execute("SELECT survey_completed FROM users WHERE id = %s", (user_id,))
-    # user = cur.fetchone()
 
-    # if user['survey_completed'] == 0:
-    #     cur.close()
-    #     return redirect(url_for('survey')) 
-    
     cur.execute("""
         SELECT invitations.invitation_id, `groups`.name AS group_name, users.name AS leader_name
         FROM invitations
@@ -635,10 +629,11 @@ def choose_mode():
         return redirect(url_for('select_trimester'))
     
     user_id = session.get('id')
+    trimester_id = session.get('trimester_id')
 
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
 
-    cur.execute("SELECT group_id FROM group_members WHERE user_id = %s", (user_id,))
+    cur.execute("SELECT group_id FROM group_members WHERE user_id = %s AND trimester_id = %s", (user_id, trimester_id))
     user_group = cur.fetchone()
     
     if user_group:
@@ -651,7 +646,7 @@ def choose_mode():
             session['group_id'] = None
             return redirect(url_for('select_hostel', mode='individual'))
         elif mode == 'group':
-            cur.execute("SELECT group_id FROM group_members WHERE user_id = %s", (user_id,))
+            cur.execute("SELECT group_id FROM group_members WHERE user_id = %s AND trimester_id = %s", (user_id, trimester_id))
             user_group = cur.fetchone()
             if user_group:
                 session['group_id'] = user_group['group_id']
@@ -665,9 +660,10 @@ def choose_mode():
 @student_required
 def group_page():
     user_id = session.get('id')
+    trimester_id = session.get('trimester_id')
 
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    cur.execute("SELECT * FROM `groups` WHERE leader_id = %s", (user_id,))
+    cur.execute("SELECT * FROM `groups` WHERE leader_id = %s AND trimester_id = %s", (user_id, trimester_id))
     group = cur.fetchone()
     cur.close()
 
@@ -678,14 +674,12 @@ def group_page():
         group_action = request.form['group_action']
         
         if group_action == 'create':
-            selected_trimester = session.get('trimester_id')
-            group_name = request.form['group_name']  # Get the group name from the form
+            group_name = request.form['group_name']
             profile_pic = request.files.get('profile_pic')
 
             cur = mysql.connection.cursor()
 
             if profile_pic:
-                # Save the uploaded profile picture
                 profile_pic_path = os.path.join(main.config['UPLOAD_FOLDER'], profile_pic.filename)
                 profile_pic.save(profile_pic_path)
                 profile_pic_url = url_for('static', filename=f"uploads/{profile_pic.filename}")
@@ -694,12 +688,12 @@ def group_page():
 
             cur.execute(
                 "INSERT INTO `groups`(leader_id, trimester_id, name, profile_pic) VALUES(%s, %s, %s, %s)", 
-                (user_id, selected_trimester, group_name, profile_pic_url)
+                (user_id, trimester_id, group_name, profile_pic_url)
             )
             mysql.connection.commit()
             group_id = cur.lastrowid
 
-            cur.execute("INSERT INTO group_members(group_id, user_id) VALUES(%s, %s)", (group_id, user_id))
+            cur.execute("INSERT INTO group_members(group_id, user_id, trimester_id) VALUES(%s, %s, %s)", (group_id, user_id, trimester_id))
             mysql.connection.commit()
             cur.close()
 
@@ -756,18 +750,19 @@ def edit_group(group_id):
 @student_required
 def manage_group(group_id):
     user_id = session.get('id')
+    trimester_id = request.args.get('trimester_id') or session.get('trimester_id')
 
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    cur.execute("SELECT * FROM `groups` WHERE group_id = %s AND leader_id = %s", (group_id, user_id))
+    cur.execute("SELECT * FROM `groups` WHERE group_id = %s AND leader_id = %s AND trimester_id = %s", (group_id, user_id, trimester_id))
     group = cur.fetchone()
 
-    cur.execute("SELECT users.id, users.email FROM users JOIN group_members ON users.id = group_members.user_id WHERE group_members.group_id = %s AND group_members.user_id = %s", (group_id, user_id))
+    cur.execute("SELECT users.id, users.email FROM users JOIN group_members ON users.id = group_members.user_id WHERE group_members.group_id = %s AND group_members.user_id = %s AND group_members.trimester_id = %s", (group_id, user_id, trimester_id))
     is_group_member = cur.fetchone()
 
     if not group and not is_group_member:
         return redirect(url_for('group_page'))
 
-    cur.execute("SELECT * FROM `groups` WHERE group_id = %s", (group_id,))
+    cur.execute("SELECT * FROM `groups` WHERE group_id = %s AND trimester_id = %s", (group_id, trimester_id))
     group = cur.fetchone()
 
     is_leader = group['leader_id'] == user_id
@@ -781,8 +776,8 @@ def manage_group(group_id):
         FROM users 
         JOIN group_members ON users.id = group_members.user_id 
         JOIN `groups` ON group_members.group_id = groups.group_id
-        WHERE group_members.group_id = %s
-    """, (group_id,))
+        WHERE group_members.group_id = %s AND group_members.trimester_id = %s
+    """, (group_id, trimester_id))
     members = cur.fetchall()
 
     students = None
@@ -883,12 +878,13 @@ def leave_group(group_id):
 @student_required
 def invite_user(group_id, invitee_id):
     user_id = session.get('id')  # User A (group leader) who is sending the invite
+    trimester_id = session.get('trimester_id')
 
-    cur = mysql.connection.cursor()    # Insert the invitation into the 'invitations' table
+    cur = mysql.connection.cursor()
     cur.execute("""
-        INSERT INTO invitations (group_id, inviter_id, invitee_id, status)
-        VALUES (%s, %s, %s, 'pending')
-    """, (group_id, user_id, invitee_id))
+        INSERT INTO invitations (group_id, inviter_id, invitee_id, status, trimester_id)
+        VALUES (%s, %s, %s, 'pending', %s)
+    """, (group_id, user_id, invitee_id, trimester_id))
     mysql.connection.commit()
     cur.close()
 
@@ -909,20 +905,20 @@ def accept_invite(invitation_id):
         WHERE invitation_id = %s AND invitee_id = %s
     """, (invitation_id, user_id))
 
-    # Fetch the group_id from the invitation
-    cur.execute("SELECT group_id FROM invitations WHERE invitation_id = %s", (invitation_id,))
-    group = cur.fetchone()
+    # Fetch the group_id and trimester_id from the invitation
+    cur.execute("SELECT group_id, trimester_id FROM invitations WHERE invitation_id = %s", (invitation_id,))
+    invitation = cur.fetchone()
 
     # Add the user to the group members
     cur.execute("""
-        INSERT INTO group_members (group_id, user_id)
-        VALUES (%s, %s)
-    """, (group['group_id'], user_id))
+        INSERT INTO group_members (group_id, user_id, trimester_id)
+        VALUES (%s, %s, %s)
+    """, (invitation['group_id'], user_id, invitation['trimester_id']))
 
     mysql.connection.commit()
     cur.close()
 
-    return redirect(url_for('manage_group', group_id=group['group_id']))
+    return redirect(url_for('manage_group', group_id=invitation['group_id'], trimester_id=invitation['trimester_id']))
 
 # Decline the invitation
 @main.route('/student/decline_invite/<int:invitation_id>', methods=['POST'])
@@ -930,14 +926,18 @@ def accept_invite(invitation_id):
 def decline_invite(invitation_id):
     user_id = session.get('id')  # User B (invitee)
 
-    cur = mysql.connection.cursor()
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
+    # Fetch the group_id and trimester_id from the invitation
+    cur.execute("SELECT group_id, trimester_id FROM invitations WHERE invitation_id = %s", (invitation_id,))
+    invitation = cur.fetchone()
 
     # Update invitation status to 'declined'
     cur.execute("""
         UPDATE invitations
         SET status = 'declined'
-        WHERE invitation_id = %s AND invitee_id = %s
-    """, (invitation_id, user_id))
+        WHERE invitation_id = %s AND invitee_id = %s AND trimester_id = %s
+    """, (invitation_id, user_id, invitation['trimester_id']))
 
     mysql.connection.commit()
     cur.close()
@@ -975,32 +975,37 @@ def select_hostel(mode):
 @student_required
 def select_room_type(mode, hostel_id):
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-
-    group_id = session.get('group_id')
+    trimester_id = session.get('trimester_id')
 
     if mode == 'individual':
         cur.execute("""
             SELECT r.*, COUNT(b.id) as total_beds, 
-            SUM(CASE WHEN b.status = 'Available' THEN 1 ELSE 0 END) as available_beds
+            SUM(CASE WHEN b.id NOT IN (
+                SELECT bed_number FROM booking 
+                WHERE trimester_id = %s AND hostel_id = %s
+            ) THEN 1 ELSE 0 END) as available_beds
             FROM rooms r
             LEFT JOIN beds b ON r.number = b.room_number
             WHERE r.hostel_id = %s
             GROUP BY r.number
             HAVING available_beds > 0
-        """, (hostel_id,))
+        """, (trimester_id, hostel_id, hostel_id))
     elif mode == 'group':
         group_id = session.get('group_id')
         cur.execute("SELECT COUNT(*) as count FROM group_members WHERE group_id = %s", (group_id,))
         group_size = cur.fetchone()['count']
         cur.execute("""
             SELECT r.*, COUNT(b.id) as total_beds, 
-            SUM(CASE WHEN b.status = 'Available' THEN 1 ELSE 0 END) as available_beds
+            SUM(CASE WHEN b.id NOT IN (
+                SELECT bed_number FROM booking 
+                WHERE trimester_id = %s AND hostel_id = %s
+            ) THEN 1 ELSE 0 END) as available_beds
             FROM rooms r
             LEFT JOIN beds b ON r.number = b.room_number
             WHERE r.hostel_id = %s
             GROUP BY r.number
             HAVING available_beds >= %s
-        """, (hostel_id, group_size))
+        """, (trimester_id, hostel_id, hostel_id, group_size))
     
     available_rooms = cur.fetchall()
 
@@ -1010,13 +1015,14 @@ def select_room_type(mode, hostel_id):
             return redirect(url_for('select_bed', mode=mode, hostel_id=hostel_id, room_type=available_rooms[0]['category'], selected_room=selected_room))
 
     cur.close()
-    return render_template('select_room_type.html', mode=mode, hostel_id=hostel_id, available_rooms=available_rooms, group_id=group_id)
+    return render_template('select_room_type.html', mode=mode, hostel_id=hostel_id, available_rooms=available_rooms, group_id=session.get('group_id'))
 
 # Select Bed Route
 @main.route('/student/select_bed/<mode>/<int:hostel_id>/<room_type>', methods=['GET', 'POST'])
 @student_required
 def select_bed(mode, hostel_id, room_type):
     user_id = session.get('id')
+    trimester_id = session.get('trimester_id')
 
     selected_room = request.args.get('selected_room')
     if not selected_room:
@@ -1030,12 +1036,18 @@ def select_bed(mode, hostel_id, room_type):
         if not room_info:
             raise ValueError("Room not found.")
 
-        cur.execute("SELECT * FROM beds WHERE room_number = %s AND status = 'Available'", (selected_room,))
+        cur.execute("""
+            SELECT * FROM beds 
+            WHERE room_number = %s 
+            AND id NOT IN (
+                SELECT bed_number FROM booking 
+                WHERE trimester_id = %s AND room_no = %s
+            )
+        """, (selected_room, trimester_id, selected_room))
         available_beds = cur.fetchall()
 
         group_id = session.get('group_id')
         
-        # Always fetch the most up-to-date information from the database
         if mode == 'group' and group_id:
             cur.execute("""
                 SELECT users.id, users.name, users.email 
@@ -1083,6 +1095,7 @@ def select_bed(mode, hostel_id, room_type):
 @student_required
 def booking_summary(mode, hostel_id, room_type, room_number, bed_ids, user_ids):
     user_id = session.get('id')
+    trimester_id = session.get('trimester_id')
 
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     cur.execute("SELECT * FROM rooms WHERE number = %s", (room_number,))
@@ -1117,15 +1130,12 @@ def booking_summary(mode, hostel_id, room_type, room_number, bed_ids, user_ids):
     }
 
     if request.method == 'POST':
-        trimester_id = session.get('trimester_id')
-
         for assignment in bed_assignments:
             cur.execute(
                 "INSERT INTO booking(user_id, trimester_id, group_individual, group_id, hostel_id, room_no, bed_number, cost) "
                 "VALUES(%s, %s, %s, %s, %s, %s, %s, %s)",
-                (assignment['user']['id'], trimester_id, 1 if mode == 'group' else 0, group_id, hostel_id, room_number, assignment['bed']['bed_letter'], room_info['price'])
+                (assignment['user']['id'], trimester_id, 1 if mode == 'group' else 0, group_id, hostel_id, room_number, assignment['bed']['id'], room_info['price'])
             )
-            cur.execute("UPDATE beds SET status = 'Occupied' WHERE id = %s", (assignment['bed']['id'],))
 
         # Update room status if all beds are occupied
         cur.execute("SELECT COUNT(*) as total, SUM(CASE WHEN status = 'Occupied' THEN 1 ELSE 0 END) as occupied FROM beds WHERE room_number = %s", (room_number,))
@@ -1166,8 +1176,9 @@ def transfer_leadership(group_id, new_leader_id):
 @main.route('/student/remove_member/<int:group_id>/<int:member_id>', methods=['POST'])
 @student_required
 def remove_member(group_id, member_id):
+    trimester_id = session.get('trimester_id')
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    cur.execute("DELETE FROM group_members WHERE group_id = %s AND user_id = %s", (group_id, member_id))
+    cur.execute("DELETE FROM group_members WHERE group_id = %s AND user_id = %s AND trimester_id = %s", (group_id, member_id, trimester_id))
     mysql.connection.commit()
     cur.close()
 
@@ -1180,14 +1191,15 @@ def remove_member(group_id, member_id):
 @student_required
 def disband_group(group_id):
     user_id = session.get('id')
+    trimester_id = session.get('trimester_id')
 
     session.pop('group_id', None)
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    cur.execute("SELECT * FROM `groups` WHERE group_id = %s AND leader_id = %s", (group_id, user_id))
+    cur.execute("SELECT * FROM `groups` WHERE group_id = %s AND leader_id = %s AND trimester_id = %s", (group_id, user_id, trimester_id))
 
-    cur.execute("DELETE FROM invitations WHERE group_id = %s", (group_id,))
-    cur.execute("DELETE FROM group_members WHERE group_id = %s", (group_id,))
-    cur.execute("DELETE FROM `groups` WHERE group_id = %s", (group_id,))
+    cur.execute("DELETE FROM invitations WHERE group_id = %s AND trimester_id = %s", (group_id, trimester_id))
+    cur.execute("DELETE FROM group_members WHERE group_id = %s AND trimester_id = %s", (group_id, trimester_id))
+    cur.execute("DELETE FROM `groups` WHERE group_id = %s AND trimester_id = %s", (group_id, trimester_id))
     mysql.connection.commit()
     cur.close()
 
