@@ -24,6 +24,7 @@
 .manage-group-container {
     display: flex;
     flex-direction: column;
+    justify-content: center;
     align-items: center;
     max-width: 1000px;
 }
@@ -45,14 +46,13 @@ table {
     border-radius: 15px;       
     overflow: hidden;         
     box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
-    margin-bottom: 25px;
+    margin-bottom: 15px;
 }
 
 
 th, td {
     padding: 14px 18px;
     text-align: left;
-    border-bottom: 1px solid #e0e0e0;
 }
 
 th {
@@ -81,7 +81,7 @@ button, .btn {
     text-decoration: none;
     transition: background-color 0.3s ease;
     box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
-    margin-right: 5px;
+ 
 }
 
 button:hover {
@@ -91,7 +91,7 @@ button:hover {
 .search-form {
     display: flex;
     width: 100%;
-    margin-bottom: 20px;
+    margin-top: 10px;
 }
 
 .search-form input {
@@ -99,26 +99,6 @@ button:hover {
     border: 1px solid #ccc;
     border-radius: 4px;
     padding: 10px;
-}
-
-.action-buttons {
-    display: flex;
-    justify-content: space-between;
-    width: 100%;
-    margin-top: 30px;
-}
-
-.action-buttons button {
-    padding: 12px 25px;
-    font-size: 1em;
-}
-
-.action-buttons .disband {
-    background-color: #dc3545;
-}
-
-.action-buttons .disband:hover {
-    background-color: #c82333;
 }
 
 .action-buttons-horizontal {
@@ -155,7 +135,7 @@ button:hover {
     justify-content: space-between;
     align-items: center;
     width: 100%;
-    margin-bottom: 15px;
+    margin-bottom: 5px;
 }
 
 .invite-member-header {
@@ -163,5 +143,11 @@ button:hover {
     justify-content: space-between;
     align-items: center;
     width: 100%;
-    margin-bottom: 15px;
+    margin-bottom: 5px;
+}
+
+.button-container {
+    display: flex;
+    margin-top: 10px;
+    justify-content: center; /* Centers the button horizontally */
 }

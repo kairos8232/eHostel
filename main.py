@@ -1530,7 +1530,6 @@ def delete_student(student_id):
     flash('Student deleted successfully!', 'success')
     return redirect(url_for('add_student'))
 
-
 # Add room route
 @main.route('/admin/add_room', methods=['GET', 'POST'])
 @admin_required
@@ -1547,7 +1546,6 @@ def add_room():
         price = request.form['price']
         status = 'Available'
 
-        # Determine the capacity and corresponding bed letters based on the category
         if category == 'Single':
             capacity = 1
             beds = ['A']
@@ -1557,8 +1555,7 @@ def add_room():
         elif category == 'Triple':
             capacity = 3
             beds = ['A', 'B', 'C']
-
-        # Check if the room number already exists
+            
         cur.execute("SELECT * FROM rooms WHERE number = %s AND hostel_id = %s", (number, hostel_id))
         existing_room = cur.fetchone()
 
@@ -1567,15 +1564,13 @@ def add_room():
             return redirect(url_for('add_room'))
 
         try:
-            # Insert new room into the database
             cur.execute(''' 
                 INSERT INTO rooms (number, hostel_id, category, capacity, price, status) 
                 VALUES (%s, %s, %s, %s, %s, %s) 
             ''', (number, hostel_id, category, capacity, price, status))
 
-            # Create beds for the room
             for bed in beds:
-                cur.execute('''
+                cur.execute(''' 
                     INSERT INTO beds (room_number, bed_letter, status) 
                     VALUES (%s, %s, %s) 
                 ''', (number, bed, 'Available'))
@@ -1589,6 +1584,8 @@ def add_room():
             cur.close()
 
         return redirect(url_for('add_room'))
+
+    return render_template('room_add.html', hostels=hostels)
 
     # Render template and pass hostels to the form
 @main.route('/admin/edit_room/<int:room_number>', methods=['GET', 'POST'])

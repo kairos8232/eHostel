@@ -71,7 +71,6 @@
 
                 {% if request.method == 'POST' and students is not none %}
                     {% if students %}
-                        <h3>Available Students</h3>
                         <table>
                             <tr>
                                 <th>Student ID</th>
@@ -101,14 +100,14 @@
                     {% endif %}
                 {% endif %}
             </div>
-
-            <a href="{{ url_for('select_hostel', mode='group') }}" class="btn">
-                Continue to Hostel Selection
-            </a>
+            <div class="button-container">
+                <a href="{{ url_for('select_hostel', mode='group') }}" class="btn">
+                    Continue to Hostel Selection
+                </a>
+            </div>            
             {% else %}
                 <p>Only the group leader can invite new members or proceed with booking.</p>
             {% endif %}
-
         </div>
     </div>
 </div>
