@@ -753,6 +753,8 @@ def manage_group(group_id):
     trimester_id = request.args.get('trimester_id') or session.get('trimester_id')
 
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
+    # Check if user is the group leader or a member of the group
     cur.execute("SELECT * FROM `groups` WHERE group_id = %s AND leader_id = %s AND trimester_id = %s", (group_id, user_id, trimester_id))
     group = cur.fetchone()
 
@@ -787,17 +789,19 @@ def manage_group(group_id):
             cur.execute("SELECT rating FROM user_ratings WHERE user_id = %s ORDER BY question_id", (user_id,))
             user_ratings = [rating['rating'] for rating in cur.fetchall()]
 
-            # Get all other users of the same gender who are not in the group
+            # Get all other users of the same gender who are not in the group, not in any other group in the same trimester, and haven't made a booking
             cur.execute("""
-                SELECT id, name, faculty, gender
-                FROM users
-                WHERE gender = %s AND id != %s AND id NOT IN (
-                    SELECT user_id FROM group_members WHERE group_id = %s
-                )
-            """, (leader_gender, user_id, group_id))
+                SELECT u.id, u.name, u.faculty, u.gender
+                FROM users u
+                LEFT JOIN group_members gm ON u.id = gm.user_id AND gm.trimester_id = %s
+                LEFT JOIN booking b ON u.id = b.user_id AND b.trimester_id = %s
+                WHERE u.gender = %s
+                AND u.id != %s
+                AND (gm.group_id IS NULL OR gm.trimester_id != %s)  -- Ensure not part of any group in the same trimester
+                AND b.user_id IS NULL
+            """, (trimester_id, trimester_id, leader_gender, user_id, trimester_id))
             potential_roommates = cur.fetchall()
 
-            # Calculate similarity for each potential roommate
             students = []
             for roommate in potential_roommates:
                 cur.execute("SELECT rating FROM user_ratings WHERE user_id = %s ORDER BY question_id", (roommate['id'],))
@@ -805,24 +809,26 @@ def manage_group(group_id):
                 
                 if len(user_ratings) == len(roommate_ratings):
                     similarity = calculate_similarity(user_ratings, roommate_ratings)
-                    roommate['similarity'] = round(similarity, 2)  # Round to 2 decimal places
+                    roommate['similarity'] = round(similarity, 2)
                     students.append(roommate)
 
             # Sort by similarity (highest first) and take top 10
-            students = sorted(students, key=lambda x: x['similarity'], reverse=True)[:10]
-            print(students)  # Print the list of students and their similarity values
+            students = sorted(students, key=lambda x: x['similarity'], reverse=True)[:1]
 
         elif 'filter_student_id' in request.form:
             filter_student_id = request.form.get('filter_student_id')
             if filter_student_id:
                 cur.execute("""
-                    SELECT id, name, faculty, gender
-                    FROM users
-                    WHERE id = %s AND gender = %s AND id != %s
-                    AND id NOT IN (
-                        SELECT user_id FROM group_members
-                    )
-                """, (filter_student_id, leader_gender, user_id))
+                    SELECT u.id, u.name, u.faculty, u.gender
+                    FROM users u
+                    LEFT JOIN group_members gm ON u.id = gm.user_id AND gm.trimester_id = %s
+                    LEFT JOIN booking b ON u.id = b.user_id AND b.trimester_id = %s
+                    WHERE u.id = %s
+                    AND u.gender = %s
+                    AND u.id != %s
+                    AND (gm.group_id IS NULL OR gm.trimester_id != %s)  -- Ensure not part of any group in the same trimester
+                    AND b.user_id IS NULL
+                """, (trimester_id, trimester_id, filter_student_id, leader_gender, user_id, trimester_id))
                 students = cur.fetchall()
 
                 if students:
@@ -835,7 +841,7 @@ def manage_group(group_id):
 
                     if len(user_ratings) == len(student_ratings):
                         similarity = calculate_similarity(user_ratings, student_ratings)
-                        students[0]['similarity'] = round(similarity, 2)  # Round to 2 decimal places
+                        students[0]['similarity'] = round(similarity, 2)
                     else:
                         students[0]['similarity'] = 0
             else:
@@ -873,7 +879,6 @@ def leave_group(group_id):
     cur.close()
     return redirect(url_for('choose_mode'))
 
-# Invite Member Route
 @main.route('/student/invite_user/<int:group_id>/<int:invitee_id>', methods=['POST'])
 @student_required
 def invite_user(group_id, invitee_id):
@@ -881,13 +886,30 @@ def invite_user(group_id, invitee_id):
     trimester_id = session.get('trimester_id')
 
     cur = mysql.connection.cursor()
+
+    # Check if the invitee already has a pending or accepted invitation in the same trimester
+    cur.execute("""
+        SELECT status 
+        FROM invitations 
+        WHERE invitee_id = %s AND trimester_id = %s AND (status = 'pending' OR status = 'accepted')
+    """, (invitee_id, trimester_id))
+    
+    existing_invitation = cur.fetchone()
+
+    if existing_invitation:
+        flash('This user is already part of a group or has a pending invitation in this trimester.', 'info')
+        return redirect(url_for('manage_group', group_id=group_id))
+
+    # If no pending or accepted invitation, send a new invitation
     cur.execute("""
         INSERT INTO invitations (group_id, inviter_id, invitee_id, status, trimester_id)
         VALUES (%s, %s, %s, 'pending', %s)
     """, (group_id, user_id, invitee_id, trimester_id))
+    
     mysql.connection.commit()
     cur.close()
 
+    flash('Invitation sent successfully!', 'success')
     return redirect(url_for('manage_group', group_id=group_id))
 
 # Accept the invitation
