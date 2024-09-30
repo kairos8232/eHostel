@@ -1,12 +1,12 @@
-.manage-room-wrapper {
+/* Wrapper and Layout */
+.manage-group-wrapper {
     background-color: #ffffff;
-    max-width: 1000px;
+    max-width: 900px;
     border-radius: 15px;
-    margin: 0 auto;
+    margin: 50px auto;
     padding: 30px;
     box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.1);
     display: flex;
-    margin-top: 50px;
 }
 
 /* Sidebar */
@@ -33,18 +33,10 @@
     border-radius: 15px;
     cursor: pointer;
     transition: background-color 0.3s, color 0.3s;
-}
-
-.menu-item.active {
-    background-color: #ffffff;
-    color: #1a1b2d;
-}
-
-.menu-item.inactive {
     color: #ffffff;
 }
 
-.menu-item i {
+.menu-item p {
     font-size: 24px;
 }
 
@@ -52,6 +44,20 @@
     background-color: #30334f;
 }
 
+.text {
+    font-size: 16px;
+    font-weight: bold; 
+    margin-top: 10px;
+    margin-bottom: 20px;
+    color: #b3b3b3;
+    text-align: center;
+}
+
+.menu-item p.text:hover {
+    background-color: transparent; /* No background change */
+}
+
+/* Content Area */
 .content {
     flex-grow: 1;
     padding-left: 30px;
@@ -63,42 +69,50 @@ h1 {
     text-align: center;
 }
 
-/* Form */
+/* Form Styles */
 form {
+    font-size: 1.1em;
     max-width: 800px;
-    margin-bottom: 30px;
+    margin-top: 20px;
+}
+
+.form-group {
+    margin-bottom: 15px;
 }
 
 label {
+    display: block;
     font-weight: bold;
-    margin-right: 10px;
+    margin-bottom: 5px;
 }
 
-select {
-    padding: 8px;
+input, select {
+    width: 100%;
+    padding: 10px;
     border: 1px solid #ccc;
     border-radius: 5px;
-    width: 200px;
-    font-size: 16px;
+    box-sizing: border-box;
 }
 
-button, .btn {
+
+button {
     padding: 10px 20px;
     background-color: #1a1b2d;
     color: #ffffff;
     border: none;
     border-radius: 5px;
     cursor: pointer;
-    font-size: 14px;
+    transition: background-color 0.3s;
 }
 
 button:hover {
     background-color: #30334f;
 }
 
+/* Status Messages */
 .status-message {
     padding: 10px;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
     border-radius: 5px;
 }
 
@@ -110,49 +124,4 @@ button:hover {
 .status-message.error {
     background-color: #f8d7da;
     color: #721c24;
-}
-
-/* Table */
-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 20px;
-}
-
-table thead {
-    background-color: #1a1b2d;
-    color: #ffffff;
-}
-
-table th, table td {
-    padding: 12px 15px;
-    text-align: left;
-    border-bottom: 1px solid #ddd;
-}
-
-table th {
-    font-weight: bold;
-}
-
-/* Edit and Delete button styles */
-table td .btn,
-table td button {
-    background-color: #1a1b2d;
-    color: #ffffff;
-    padding: 5px 10px;
-    border: none;
-    border-radius: 3px;
-    cursor: pointer;
-    text-decoration: none;
-    display: inline-block;
-    margin-right: 10px;
-}
-
-table td a:hover,
-table td button:hover {
-    background-color: #30334f;
-}
-
-table td form {
-    display: inline;
 }

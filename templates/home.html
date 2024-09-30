@@ -3,6 +3,7 @@
 {% extends 'base.html' %}
 {% block content %}
 
+{% if not session.get('is_admin', False) %}
 <div class="container">
     <div class="content">
         <!-- Display group invitation if pending -->
@@ -45,7 +46,7 @@
         {% else %}
             <p>No announcements available.</p>
         {% endif %}
+{% endif %}
     </div>
 </div>
-
 {% endblock %}

@@ -1,5 +1,8 @@
+{% extends 'base.html' %}
 
-{% extends 'admin_base.html' %}
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static' , filename = 'css/admin-trimester.css' ) }}">
+{% endblock %}
 
 {% block content %}
 <body>

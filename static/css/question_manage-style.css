@@ -1,6 +1,7 @@
-.manage-room-wrapper {
+/* General Wrapper */
+.manage-question-wrapper {
     background-color: #ffffff;
-    max-width: 1000px;
+    max-width: 1100px;
     border-radius: 15px;
     margin: 0 auto;
     padding: 30px;
@@ -33,23 +34,28 @@
     border-radius: 15px;
     cursor: pointer;
     transition: background-color 0.3s, color 0.3s;
-}
-
-.menu-item.active {
-    background-color: #ffffff;
-    color: #1a1b2d;
-}
-
-.menu-item.inactive {
     color: #ffffff;
 }
 
-.menu-item i {
+.menu-item p {
     font-size: 24px;
 }
 
 .menu-item:hover {
     background-color: #30334f;
+}
+
+.text {
+    font-size: 16px;
+    font-weight: bold; 
+    margin-top: 10px;
+    margin-bottom: 20px;
+    color: #b3b3b3;
+    text-align: center;
+}
+
+.menu-item p.text:hover {
+    background-color: transparent; /* No background change */
 }
 
 .content {
@@ -63,60 +69,12 @@ h1 {
     text-align: center;
 }
 
-/* Form */
-form {
-    max-width: 800px;
-    margin-bottom: 30px;
-}
-
-label {
-    font-weight: bold;
-    margin-right: 10px;
-}
-
-select {
-    padding: 8px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    width: 200px;
-    font-size: 16px;
-}
-
-button, .btn {
-    padding: 10px 20px;
-    background-color: #1a1b2d;
-    color: #ffffff;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 14px;
-}
-
-button:hover {
-    background-color: #30334f;
-}
-
-.status-message {
-    padding: 10px;
-    margin-bottom: 20px;
-    border-radius: 5px;
-}
-
-.status-message.success {
-    background-color: #d4edda;
-    color: #155724;
-}
-
-.status-message.error {
-    background-color: #f8d7da;
-    color: #721c24;
-}
-
-/* Table */
+/* Table Styles */
 table {
     width: 100%;
     border-collapse: collapse;
-    margin-bottom: 20px;
+    margin-top: 20px;
+    text-align: left;
 }
 
 table thead {
@@ -126,16 +84,16 @@ table thead {
 
 table th, table td {
     padding: 12px 15px;
-    text-align: left;
     border-bottom: 1px solid #ddd;
 }
 
 table th {
     font-weight: bold;
+    text-align: left;
 }
 
-/* Edit and Delete button styles */
-table td .btn,
+/* Buttons (Edit/Delete) */
+table td a, 
 table td button {
     background-color: #1a1b2d;
     color: #ffffff;
@@ -146,6 +104,7 @@ table td button {
     text-decoration: none;
     display: inline-block;
     margin-right: 10px;
+    font-size: 14px;
 }
 
 table td a:hover,
@@ -153,6 +112,26 @@ table td button:hover {
     background-color: #30334f;
 }
 
+/* Inline Form (Delete button inside table) */
 table td form {
     display: inline;
+}
+
+/* Status Message Styles */
+.status-message {
+    padding: 10px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+    font-size: 14px;
+    text-align: center;
+}
+
+.status-message.success {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.status-message.error {
+    background-color: #f8d7da;
+    color: #721c24;
 }
