@@ -25,7 +25,7 @@ mysql = MySQL(main)
 def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if not session.get('is_admin', False):  # Default to False
+        if not session.get('is_admin', False): 
             flash('Access denied. Admin privileges required.', 'error')
             return redirect(url_for('index'))
         if not session.get('loggedin', False):
@@ -43,7 +43,7 @@ def student_required(f):
             return redirect(url_for('index'))
         if not session.get('loggedin', False):
             flash('Please log in to access this page.', 'error')
-            return redirect(url_for('index'))
+            return redirect(url_for('login'))
         return f(*args, **kwargs)
     return decorated_function
 
@@ -132,7 +132,7 @@ def login():
                     session['is_admin'] = False
                     cur.close()
                     return redirect(url_for('home'))
-
+  
         cur.close()
         flash('Incorrect ID or password. Please try again!', 'error')
         return redirect(url_for('login'))
@@ -181,7 +181,6 @@ def home():
                            has_next=total_announcements > 1,
                            has_back=total_announcements > 1,
                            invitation=invitation,
-                        #    survey_completed=user['survey_completed'])
     )
 
 @main.route('/chat/')
@@ -456,7 +455,6 @@ def profile():
         email=user[3],
         faculty=user[5],
         image_url=user[6],
-        url_for=url_for,
         messages=get_flashed_messages(with_categories=True)  # Pass flash messages to the template
     )
 
@@ -472,51 +470,39 @@ def edit_profile():
         email = request.form['email']
         profile_pic = request.files.get('profile_pic')
 
-        try:
-            if profile_pic:
-                # Save the uploaded profile picture
-                profile_pic_path = os.path.join(main.config['UPLOAD_FOLDER'], profile_pic.filename)
-                profile_pic.save(profile_pic_path)
-                profile_pic_url = url_for('static', filename=f"uploads/{profile_pic.filename}")
-            else:
-                profile_pic_url = None
+        if profile_pic:
+            # Save the uploaded profile picture
+            profile_pic_path = os.path.join(main.config['UPLOAD_FOLDER'], profile_pic.filename)
+            profile_pic.save(profile_pic_path)
+            profile_pic_url = url_for('static', filename=f"uploads/{profile_pic.filename}")
+        else:
+            profile_pic_url = None
 
-            # Update the user's profile data
-            cur.execute("""
-                UPDATE users SET email=%s, profile_pic=%s
-                WHERE id=%s
-                """, (email, profile_pic_url, user_id))
-            mysql.connection.commit()
+        # Update the user's profile data
+        cur.execute("""
+            UPDATE users SET email=%s, profile_pic=%s
+            WHERE id=%s
+            """, (email, profile_pic_url, user_id))
+        mysql.connection.commit()
 
-            # Flash success message
-            flash('Profile updated successfully!', 'success')
-        except Exception as e:
-            # Handle any errors and flash a failure message
-            flash('An error occurred while updating your profile. Please try again.', 'error')
-            mysql.connection.rollback()
-        finally:
-            cur.close()
+        flash('Profile updated successfully!', 'success')
+        cur.close()
 
-        # Redirect to the profile route
         return redirect(url_for('profile'))
 
-    # Fetch the user's current data for the edit form
     cur.execute("SELECT name, id, gender, faculty, email, profile_pic FROM users WHERE id=%s", [user_id])
     user_data = cur.fetchone()
     cur.close()
 
-    if user_data:
-        user_profile = {
-            'name': user_data['name'],
-            'student_id': user_data['id'],
-            'gender': user_data['gender'],
-            'faculty': user_data['faculty'],
-            'email': user_data['email'],
-            'image_url': user_data['profile_pic'] if user_data['profile_pic'] else url_for('static', filename='images/default_profile_pic.jpg')
-        }
-        return render_template('edit_profile.html', **user_profile)
-    else:
-        return redirect(url_for('home'))
+    user_profile = {
+        'name': user_data['name'],
+        'student_id': user_data['id'],
+        'gender': user_data['gender'],
+        'faculty': user_data['faculty'],
+        'email': user_data['email'],
+        'image_url': user_data['profile_pic']
+    }
+    return render_template('edit_profile.html', **user_profile)
 
 # Change Password Route
 @main.route('/student/change_password', methods=['GET', 'POST'])
@@ -796,7 +782,7 @@ def manage_group(group_id):
                     roommate['similarity'] = round(similarity, 2)
                     students.append(roommate)
 
-            # Sort by similarity (highest first) and take top 10
+            # Sort by similarity (highest first) and take top 1
             students = sorted(students, key=lambda x: x['similarity'], reverse=True)[:1]
 
         elif 'filter_student_id' in request.form:
@@ -1036,65 +1022,58 @@ def select_bed(mode, hostel_id, room_type):
 
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     
-    try:
-        cur.execute("SELECT * FROM rooms WHERE number = %s", (selected_room,))
-        room_info = cur.fetchone()
-        if not room_info:
-            raise ValueError("Room not found.")
+    cur.execute("SELECT * FROM rooms WHERE number = %s", (selected_room,))
+    room_info = cur.fetchone()
 
+    cur.execute("""
+        SELECT * FROM beds 
+        WHERE room_number = %s 
+        AND id NOT IN (
+            SELECT bed_number FROM booking 
+            WHERE trimester_id = %s AND room_no = %s
+        )
+    """, (selected_room, trimester_id, selected_room))
+    available_beds = cur.fetchall()
+
+    group_id = session.get('group_id')
+    
+    if mode == 'group' and group_id:
         cur.execute("""
-            SELECT * FROM beds 
-            WHERE room_number = %s 
-            AND id NOT IN (
-                SELECT bed_number FROM booking 
-                WHERE trimester_id = %s AND room_no = %s
-            )
-        """, (selected_room, trimester_id, selected_room))
-        available_beds = cur.fetchall()
+            SELECT users.id, users.name, users.email 
+            FROM users 
+            JOIN group_members ON users.id = group_members.user_id 
+            WHERE group_members.group_id = %s
+        """, (group_id,))
+        group_members = cur.fetchall()
+    elif mode == 'individual':
+        cur.execute("SELECT id, name, email FROM users WHERE id = %s", (user_id,))
+        current_user = cur.fetchone()
+        group_members = [current_user] if current_user else []
+    else:
+        group_members = []
 
-        group_id = session.get('group_id')
+    assigned_users = []
+
+    if request.method == 'POST':
+        bed_assignments = {}
+        for bed in available_beds:
+            assigned_user_id = request.form.get(f'user_for_bed_{bed["id"]}')
+            if assigned_user_id:
+                bed_assignments[bed['id']] = int(assigned_user_id)
+                assigned_users.append(str(assigned_user_id))
+
+        if bed_assignments:
+            bed_ids = ','.join(map(str, bed_assignments.keys()))
+            user_ids = ','.join(map(str, bed_assignments.values()))
+            return redirect(url_for('booking_summary', mode=mode, hostel_id=hostel_id, 
+                                    room_type=room_type, room_number=selected_room, 
+                                    bed_ids=bed_ids, user_ids=user_ids))
         
-        if mode == 'group' and group_id:
-            cur.execute("""
-                SELECT users.id, users.name, users.email 
-                FROM users 
-                JOIN group_members ON users.id = group_members.user_id 
-                WHERE group_members.group_id = %s
-            """, (group_id,))
-            group_members = cur.fetchall()
-        elif mode == 'individual':
-            cur.execute("SELECT id, name, email FROM users WHERE id = %s", (user_id,))
-            current_user = cur.fetchone()
-            group_members = [current_user] if current_user else []
-        else:
-            group_members = []
-
-        assigned_users = []
-
-        if request.method == 'POST':
-            bed_assignments = {}
-            for bed in available_beds:
-                assigned_user_id = request.form.get(f'user_for_bed_{bed["id"]}')
-                if assigned_user_id:
-                    bed_assignments[bed['id']] = int(assigned_user_id)
-                    assigned_users.append(str(assigned_user_id))
-
-            if bed_assignments:
-                bed_ids = ','.join(map(str, bed_assignments.keys()))
-                user_ids = ','.join(map(str, bed_assignments.values()))
-                return redirect(url_for('booking_summary', mode=mode, hostel_id=hostel_id, 
-                                        room_type=room_type, room_number=selected_room, 
-                                        bed_ids=bed_ids, user_ids=user_ids))
-            
-        return render_template('select_bed.html', mode=mode, hostel_id=hostel_id, room_type=room_type, 
-                               selected_room=selected_room, beds=available_beds, 
-                               group_members=group_members, room_info=room_info, assigned_users=assigned_users)
-
-    except Exception as e:
-        return render_template('error.html', message=f"An error occurred: {str(e)}")
-
-    finally:
-        cur.close()
+    cur.close()
+        
+    return render_template('select_bed.html', mode=mode, hostel_id=hostel_id, room_type=room_type, 
+                            selected_room=selected_room, beds=available_beds, 
+                            group_members=group_members, room_info=room_info, assigned_users=assigned_users)
 
 # Booking Confirmation
 @main.route('/student/booking_summary/<mode>/<int:hostel_id>/<room_type>/<int:room_number>/<bed_ids>/<user_ids>', methods=['GET', 'POST'])
@@ -1154,7 +1133,7 @@ def booking_summary(mode, hostel_id, room_type, room_number, bed_ids, user_ids):
         mysql.connection.commit()
         cur.close()
 
-        return render_template('booking_success.html', message="Booking successful!")
+        return render_template('booking_success.html')
 
     cur.close()
 
@@ -1370,8 +1349,7 @@ def request_room_swap():
         return redirect(url_for('room_setting'))
     
     cur.close()
-    
-    # If all checks pass, show the swap confirmation form
+
     return render_template('confirm_room_swap.html', other_student=other_student)
 
 @main.route('/student/confirm_room_swap', methods=['POST'])
@@ -1405,7 +1383,7 @@ def respond_to_swap():
     if response == 'approve':
         cur.execute("""
             UPDATE room_swap_requests
-            SET status = 'pending'
+            SET status = 'approved_by_student'
             WHERE id = %s AND other_user_id = %s
         """, (swap_request_id, user_id))
         flash('You have approved the room swap request. It will now be reviewed by the admin.', 'success')
@@ -1475,7 +1453,7 @@ def post():
         cur.execute("INSERT INTO announcement(title, context) VALUES(%s  , %s)", (title, context))
         mysql.connection.commit()
         cur.close()
-        return redirect(url_for('home'))
+        return redirect(url_for('post'))
   
     return render_template('post_announcement.html')
 
@@ -1733,58 +1711,74 @@ def admin_room_change_requests():
             new_room_no = request.form.get('new_room_no')
             new_bed_letter = request.form.get('new_bed_letter')
             
-            # Verify if the room and bed are still available
-            cur.execute("""
-                SELECT COUNT(*) as count
-                FROM rooms r
-                JOIN beds b ON r.number = b.room_number
-                WHERE r.number = %s AND b.bed_letter = %s 
-                AND (r.status = 'Available' OR r.status = 'Partially Occupied') AND b.status = 'Available'
-            """, (new_room_no, new_bed_letter))
-            result = cur.fetchone()
+            if not new_room_no or not new_bed_letter:
+                flash('Please select both a room and a bed.', 'error')
+                return redirect(url_for('admin_room_change_requests'))
             
-            if result['count'] > 0:
-                # Get the current room and bed of the user
+            try:                
+                # Check availability of the new room and bed
                 cur.execute("""
-                    SELECT room_no, bed_number
-                    FROM booking
+                    SELECT r.status as room_status, b.status as bed_status, r.hostel_id, b.id as bed_id
+                    FROM rooms r 
+                    JOIN beds b ON r.number = b.room_number 
+                    WHERE r.number = %s AND b.bed_letter = %s
+                    FOR UPDATE
+                """, (new_room_no, new_bed_letter))
+                result = cur.fetchone()
+                
+                if result and result['room_status'] in ['Available', 'Partially Occupied'] and result['bed_status'] == 'Available':
+                    # Get the current booking details
+                    cur.execute("""
+                        SELECT room_no, bed_number, hostel_id
+                        FROM booking
+                        WHERE user_id = (SELECT user_id FROM room_change_requests WHERE request_id = %s)
+                        ORDER BY booking_no DESC
+                        LIMIT 1
+                    """, (request_id,))
+                    current_booking = cur.fetchone()
+                    
+                    # Update the booking
+                    cur.execute("""
+                    UPDATE booking
+                    SET room_no = %s, bed_number = %s, hostel_id = %s
                     WHERE user_id = (SELECT user_id FROM room_change_requests WHERE request_id = %s)
-                    ORDER BY booking_no DESC
-                    LIMIT 1
-                """, (request_id,))
-                current_booking = cur.fetchone()
-                
-                # Update the booking
-                cur.execute("""
-                UPDATE booking
-                SET room_no = %s, bed_number = %s
-                WHERE user_id = (SELECT user_id FROM (SELECT user_id FROM room_change_requests WHERE request_id = %s) AS temp)
-                AND booking_no = (SELECT MAX(booking_no) FROM (SELECT * FROM booking) AS b WHERE user_id = (SELECT user_id FROM room_change_requests WHERE request_id = %s));
-                """, (new_room_no, new_bed_letter, request_id, request_id))
-                
-                # Update the new room and bed status
-                cur.execute("UPDATE beds SET status = 'Occupied' WHERE room_number = %s AND bed_letter = %s", (new_room_no, new_bed_letter))
-                
-                # Update the old room and bed status
-                cur.execute("UPDATE beds SET status = 'Available' WHERE room_number = %s AND bed_letter = %s", (current_booking['room_no'], current_booking['bed_number']))
-                
-                # Update room statuses
-                update_room_status(cur, new_room_no)
-                update_room_status(cur, current_booking['room_no'])
-                
-                # Update the request status
-                cur.execute("UPDATE room_change_requests SET status = 'approved' WHERE request_id = %s", (request_id,))
-                
-                flash('Room change request approved successfully.', 'success')
-            else:
-                flash('The selected room or bed is no longer available. Please try again.', 'error')
+                    AND booking_no = (SELECT MAX(booking_no) FROM (SELECT * FROM booking) AS b WHERE user_id = (SELECT user_id FROM room_change_requests WHERE request_id = %s))
+                    """, (new_room_no, new_bed_letter, result['hostel_id'], request_id, request_id))
+                    
+                    # Update the new bed status
+                    cur.execute("UPDATE beds SET status = 'Occupied' WHERE room_number = %s AND bed_letter = %s", (new_room_no, new_bed_letter))
+                    
+                    # Update the old bed status
+                    cur.execute("""
+                    UPDATE beds SET status = 'Available' 
+                    WHERE room_number = %s AND bed_letter = %s
+                    """, (current_booking['room_no'], current_booking['bed_number']))
+                    
+                    # Update room statuses
+                    update_room_status(cur, new_room_no)
+                    update_room_status(cur, current_booking['room_no'])
+                    
+                    # Update the request status
+                    cur.execute("UPDATE room_change_requests SET status = 'approved' WHERE request_id = %s", (request_id,))
+                    
+                    # Commit transaction
+                    mysql.connection.commit()
+                    flash('Room change request approved successfully.', 'success')
+                else:
+                    # Rollback transaction
+                    mysql.connection.rollback()
+                    flash('The selected room or bed is no longer available. Please try again.', 'error')
+            
+            except Exception as e:
+                # Rollback transaction in case of any error
+                mysql.connection.rollback()
+                flash(f'An error occurred: {str(e)}', 'error')
         
         elif action == 'reject':
             # Update the request status
             cur.execute("UPDATE room_change_requests SET status = 'rejected' WHERE request_id = %s", (request_id,))
+            mysql.connection.commit()
             flash('Room change request rejected.', 'info')
-        
-        mysql.connection.commit()
 
     # Fetch pending room change requests
     cur.execute("""
@@ -1798,26 +1792,8 @@ def admin_room_change_requests():
     """)
     requests = cur.fetchall()
     
-    # Fetch available rooms
-    cur.execute("""
-        SELECT r.number, r.hostel_id, h.name as hostel_name
-        FROM rooms r
-        JOIN hostel h ON r.hostel_id = h.id
-        WHERE r.status IN ('Available', 'Partially Occupied')
-        ORDER BY h.name, r.number
-    """)
-    available_rooms = cur.fetchall()
-    
-    # Fetch available beds for each available room
-    available_beds = {}
-    for room in available_rooms:
-        cur.execute("""
-            SELECT bed_letter
-            FROM beds
-            WHERE room_number = %s AND status = 'Available'
-            ORDER BY bed_letter
-        """, (room['number'],))
-        available_beds[room['number']] = [bed['bed_letter'] for bed in cur.fetchall()]
+    # Fetch available rooms and beds
+    available_rooms, available_beds = get_available_rooms_and_beds(cur)
     
     cur.close()
     
@@ -1843,6 +1819,30 @@ def update_room_status(cur, room_number):
     
     cur.execute("UPDATE rooms SET status = %s WHERE number = %s", (new_status, room_number))
 
+def get_available_rooms_and_beds(cur):
+    # Fetch available rooms
+    cur.execute("""
+        SELECT r.number, r.hostel_id, h.name as hostel_name
+        FROM rooms r
+        JOIN hostel h ON r.hostel_id = h.id
+        WHERE r.status IN ('Available', 'Partially Occupied')
+        ORDER BY h.name, r.number
+    """)
+    available_rooms = cur.fetchall()
+    
+    # Fetch available beds for each available room
+    available_beds = {}
+    for room in available_rooms:
+        cur.execute("""
+            SELECT bed_letter
+            FROM beds
+            WHERE room_number = %s AND status = 'Available'
+            ORDER BY bed_letter
+        """, (room['number'],))
+        available_beds[room['number']] = [bed['bed_letter'] for bed in cur.fetchall()]
+    
+    return available_rooms, available_beds
+
 # Room Swap Request
 @main.route('/admin/room_swap_requests')
 @admin_required
@@ -1861,7 +1861,7 @@ def admin_room_swap_requests():
         JOIN booking b1 ON rsr.user_id = b1.user_id
         JOIN booking b2 ON rsr.other_user_id = b2.user_id
         JOIN hostel h ON b1.hostel_id = h.id
-        WHERE rsr.status = 'pending'
+        WHERE rsr.status = 'approved_by_student'
         ORDER BY rsr.created_at ASC
     """)
     swap_requests = cur.fetchall()
