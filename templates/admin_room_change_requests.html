@@ -95,26 +95,29 @@
             <!-- Approve Options (hidden by default, shown after clicking Approve) -->
             <tr id="approveOptions{{ request.request_id }}" class="approve-options">
               <td colspan="3">
-                <label for="new_room_no{{ request.request_id }}">New Room:</label>
-                <select name="new_room_no" id="new_room_no{{ request.request_id }}">
-                  <option value="">Select a room</option>
-                  {% for room in available_rooms %}
-                    {% if room.hostel_id == request.hostel_id %}
-                      <option value="{{ room.number }}">{{ room.number }} ({{ room.hostel_name }})</option>
-                    {% endif %}
-                  {% endfor %}
-                </select>
-              </td>
-              <td colspan="3">
-                <label for="new_bed_letter{{ request.request_id }}">New Bed:</label>
-                <select name="new_bed_letter" id="new_bed_letter{{ request.request_id }}">
-                  <option value="">Select a bed</option>
-                </select>
-              </td>
-            </tr>
-            <tr id="approveOptionsRow{{ request.request_id }}" class="approve-options">
-              <td colspan="6">
-                <button type="submit" name="action" value="approve" class="btn">Assign Bed and Approve</button>
+                <form action="{{ url_for('admin_room_change_requests') }}" method="POST">
+                  <label for="new_room_no{{ request.request_id }}">New Room:</label>
+                  <select name="new_room_no" id="new_room_no{{ request.request_id }}">
+                    <option value="">Select a room</option>
+                    {% for room in available_rooms %}
+                      {% if room.hostel_id == request.hostel_id %}
+                        <option value="{{ room.number }}">{{ room.number }} ({{ room.hostel_name }})</option>
+                      {% endif %}
+                    {% endfor %}
+                  </select>
+                </td>
+                <td colspan="3">  
+                  <label for="new_bed_letter{{ request.request_id }}">New Bed:</label>
+                  <select name="new_bed_letter" id="new_bed_letter{{ request.request_id }}">
+                    <option value="">Select a bed</option>
+                  </select>
+                </td>
+              </tr>
+              <tr id="approveOptionsRow{{ request.request_id }}" class="approve-options">
+                <td colspan="6">
+                  <input type="hidden" name="request_id" value="{{ request.request_id }}">
+                  <button type="submit" name="action" value="approve" class="btn">Assign Bed and Approve</button>
+                </form>
               </td>
             </tr>
           </table>

@@ -7,6 +7,16 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/index-style.css') }}">
 </head>
 <body>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash-container">
+        {% for category, message in messages %}
+          <div class="flash-message flash-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+    {% endwith %}
+
     <!-- Section 1: Index/Home Section -->
     <section id="home" class="section">
         <header class="navbar">
@@ -111,5 +121,15 @@
             </div>
         </div>
     </section>
+
+    <script>
+        const flashMessages = document.querySelectorAll('.flash-message');
+        flashMessages.forEach(message => {
+        message.style.display = 'block';
+        setTimeout(() => {
+        message.style.display = 'none';
+        }, 3000); // Hide after 3 seconds
+    });
+    </script>
 </body>
 </html>
