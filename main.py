@@ -538,41 +538,44 @@ def change_password():
 
     return render_template('change_password.html')
 
-# Room Setting
 @main.route('/student/room_setting')
 @student_required
 def room_setting():
     user_id = session.get('id')
 
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
+    # Fetch the latest booking for the user, including hostel name, room type, and bed letter
     cur.execute("""
-        SELECT b.*, h.name as hostel_name, r.category as room_type
+        SELECT b.*, h.name AS hostel_name, r.category AS room_type, bd.bed_letter
         FROM booking b
         JOIN hostel h ON b.hostel_id = h.id
         JOIN rooms r ON b.room_no = r.number
+        JOIN beds bd ON b.bed_number = bd.id
         WHERE b.user_id = %s
         ORDER BY b.booking_no DESC
         LIMIT 1
     """, (user_id,))
     booking = cur.fetchone()
 
-    # Fetch pending swap requests for this user
+    # Fetch pending room swap requests for this user
     cur.execute("""
-        SELECT rsr.*, u.name AS requester_name, b.room_no AS requester_room, b.bed_number AS requester_bed
+        SELECT rsr.*, u.name AS requester_name, b.room_no AS requester_room, b.bed_number AS requester_bed, bd.bed_letter AS requester_bed_letter
         FROM room_swap_requests rsr
         JOIN users u ON rsr.user_id = u.id
         JOIN booking b ON rsr.user_id = b.user_id
+        JOIN beds bd ON b.bed_number = bd.id
         WHERE rsr.other_user_id = %s AND rsr.status = 'pending'
     """, (user_id,))
     pending_swaps = cur.fetchall()
-    
+
     cur.close()
 
     if not booking:
         return redirect(url_for('select_trimester'))
 
     return render_template('room_setting.html', booking=booking, pending_swaps=pending_swaps)
-    
+
 # Select Trimester Route
 @main.route('/student/select_trimester', methods=['GET', 'POST'])
 @student_required
@@ -1710,40 +1713,53 @@ def admin_room_change_requests():
         if action == 'approve':
             new_room_no = request.form.get('new_room_no')
             new_bed_letter = request.form.get('new_bed_letter')
-            
+
             if not new_room_no or not new_bed_letter:
                 flash('Please select both a room and a bed.', 'error')
                 return redirect(url_for('admin_room_change_requests'))
-            
-            try:                
+
+            try:
+                # Get the user's current booking and trimester
+                cur.execute("""
+                    SELECT b.trimester_id, b.room_no, b.bed_number, b.hostel_id
+                    FROM booking b
+                    JOIN room_change_requests rcr ON b.user_id = rcr.user_id
+                    WHERE rcr.request_id = %s
+                    ORDER BY b.booking_no DESC
+                    LIMIT 1
+                """, (request_id,))
+                current_booking = cur.fetchone()
+                user_trimester_id = current_booking['trimester_id']
+
                 # Check availability of the new room and bed
                 cur.execute("""
-                    SELECT r.status as room_status, b.status as bed_status, r.hostel_id, b.id as bed_id
+                    SELECT r.status as room_status, b.status as bed_status, r.hostel_id, b.id as bed_id,
+                           COALESCE(bk.trimester_id, 0) as occupant_trimester_id
                     FROM rooms r 
                     JOIN beds b ON r.number = b.room_number 
+                    LEFT JOIN booking bk ON b.id = bk.bed_number AND bk.room_no = r.number
                     WHERE r.number = %s AND b.bed_letter = %s
+                    ORDER BY bk.booking_no DESC
+                    LIMIT 1
                     FOR UPDATE
                 """, (new_room_no, new_bed_letter))
                 result = cur.fetchone()
                 
-                if result and result['room_status'] in ['Available', 'Partially Occupied'] and result['bed_status'] == 'Available':
-                    # Get the current booking details
+                if result and result['room_status'] in ['Available', 'Partially Occupied'] and \
+                   (result['bed_status'] == 'Available' or 
+                    (result['bed_status'] == 'Occupied' and result['occupant_trimester_id'] != user_trimester_id)):
+                    
+                    # Update the booking with the new room and bed
                     cur.execute("""
-                        SELECT room_no, bed_number, hostel_id
+                    INSERT INTO booking (user_id, trimester_id, group_individual, group_id, hostel_id, room_no, cost, bed_number)
+                    SELECT user_id, %s, group_individual, group_id, %s, %s, cost, %s
+                    FROM booking
+                    WHERE booking_no = (
+                        SELECT MAX(booking_no)
                         FROM booking
                         WHERE user_id = (SELECT user_id FROM room_change_requests WHERE request_id = %s)
-                        ORDER BY booking_no DESC
-                        LIMIT 1
-                    """, (request_id,))
-                    current_booking = cur.fetchone()
-                    
-                    # Update the booking
-                    cur.execute("""
-                    UPDATE booking
-                    SET room_no = %s, bed_number = %s, hostel_id = %s
-                    WHERE user_id = (SELECT user_id FROM room_change_requests WHERE request_id = %s)
-                    AND booking_no = (SELECT MAX(booking_no) FROM (SELECT * FROM booking) AS b WHERE user_id = (SELECT user_id FROM room_change_requests WHERE request_id = %s))
-                    """, (new_room_no, new_bed_letter, result['hostel_id'], request_id, request_id))
+                    )
+                    """, (user_trimester_id, result['hostel_id'], new_room_no, result['bed_id'], request_id))
                     
                     # Update the new bed status
                     cur.execute("UPDATE beds SET status = 'Occupied' WHERE room_number = %s AND bed_letter = %s", (new_room_no, new_bed_letter))
@@ -1751,14 +1767,14 @@ def admin_room_change_requests():
                     # Update the old bed status
                     cur.execute("""
                     UPDATE beds SET status = 'Available' 
-                    WHERE room_number = %s AND bed_letter = %s
+                    WHERE room_number = %s AND id = %s
                     """, (current_booking['room_no'], current_booking['bed_number']))
                     
                     # Update room statuses
                     update_room_status(cur, new_room_no)
                     update_room_status(cur, current_booking['room_no'])
                     
-                    # Update the request status
+                    # Update request status
                     cur.execute("UPDATE room_change_requests SET status = 'approved' WHERE request_id = %s", (request_id,))
                     
                     # Commit transaction
@@ -1767,7 +1783,7 @@ def admin_room_change_requests():
                 else:
                     # Rollback transaction
                     mysql.connection.rollback()
-                    flash('The selected room or bed is no longer available. Please try again.', 'error')
+                    flash('The selected room or bed is not available for this student. Please try again.', 'error')
             
             except Exception as e:
                 # Rollback transaction in case of any error
@@ -1782,16 +1798,18 @@ def admin_room_change_requests():
 
     # Fetch pending room change requests
     cur.execute("""
-        SELECT rcr.*, u.name, u.email, b.room_no, b.bed_number, h.name as hostel_name, h.id as hostel_id
+        SELECT rcr.*, u.name, u.email, b.trimester_id, t.term as trimester_term, b.room_no, bd.bed_letter, h.name as hostel_name, h.id as hostel_id
         FROM room_change_requests rcr
         JOIN users u ON rcr.user_id = u.id
         JOIN booking b ON u.id = b.user_id
+        JOIN trimester t ON b.trimester_id = t.id
+        JOIN beds bd ON b.bed_number = bd.id
         JOIN hostel h ON b.hostel_id = h.id
         WHERE rcr.status = 'pending'
         ORDER BY rcr.request_id ASC
     """)
     requests = cur.fetchall()
-    
+
     # Fetch available rooms and beds
     available_rooms, available_beds = get_available_rooms_and_beds(cur)
     
@@ -1830,16 +1848,18 @@ def get_available_rooms_and_beds(cur):
     """)
     available_rooms = cur.fetchall()
     
-    # Fetch available beds for each available room
+    # Fetch available beds for each available room, including occupant's trimester
     available_beds = {}
     for room in available_rooms:
         cur.execute("""
-            SELECT bed_letter
-            FROM beds
-            WHERE room_number = %s AND status = 'Available'
-            ORDER BY bed_letter
+            SELECT b.bed_letter, COALESCE(bk.trimester_id, 0) as occupant_trimester_id, COALESCE(t.term, 0) as occupant_trimester_term
+            FROM beds b
+            LEFT JOIN booking bk ON b.id = bk.bed_number AND bk.room_no = b.room_number
+            LEFT JOIN trimester t ON bk.trimester_id = t.id
+            WHERE b.room_number = %s AND (b.status = 'Available' OR bk.trimester_id IS NOT NULL)
+            ORDER BY b.bed_letter
         """, (room['number'],))
-        available_beds[room['number']] = [bed['bed_letter'] for bed in cur.fetchall()]
+        available_beds[room['number']] = cur.fetchall()
     
     return available_rooms, available_beds
 
@@ -2175,6 +2195,7 @@ def delete_admin(admin_id):
 def booking_listing():
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
 
+    # Fetch all bookings with the bed letter (A, B, or C)
     cur.execute("""
         SELECT 
             b.booking_no,
@@ -2182,11 +2203,12 @@ def booking_listing():
             u.name AS student_name,
             h.name AS hostel_name,
             b.room_no,
-            b.bed_number
+            bd.bed_letter
         FROM booking b
         JOIN users u ON b.user_id = u.id
         JOIN trimester t ON b.trimester_id = t.id
         JOIN hostel h ON b.hostel_id = h.id
+        JOIN beds bd ON b.bed_number = bd.id 
         LEFT JOIN room_change_requests rcr ON b.user_id = rcr.user_id
         LEFT JOIN room_swap_requests rsr ON (b.user_id = rsr.user_id OR b.user_id = rsr.other_user_id)
         WHERE (
@@ -2200,6 +2222,7 @@ def booking_listing():
 
     cur.close()
     return render_template('booking_listing.html', bookings=bookings)
+
 
 # Delete Booking Route
 @main.route('/admin/delete_booking/<int:booking_no>', methods=['POST'])
