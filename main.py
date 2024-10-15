@@ -1553,15 +1553,14 @@ def edit_trimester(trimester_id):
 @admin_required
 def add_student():
     if request.method == 'POST':
-        userDetails = request.form
-        id = userDetails['id']
-        name = userDetails['name']
-        gender = userDetails['gender']
-        email = userDetails['email']
-        password = userDetails['password']
-        faculty = userDetails['faculty']
+        id = request.form['student_id']
+        name = request.form['student_name']
+        gender = request.form['gender']
+        faculty = request.form['faculty']
+        email = request.form['email']
+        password = request.form['password']
         hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
-
+        
         cur = mysql.connection.cursor()
 
         cur.execute("SELECT * FROM roles WHERE SoA_id=%s", (id,))
@@ -1572,22 +1571,100 @@ def add_student():
             cur.close()
             return redirect(url_for('add_student'))
 
-        cur.execute("INSERT INTO users(id, name, gender, email, password, faculty) VALUES(%s, %s, %s, %s, %s, %s)", 
-                    (id, name, gender, email, hashed_password, faculty))
+        cur.execute("""
+            INSERT INTO users (id, name, gender, faculty, email, password) 
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """, (id, name, gender, faculty, email, hashed_password))
 
         cur.execute("INSERT INTO roles(SoA_id, role) VALUES(%s, %s)", (id, 'user'))
 
         mysql.connection.commit()
-        flash('Student added successfully!', 'success')
-
         cur.close()
-
+        flash('Student added successfully!', 'success')
+        return redirect(url_for('add_student'))
+    
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     cur.execute("SELECT * FROM users")
     students = cur.fetchall()
     cur.close()
+    return render_template('student_add.html', students=students)
 
-    return render_template('add_student.html', students=students)
+# Admin Manage Students
+@main.route('/admin/manage_students', methods=['GET', 'POST'])
+@admin_required
+def manage_students():
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
+    cur.execute("SELECT DISTINCT gender FROM users ORDER BY gender")
+    genders = cur.fetchall()
+
+    selected_gender = request.args.get('gender')
+    filter_student_id = request.form.get('filter_student_id')
+
+    if filter_student_id:
+        cur.execute('''
+            SELECT * FROM users
+            WHERE id = %s
+        ''', (filter_student_id,))
+        students = cur.fetchall()
+    elif selected_gender and selected_gender != 'all':
+        cur.execute('''
+            SELECT * FROM users
+            WHERE gender = %s
+            ORDER BY id
+        ''', (selected_gender,))
+        students = cur.fetchall()
+    else:
+        cur.execute('''
+            SELECT * FROM users
+            ORDER BY id
+        ''')
+        students = cur.fetchall()
+
+    cur.close()
+
+    return render_template('student_manage.html', students=students, genders=genders, selected_gender=selected_gender)
+
+# Admin Edit Student
+# Admin Edit Student
+@main.route('/admin/edit_student/<int:student_id>', methods=['GET', 'POST'])
+@admin_required
+def edit_student(student_id):
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    if request.method == 'POST':
+        name = request.form['student_name']
+        gender = request.form['gender']
+        faculty = request.form['faculty']
+        email = request.form['email']
+        password = request.form['password']
+        survey_completed = request.form.get('survey_completed')  # Capture survey_completed status
+        
+        # Update only the provided fields
+        if password:
+            hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+            cur.execute("""
+                UPDATE users 
+                SET name = %s, gender = %s, faculty = %s, email = %s, password = %s, survey_completed = %s 
+                WHERE id = %s
+            """, (name, gender, faculty, email, hashed_password, survey_completed, student_id))
+        else:
+            cur.execute("""
+                UPDATE users 
+                SET name = %s, gender = %s, faculty = %s, email = %s, survey_completed = %s
+                WHERE id = %s
+            """, (name, gender, faculty, email, survey_completed, student_id))
+
+        if survey_completed == '0': 
+            cur.execute("DELETE FROM user_ratings WHERE user_id = %s", (student_id,))
+        
+        mysql.connection.commit()
+        flash('Student updated successfully!', 'success')
+        return redirect(url_for('manage_students'))
+    
+    cur.execute("SELECT * FROM users WHERE id = %s", (student_id,))
+    student = cur.fetchone()
+    cur.close()
+    return render_template('student_edit.html', student=student)
 
 
 # Admin Delete Student
@@ -1601,7 +1678,7 @@ def delete_student(student_id):
     mysql.connection.commit()
     cur.close()
     flash('Student deleted successfully!', 'success')
-    return redirect(url_for('add_student'))
+    return redirect(url_for('manage_students'))
 
 # Add room route
 @main.route('/admin/add_room', methods=['GET', 'POST'])
@@ -1731,7 +1808,7 @@ def manage_rooms():
     hostels = cur.fetchall()
 
     # Fetch rooms based on the selected hostel filter
-    selected_hostel_id = request.form.get('hostel_id') if request.method == 'POST' else None
+    selected_hostel_id = request.args.get('hostel_id')
 
     if selected_hostel_id and selected_hostel_id != 'all':
         # If a specific hostel is selected, filter rooms by hostel_id
@@ -2384,7 +2461,7 @@ def manage_hostels():
     genders = cur.fetchall()
 
     # Fetch hostels based on the selected gender filter
-    selected_gender = request.form.get('gender') if request.method == 'POST' else None
+    selected_gender = request.args.get('gender')
 
     if selected_gender and selected_gender != 'all':
         # If a specific gender is selected, filter hostels by gender
