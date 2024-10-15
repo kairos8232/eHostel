@@ -1461,20 +1461,92 @@ def post():
     return render_template('post_announcement.html')
 
 # Admin Edit Trimester
-@main.route('/admin/edit_trimester', methods=['GET', 'POST'])
+@main.route('/admin/add_trimester', methods=['GET', 'POST'])
 @admin_required
-def edit_trimester():
+def add_trimester():
     if request.method == 'POST':
-        userDetails = request.form
-        trimesters = userDetails['semester']
-        term = userDetails['term']
+        name = request.form['trimester_name']
+        term = request.form['trimester_term']
         cur = mysql.connection.cursor()
-        cur.execute("INSERT INTO trimester(name, term) VALUES(%s  , %s)", (trimesters, term))
+        cur.execute("""
+            INSERT INTO trimester(name, term) 
+            VALUES(%s  , %s)
+        """, (name, term))
         mysql.connection.commit()
         cur.close()
         flash('Trimester added successfully!', 'success')
-        return redirect(url_for('edit_trimester'))
-    return render_template('admin_trimester.html')
+        return redirect(url_for('add_trimester'))
+    
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    cur.close()
+    return render_template('trimester_add.html')
+
+# Admin Manage Trimesters
+@main.route('/admin/manage_trimesters', methods=['GET', 'POST'])
+@admin_required
+def manage_trimesters():
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
+    # POST request to handle actions (set or remove default trimester)
+    if request.method == 'POST':
+        action = request.form.get('action')
+        trimester_id = request.form.get('trimester_id')
+
+        if action == 'set_default':
+            # Check if there is already a default trimester
+            cur.execute("SELECT COUNT(*) as count FROM trimester WHERE is_default = TRUE")
+            default_count = cur.fetchone()['count']
+
+            if default_count > 0:
+                flash('Please remove the existing default trimester before setting a new one.', 'error')
+            else:
+                # Set new default
+                cur.execute("UPDATE trimester SET is_default = TRUE WHERE id = %s", (trimester_id,))
+                flash('Default trimester set successfully!', 'success')
+
+            mysql.connection.commit()
+            
+            # Redirect to avoid the POST-Redirect-GET issue
+            return redirect(url_for('manage_trimesters'))
+
+        elif action == 'remove_default':
+            cur.execute("UPDATE trimester SET is_default = FALSE WHERE is_default = TRUE")
+            flash('Default trimester removed successfully!', 'success')
+            mysql.connection.commit()
+            return redirect(url_for('manage_trimesters'))
+
+    # Fetch all trimesters
+    cur.execute("SELECT * FROM trimester ORDER BY id")
+    trimesters = cur.fetchall()
+
+    # Get the current default trimester
+    cur.execute("SELECT * FROM trimester WHERE is_default = TRUE LIMIT 1")
+    default_trimester = cur.fetchone()
+
+    cur.close()
+    return render_template('trimester_manage.html', trimesters=trimesters, default_trimester=default_trimester)
+
+# Admin Edit Trimester
+@main.route('/admin/edit_trimester/<int:trimester_id>', methods=['GET', 'POST'])
+@admin_required
+def edit_trimester(trimester_id):
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    if request.method == 'POST':
+        term = request.form['trimester_term']
+        name = request.form['trimester_name']
+        cur.execute("""
+            UPDATE trimester 
+            SET term = %s, name = %s
+            WHERE id = %s
+        """, (term, name, trimester_id))
+        mysql.connection.commit()
+        flash('Trimester updated successfully!', 'success')
+        return redirect(url_for('edit_trimester', trimester_id=trimester_id))
+
+    cur.execute("SELECT * FROM trimester WHERE id = %s", (trimester_id,))
+    trimester = cur.fetchone()
+    cur.close()
+    return render_template('trimester_edit.html', trimester=trimester)
 
 # Admin Add Student
 @main.route('/admin/add_student', methods=['GET', 'POST'])
@@ -2011,7 +2083,7 @@ def edit_section(section_id):
         cur.execute("UPDATE ques_sections SET name = %s WHERE id = %s", (section_name, section_id))
         mysql.connection.commit()
         flash('Section updated successfully!', 'success')
-        return redirect(url_for('edit_section'))
+        return redirect(url_for('edit_section', section_id=section_id))
     
     cur.execute("SELECT * FROM ques_sections WHERE id = %s", (section_id,))
     section = cur.fetchone()
@@ -2066,7 +2138,7 @@ def edit_question(question_id):
         """, (section_id, question_text, question_id))
         mysql.connection.commit()
         flash('Question updated successfully!', 'success')
-        return redirect(url_for('manage_questions'))
+        return redirect(url_for('edit_question', question_id=question_id))
     
     cur.execute("SELECT * FROM questions WHERE id = %s", (question_id,))
     question = cur.fetchone()
