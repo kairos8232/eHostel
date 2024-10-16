@@ -538,6 +538,7 @@ def change_password():
 
     return render_template('change_password.html')
 
+# Student Room Setting
 @main.route('/student/room_setting')
 @student_required
 def room_setting():
@@ -547,11 +548,12 @@ def room_setting():
 
     # Fetch the latest booking for the user, including hostel name, room type, and bed letter
     cur.execute("""
-        SELECT b.*, h.name AS hostel_name, r.category AS room_type, bd.bed_letter
+        SELECT b.*, h.name AS hostel_name, r.category AS room_type, bd.bed_letter, t.term AS trimester_term
         FROM booking b
         JOIN hostel h ON b.hostel_id = h.id
         JOIN rooms r ON b.room_no = r.number
         JOIN beds bd ON b.bed_number = bd.id
+        JOIN trimester t ON b.trimester_id = t.id
         WHERE b.user_id = %s
         ORDER BY b.booking_no DESC
         LIMIT 1
@@ -574,7 +576,7 @@ def room_setting():
     if not booking:
         return redirect(url_for('select_trimester'))
 
-    return render_template('room_setting.html', booking=booking, pending_swaps=pending_swaps)
+    return render_template('room_setting.html', booking=booking, pending_swaps=pending_swaps, trimester_id=booking['trimester_id'])
 
 # Select Trimester Route
 @main.route('/student/select_trimester', methods=['GET', 'POST'])
@@ -1309,10 +1311,10 @@ def get_user_ratings(user_id):
 @student_required
 def request_room_change():
     user_id = session.get('id')
-    trimester_id = session.get('trimester_id')
+    trimester_id = request.form.get('trimester_id')
     reason = request.form.get('reason')
-    
-    cur = mysql.connection.cursor()
+
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     cur.execute("""
         INSERT INTO room_change_requests (user_id, reason, status, trimester_id)
         VALUES (%s, %s, 'pending', %s)
@@ -1328,7 +1330,7 @@ def request_room_change():
 @student_required
 def request_room_swap():
     user_id = session.get('id')
-    trimester_id = session.get('trimester_id')
+    trimester_id = request.form.get('trimester_id')
     other_student_id = request.form.get('other_student_id')
     other_student_email = request.form.get('other_student_email')
     
@@ -1336,9 +1338,10 @@ def request_room_swap():
     
     # Check if the other student exists and has the same hostel and is in the same trimester
     cur.execute("""
-        SELECT u.id, u.email, b.hostel_id, b.room_no, b.bed_number, b.trimester_id
+        SELECT u.id, u.email, b.hostel_id, b.room_no, b.bed_number, b.trimester_id, t.term AS trimester_term
         FROM users u
         JOIN booking b ON u.id = b.user_id
+        JOIN trimester t ON b.trimester_id = t.id
         WHERE u.id = %s AND u.email = %s AND b.trimester_id = %s
     """, (other_student_id, other_student_email, trimester_id))
     other_student = cur.fetchone()
@@ -1349,10 +1352,11 @@ def request_room_swap():
     
     # Get current user's booking in the same trimester
     cur.execute("""
-        SELECT hostel_id, room_no, bed_number
-        FROM booking
-        WHERE user_id = %s AND trimester_id = %s
-        ORDER BY booking_no DESC
+        SELECT hostel_id, room_no, bed_number, t.term AS trimester_term
+        FROM booking b
+        JOIN trimester t ON b.trimester_id = t.id
+        WHERE user_id = %s AND b.trimester_id = %s
+        ORDER BY b.booking_no DESC
         LIMIT 1
     """, (user_id, trimester_id))
     current_booking = cur.fetchone()
@@ -1365,16 +1369,18 @@ def request_room_swap():
         flash('Room swap is only allowed within the same hostel.', 'error')
         return redirect(url_for('room_setting'))
     
+    trimester_term = current_booking['trimester_term']
+    
     cur.close()
 
-    return render_template('confirm_room_swap.html', other_student=other_student, trimester_id=trimester_id)
+    return render_template('confirm_room_swap.html', other_student=other_student, trimester_term=trimester_term, trimester_id=trimester_id)
 
 # Student Confirm Room Swap
 @main.route('/student/confirm_room_swap', methods=['POST'])
 @student_required
 def confirm_room_swap():
     user_id = session.get('id')
-    trimester_id = session.get('trimester_id')
+    trimester_id = request.form.get('trimester_id')
     other_student_id = request.form.get('other_student_id')
     reason = request.form.get('reason')
 
@@ -1396,7 +1402,7 @@ def confirm_room_swap():
 @student_required
 def respond_to_swap():
     user_id = session.get('id')
-    trimester_id = session.get('trimester_id')
+    trimester_id = request.form.get('trimester_id')  # Fetch trimester_id from the form
     swap_request_id = request.form.get('swap_request_id')
     response = request.form.get('response')
     
@@ -1405,14 +1411,14 @@ def respond_to_swap():
         cur.execute("""
             UPDATE room_swap_requests
             SET status = 'approved_by_student'
-            WHERE id = %s AND other_user_id = %s AND trimester_id = %s
+            WHERE swap_id = %s AND other_user_id = %s AND trimester_id = %s
         """, (swap_request_id, user_id, trimester_id))
         flash('You have approved the room swap request. It will now be reviewed by the admin.', 'success')
     else:
         cur.execute("""
             UPDATE room_swap_requests
             SET status = 'rejected'
-            WHERE id = %s AND other_user_id = %s AND trimester_id = %s
+            WHERE swap_id = %s AND other_user_id = %s AND trimester_id = %s
         """, (swap_request_id, user_id, trimester_id))
         flash('You have rejected the room swap request.', 'info')
     
@@ -1875,7 +1881,7 @@ def admin_room_change_requests():
     if request.method == 'POST':
         request_id = request.form.get('request_id')
         action = request.form.get('action')
-        
+
         if action == 'approve':
             new_room_no = request.form.get('new_room_no')
             new_bed_letter = request.form.get('new_bed_letter')
@@ -1897,26 +1903,21 @@ def admin_room_change_requests():
                 current_booking = cur.fetchone()
                 user_trimester_id = current_booking['trimester_id']
 
-                # Check availability of the new room and bed
+                # Check if the new room and bed are already booked for this trimester
                 cur.execute("""
-                    SELECT r.status as room_status, b.status as bed_status, r.hostel_id, b.id as bed_id,
-                           COALESCE(bk.trimester_id, 0) as occupant_trimester_id
-                    FROM rooms r 
-                    JOIN beds b ON r.number = b.room_number 
-                    LEFT JOIN booking bk ON b.id = bk.bed_number AND bk.room_no = r.number
-                    WHERE r.number = %s AND b.bed_letter = %s
-                    ORDER BY bk.booking_no DESC
+                    SELECT bk.trimester_id, bk.user_id
+                    FROM booking bk
+                    WHERE bk.room_no = %s AND bk.bed_number = %s AND bk.trimester_id = %s
                     LIMIT 1
-                    FOR UPDATE
-                """, (new_room_no, new_bed_letter))
-                result = cur.fetchone()
-                
-                if result and result['room_status'] in ['Available', 'Partially Occupied'] and \
-                   (result['bed_status'] == 'Available' or 
-                    (result['bed_status'] == 'Occupied' and result['occupant_trimester_id'] != user_trimester_id)):
-                    
-                    # Update the booking with the new room and bed
-                    cur.execute("""
+                """, (new_room_no, new_bed_letter, user_trimester_id))
+                existing_booking = cur.fetchone()
+
+                if existing_booking:
+                    flash('The selected bed is already booked for this trimester.', 'error')
+                    return redirect(url_for('admin_room_change_requests'))
+
+                # Proceed with updating the booking
+                cur.execute("""
                     INSERT INTO booking (user_id, trimester_id, group_individual, group_id, hostel_id, room_no, cost, bed_number)
                     SELECT user_id, %s, group_individual, group_id, %s, %s, cost, %s
                     FROM booking
@@ -1925,37 +1926,20 @@ def admin_room_change_requests():
                         FROM booking
                         WHERE user_id = (SELECT user_id FROM room_change_requests WHERE request_id = %s)
                     )
-                    """, (user_trimester_id, result['hostel_id'], new_room_no, result['bed_id'], request_id))
-                    
-                    # Update the new bed status
-                    cur.execute("UPDATE beds SET status = 'Occupied' WHERE room_number = %s AND bed_letter = %s", (new_room_no, new_bed_letter))
-                    
-                    # Update the old bed status
-                    cur.execute("""
-                    UPDATE beds SET status = 'Available' 
-                    WHERE room_number = %s AND id = %s
-                    """, (current_booking['room_no'], current_booking['bed_number']))
-                    
-                    # Update room statuses
-                    update_room_status(cur, new_room_no)
-                    update_room_status(cur, current_booking['room_no'])
-                    
-                    # Update request status
-                    cur.execute("UPDATE room_change_requests SET status = 'approved' WHERE request_id = %s", (request_id,))
-                    
-                    # Commit transaction
-                    mysql.connection.commit()
-                    flash('Room change request approved successfully.', 'success')
-                else:
-                    # Rollback transaction
-                    mysql.connection.rollback()
-                    flash('The selected room or bed is not available for this student. Please try again.', 'error')
-            
+                """, (user_trimester_id, current_booking['hostel_id'], new_room_no, new_bed_letter, request_id))
+
+                # Update the room change request status
+                cur.execute("UPDATE room_change_requests SET status = 'approved' WHERE request_id = %s", (request_id,))
+
+                # Commit transaction
+                mysql.connection.commit()
+                flash('Room change request approved successfully.', 'success')
+
             except Exception as e:
                 # Rollback transaction in case of any error
                 mysql.connection.rollback()
                 flash(f'An error occurred: {str(e)}', 'error')
-        
+
         elif action == 'reject':
             # Update the request status
             cur.execute("UPDATE room_change_requests SET status = 'rejected' WHERE request_id = %s", (request_id,))
@@ -1976,57 +1960,39 @@ def admin_room_change_requests():
     """)
     requests = cur.fetchall()
 
-    # Fetch available rooms and beds
+    # Fetch available rooms and beds (without needing a user trimester)
     available_rooms, available_beds = get_available_rooms_and_beds(cur)
-    
+
     cur.close()
-    
+
     return render_template('admin_room_change_requests.html', 
                            requests=requests, 
                            available_rooms=available_rooms, 
                            available_beds=available_beds)
 
-def update_room_status(cur, room_number):
-    cur.execute("""
-        SELECT COUNT(*) as total, SUM(CASE WHEN status = 'Occupied' THEN 1 ELSE 0 END) as occupied
-        FROM beds
-        WHERE room_number = %s
-    """, (room_number,))
-    bed_status = cur.fetchone()
-    
-    if bed_status['occupied'] == 0:
-        new_status = 'Available'
-    elif bed_status['occupied'] == bed_status['total']:
-        new_status = 'Occupied'
-    else:
-        new_status = 'Partially Occupied'
-    
-    cur.execute("UPDATE rooms SET status = %s WHERE number = %s", (new_status, room_number))
 
 def get_available_rooms_and_beds(cur):
-    # Fetch available rooms
+    # Fetch all rooms
     cur.execute("""
         SELECT r.number, r.hostel_id, h.name as hostel_name
         FROM rooms r
         JOIN hostel h ON r.hostel_id = h.id
-        WHERE r.status IN ('Available', 'Partially Occupied')
         ORDER BY h.name, r.number
     """)
     available_rooms = cur.fetchall()
-    
-    # Fetch available beds for each available room, including occupant's trimester
+
+    # Fetch available beds for each room, excluding those already booked for any trimester
     available_beds = {}
     for room in available_rooms:
         cur.execute("""
-            SELECT b.bed_letter, COALESCE(bk.trimester_id, 0) as occupant_trimester_id, COALESCE(t.term, 0) as occupant_trimester_term
+            SELECT b.bed_letter
             FROM beds b
             LEFT JOIN booking bk ON b.id = bk.bed_number AND bk.room_no = b.room_number
-            LEFT JOIN trimester t ON bk.trimester_id = t.id
-            WHERE b.room_number = %s AND (b.status = 'Available' OR bk.trimester_id IS NOT NULL)
+            WHERE b.room_number = %s AND bk.trimester_id IS NULL
             ORDER BY b.bed_letter
         """, (room['number'],))
         available_beds[room['number']] = cur.fetchall()
-    
+
     return available_rooms, available_beds
 
 # Room Swap Request
@@ -2040,14 +2006,17 @@ def admin_room_swap_requests():
                u2.name AS other_name, u2.email AS other_email,
                b1.room_no AS requester_room, b1.bed_number AS requester_bed,
                b2.room_no AS other_room, b2.bed_number AS other_bed,
-               h.name AS hostel_name
+               h.name AS hostel_name,
+               t.term AS trimester_term
         FROM room_swap_requests rsr
         JOIN users u1 ON rsr.user_id = u1.id
         JOIN users u2 ON rsr.other_user_id = u2.id
         JOIN booking b1 ON rsr.user_id = b1.user_id
         JOIN booking b2 ON rsr.other_user_id = b2.user_id
         JOIN hostel h ON b1.hostel_id = h.id
-        WHERE rsr.status = 'approved_by_student'
+        JOIN trimester t ON rsr.trimester_id = t.id  -- Join with trimesters table
+        WHERE rsr.status = 'approved_by_student' 
+          AND b1.trimester_id = b2.trimester_id
         ORDER BY rsr.created_at ASC
     """)
     swap_requests = cur.fetchall()
@@ -2069,30 +2038,55 @@ def process_room_swap():
         cur.execute("""
             SELECT user_id, other_user_id
             FROM room_swap_requests
-            WHERE id = %s
+            WHERE swap_id = %s
         """, (swap_request_id,))
         swap_request = cur.fetchone()
         
         if swap_request:
-            # Swap the rooms
+            # Fetch current room and bed details for both users
             cur.execute("""
-                UPDATE booking b1
+                SELECT b1.room_no AS room1, b1.bed_number AS bed1,
+                       b2.room_no AS room2, b2.bed_number AS bed2
+                FROM booking b1
                 JOIN booking b2 ON b1.user_id = %s AND b2.user_id = %s
-                SET b1.room_no = b2.room_no, b1.bed_number = b2.bed_number,
-                    b2.room_no = b1.room_no, b2.bed_number = b1.bed_number
-                WHERE b1.user_id = %s AND b2.user_id = %s
-            """, (swap_request['user_id'], swap_request['other_user_id'], 
-                  swap_request['user_id'], swap_request['other_user_id']))
-            
-            # Update the swap request status
-            cur.execute("""
-                UPDATE room_swap_requests
-                SET status = 'approved'
-                WHERE id = %s
-            """, (swap_request_id,))
-            
-            mysql.connection.commit()
-            flash('Room swap has been approved and processed.', 'success')
+                WHERE b1.user_id = %s AND b2.user_id = %s AND b1.trimester_id = b2.trimester_id
+            """, (swap_request['user_id'], swap_request['other_user_id'], swap_request['user_id'], swap_request['other_user_id']))
+            rooms_beds = cur.fetchone()
+
+            if rooms_beds:
+                # Swap the room and bed assignments using temp variables
+                room1, bed1 = rooms_beds['room1'], rooms_beds['bed1']
+                room2, bed2 = rooms_beds['room2'], rooms_beds['bed2']
+                
+                # Update booking for user 1
+                cur.execute("""
+                    UPDATE booking
+                    SET room_no = %s, bed_number = %s
+                    WHERE user_id = %s AND trimester_id = (
+                        SELECT trimester_id FROM room_swap_requests WHERE swap_id = %s
+                    )
+                """, (room2, bed2, swap_request['user_id'], swap_request_id))
+                
+                # Update booking for user 2
+                cur.execute("""
+                    UPDATE booking
+                    SET room_no = %s, bed_number = %s
+                    WHERE user_id = %s AND trimester_id = (
+                        SELECT trimester_id FROM room_swap_requests WHERE swap_id = %s
+                    )
+                """, (room1, bed1, swap_request['other_user_id'], swap_request_id))
+
+                # Mark the swap request as approved
+                cur.execute("""
+                    UPDATE room_swap_requests
+                    SET status = 'approved'
+                    WHERE swap_id = %s
+                """, (swap_request_id,))
+                
+                mysql.connection.commit()
+                flash('Room swap has been approved and processed.', 'success')
+            else:
+                flash('Could not fetch room and bed details for both users.', 'error')
         else:
             flash('Swap request not found.', 'error')
     
@@ -2101,7 +2095,7 @@ def process_room_swap():
         cur.execute("""
             UPDATE room_swap_requests
             SET status = 'rejected_by_admin'
-            WHERE id = %s
+            WHERE swap_id = %s
         """, (swap_request_id,))
         
         mysql.connection.commit()
