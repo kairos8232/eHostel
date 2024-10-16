@@ -583,16 +583,15 @@ def room_setting():
 def select_trimester():
     
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    cur.execute("SELECT * FROM trimester")
-    trimesters = cur.fetchall()
+    cur.execute("SELECT * FROM trimester WHERE is_default = 1")
+    trimester = cur.fetchone()
     cur.close()
 
-    if request.method == 'POST':
-        selected_trimester = request.form.get('trimester')
-        session['trimester_id'] = selected_trimester
+    if request.method == 'POST' and trimester:
+        session['trimester_id'] = trimester['id']
         return redirect(url_for('choose_mode'))
 
-    return render_template('select_trimester.html', trimesters=trimesters)
+    return render_template('select_trimester.html', trimester=trimester)
 
 # Mode selection route (Individual or Group)
 @main.route('/student/choose_mode', methods=['GET', 'POST'])
@@ -675,40 +674,40 @@ def group_page():
 
     return render_template('group_page.html')
 
+# Edit Group
 @main.route('/student/edit_group/<int:group_id>', methods=['GET', 'POST'])
 @student_required
 def edit_group(group_id):
     user_id = session.get('id')
+    trimester_id = session.get('trimester_id') 
 
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
 
-    # Fetch group details for the given group_id and check if the user is the leader
-    cur.execute("SELECT * FROM `groups` WHERE group_id = %s AND leader_id = %s", (group_id, user_id))
+    cur.execute("""
+        SELECT * FROM `groups` 
+        WHERE group_id = %s AND leader_id = %s AND trimester_id = %s
+    """, (group_id, user_id, trimester_id))
+    
     group = cur.fetchone()
-
     if not group:
         return redirect(url_for('group_page'))
 
-    # If the form is submitted via POST
     if request.method == 'POST':
-        group_name = request.form['group_name']  # Get the updated group name
+        group_name = request.form['group_name']
         profile_pic = request.files.get('profile_pic')
 
         if profile_pic:
-            # Save the new profile picture
             profile_pic_path = os.path.join(main.config['UPLOAD_FOLDER'], profile_pic.filename)
             profile_pic.save(profile_pic_path)
             profile_pic_url = url_for('static', filename=f"uploads/{profile_pic.filename}")
         else:
-            # Keep the existing profile picture
             profile_pic_url = group['profile_pic']
 
-        # Update the group in the database
         cur.execute("""
             UPDATE `groups`
             SET name = %s, profile_pic = %s
-            WHERE group_id = %s AND leader_id = %s
-        """, (group_name, profile_pic_url, group_id, user_id))
+            WHERE group_id = %s AND leader_id = %s AND trimester_id = %s
+        """, (group_name, profile_pic_url, group_id, user_id, trimester_id))
 
         mysql.connection.commit()
         cur.close()
@@ -728,10 +727,17 @@ def manage_group(group_id):
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
 
     # Check if user is the group leader or a member of the group
-    cur.execute("SELECT * FROM `groups` WHERE group_id = %s AND leader_id = %s AND trimester_id = %s", (group_id, user_id, trimester_id))
+    cur.execute("""
+        SELECT * FROM `groups` 
+        WHERE group_id = %s AND leader_id = %s AND trimester_id = %s
+    """, (group_id, user_id, trimester_id))
     group = cur.fetchone()
 
-    cur.execute("SELECT users.id, users.email FROM users JOIN group_members ON users.id = group_members.user_id WHERE group_members.group_id = %s AND group_members.user_id = %s AND group_members.trimester_id = %s", (group_id, user_id, trimester_id))
+    cur.execute("""
+        SELECT users.id, users.email FROM users 
+        JOIN group_members ON users.id = group_members.user_id 
+        WHERE group_members.group_id = %s AND group_members.user_id = %s AND group_members.trimester_id = %s
+    """, (group_id, user_id, trimester_id))
     is_group_member = cur.fetchone()
 
     if not group and not is_group_member:
@@ -829,24 +835,37 @@ def manage_group(group_id):
 @student_required
 def leave_group(group_id):
     user_id = session.get('id')
+    trimester_id = session.get('trimester_id') 
 
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    
-    # Check if the user is the leader
-    cur.execute("SELECT leader_id FROM `groups` WHERE group_id = %s", (group_id,))
-    group = cur.fetchone()
 
-    # Remove the user from the group
-    cur.execute("DELETE FROM group_members WHERE group_id = %s AND user_id = %s", (group_id, user_id))
+    cur.execute("""
+        SELECT leader_id FROM `groups` 
+        WHERE group_id = %s AND trimester_id = %s
+    """, (group_id, trimester_id))
+
+    group = cur.fetchone()
+    if not group:
+        return redirect(url_for('group_page'))
+
+    cur.execute("""
+        DELETE FROM group_members 
+        WHERE group_id = %s AND user_id = %s AND trimester_id = %s
+    """, (group_id, user_id, trimester_id))
     mysql.connection.commit()
     
-    # Check if the group is now empty
-    cur.execute("SELECT COUNT(*) as count FROM group_members WHERE group_id = %s", (group_id,))
+    cur.execute("""
+        SELECT COUNT(*) as count FROM group_members 
+        WHERE group_id = %s AND trimester_id = %s
+    """, (group_id, trimester_id))
+    
     member_count = cur.fetchone()['count']
     
     if member_count == 0:
-        # If the group is empty, delete it
-        cur.execute("DELETE FROM `groups` WHERE group_id = %s", (group_id,))
+        cur.execute("""
+            DELETE FROM `groups` 
+            WHERE group_id = %s AND trimester_id = %s
+        """, (group_id, trimester_id))
         mysql.connection.commit()
 
     cur.close()
@@ -855,7 +874,7 @@ def leave_group(group_id):
 @main.route('/student/invite_user/<int:group_id>/<int:invitee_id>', methods=['POST'])
 @student_required
 def invite_user(group_id, invitee_id):
-    user_id = session.get('id')  # User A (group leader) who is sending the invite
+    user_id = session.get('id')
     trimester_id = session.get('trimester_id')
 
     cur = mysql.connection.cursor()
@@ -900,11 +919,11 @@ def accept_invite(invitation_id):
         WHERE invitation_id = %s AND invitee_id = %s
     """, (invitation_id, user_id))
 
-    # Fetch the group_id and trimester_id from the invitation
+    # Fetch group_id and trimester_id from the invitation
     cur.execute("SELECT group_id, trimester_id FROM invitations WHERE invitation_id = %s", (invitation_id,))
     invitation = cur.fetchone()
 
-    # Add the user to the group members
+    # Add user to the group members for the correct trimester
     cur.execute("""
         INSERT INTO group_members (group_id, user_id, trimester_id)
         VALUES (%s, %s, %s)
@@ -923,11 +942,11 @@ def decline_invite(invitation_id):
 
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
 
-    # Fetch the group_id and trimester_id from the invitation
+    # Fetch group_id and trimester_id from the invitation
     cur.execute("SELECT group_id, trimester_id FROM invitations WHERE invitation_id = %s", (invitation_id,))
     invitation = cur.fetchone()
 
-    # Update invitation status to 'declined'
+    # Update invitation status to 'declined' for the correct trimester
     cur.execute("""
         UPDATE invitations
         SET status = 'declined'
@@ -1146,13 +1165,13 @@ def booking_summary(mode, hostel_id, room_type, room_number, bed_ids, user_ids):
 @main.route('/student/transfer_leadership/<int:group_id>/<int:new_leader_id>', methods=['POST'])
 @student_required
 def transfer_leadership(group_id, new_leader_id):
-    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    trimester_id = session.get('trimester_id')
     
-    # Check if the current user is the leader
-    cur.execute("SELECT leader_id FROM `groups` WHERE group_id = %s", (group_id,))
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
 
-    # Update the leader_id in the groups table
-    cur.execute("UPDATE `groups` SET leader_id = %s WHERE group_id = %s", (new_leader_id, group_id))
+    cur.execute("SELECT leader_id FROM `groups` WHERE group_id = %s AND trimester_id = %s", (group_id, trimester_id))
+
+    cur.execute("UPDATE `groups` SET leader_id = %s WHERE group_id = %s AND trimester_id = %s", (new_leader_id, group_id, trimester_id))
     mysql.connection.commit()
     cur.close()
 
@@ -1165,7 +1184,9 @@ def transfer_leadership(group_id, new_leader_id):
 @student_required
 def remove_member(group_id, member_id):
     trimester_id = session.get('trimester_id')
+    
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
     cur.execute("DELETE FROM group_members WHERE group_id = %s AND user_id = %s AND trimester_id = %s", (group_id, member_id, trimester_id))
     mysql.connection.commit()
     cur.close()
@@ -1182,12 +1203,15 @@ def disband_group(group_id):
     trimester_id = session.get('trimester_id')
 
     session.pop('group_id', None)
+    
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
     cur.execute("SELECT * FROM `groups` WHERE group_id = %s AND leader_id = %s AND trimester_id = %s", (group_id, user_id, trimester_id))
 
     cur.execute("DELETE FROM invitations WHERE group_id = %s AND trimester_id = %s", (group_id, trimester_id))
     cur.execute("DELETE FROM group_members WHERE group_id = %s AND trimester_id = %s", (group_id, trimester_id))
     cur.execute("DELETE FROM `groups` WHERE group_id = %s AND trimester_id = %s", (group_id, trimester_id))
+    
     mysql.connection.commit()
     cur.close()
 
@@ -1285,67 +1309,57 @@ def get_user_ratings(user_id):
 @student_required
 def request_room_change():
     user_id = session.get('id')
+    trimester_id = session.get('trimester_id')
     reason = request.form.get('reason')
     
     cur = mysql.connection.cursor()
     cur.execute("""
-        INSERT INTO room_change_requests (user_id, reason, status)
-        VALUES (%s, %s, 'pending')
-    """, (user_id, reason))
+        INSERT INTO room_change_requests (user_id, reason, status, trimester_id)
+        VALUES (%s, %s, 'pending', %s)
+    """, (user_id, reason, trimester_id))
     mysql.connection.commit()
     cur.close()
     
     flash('Your room change request has been submitted.', 'success')
     return redirect(url_for('room_setting'))
 
-@main.route('/student/submit_room_change', methods=['POST'])
-@student_required
-def submit_room_change():
-    user_id = session.get('id')
-    reason = request.form.get('reason')
-    
-    cur = mysql.connection.cursor()
-    cur.execute("""
-        INSERT INTO room_change_requests (user_id, reason, status)
-        VALUES (%s, %s, 'pending')
-    """, (user_id, reason))
-    mysql.connection.commit()
-    cur.close()
-    
-    flash('Your room change request has been submitted.', 'success')
-    return redirect(url_for('room_setting'))
-
+# Student Request Room Swap
 @main.route('/student/request_room_swap', methods=['POST'])
 @student_required
 def request_room_swap():
     user_id = session.get('id')
+    trimester_id = session.get('trimester_id')
     other_student_id = request.form.get('other_student_id')
     other_student_email = request.form.get('other_student_email')
     
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     
-    # Check if the other student exists and has the same hostel
+    # Check if the other student exists and has the same hostel and is in the same trimester
     cur.execute("""
-        SELECT u.id, u.email, b.hostel_id, b.room_no, b.bed_number
+        SELECT u.id, u.email, b.hostel_id, b.room_no, b.bed_number, b.trimester_id
         FROM users u
         JOIN booking b ON u.id = b.user_id
-        WHERE u.id = %s AND u.email = %s
-    """, (other_student_id, other_student_email))
+        WHERE u.id = %s AND u.email = %s AND b.trimester_id = %s
+    """, (other_student_id, other_student_email, trimester_id))
     other_student = cur.fetchone()
     
     if not other_student:
-        flash('No student found with the given ID and email.', 'error')
+        flash('No student found with the given ID, email, or they are not in the same trimester.', 'error')
         return redirect(url_for('room_setting'))
     
-    # Get current user's booking
+    # Get current user's booking in the same trimester
     cur.execute("""
         SELECT hostel_id, room_no, bed_number
         FROM booking
-        WHERE user_id = %s
+        WHERE user_id = %s AND trimester_id = %s
         ORDER BY booking_no DESC
         LIMIT 1
-    """, (user_id,))
+    """, (user_id, trimester_id))
     current_booking = cur.fetchone()
+    
+    if not current_booking:
+        flash('Your booking is not found for the current trimester.', 'error')
+        return redirect(url_for('room_setting'))
     
     if current_booking['hostel_id'] != other_student['hostel_id']:
         flash('Room swap is only allowed within the same hostel.', 'error')
@@ -1353,21 +1367,23 @@ def request_room_swap():
     
     cur.close()
 
-    return render_template('confirm_room_swap.html', other_student=other_student)
+    return render_template('confirm_room_swap.html', other_student=other_student, trimester_id=trimester_id)
 
+# Student Confirm Room Swap
 @main.route('/student/confirm_room_swap', methods=['POST'])
 @student_required
 def confirm_room_swap():
     user_id = session.get('id')
+    trimester_id = session.get('trimester_id')
     other_student_id = request.form.get('other_student_id')
     reason = request.form.get('reason')
 
     cur = mysql.connection.cursor()
     
     cur.execute("""
-        INSERT INTO room_swap_requests (user_id, other_user_id, reason, status)
-        VALUES (%s, %s, %s, 'pending')
-    """, (user_id, other_student_id, reason))
+        INSERT INTO room_swap_requests (user_id, other_user_id, reason, status, trimester_id)
+        VALUES (%s, %s, %s, 'pending', %s)
+    """, (user_id, other_student_id, reason, trimester_id))
     
     mysql.connection.commit()
     cur.close()
@@ -1375,10 +1391,12 @@ def confirm_room_swap():
     flash('Your room swap request has been submitted.', 'success')
     return redirect(url_for('room_setting'))
 
+# Student Respond to Swap
 @main.route('/student/respond_to_swap', methods=['POST'])
 @student_required
 def respond_to_swap():
     user_id = session.get('id')
+    trimester_id = session.get('trimester_id')
     swap_request_id = request.form.get('swap_request_id')
     response = request.form.get('response')
     
@@ -1387,15 +1405,15 @@ def respond_to_swap():
         cur.execute("""
             UPDATE room_swap_requests
             SET status = 'approved_by_student'
-            WHERE id = %s AND other_user_id = %s
-        """, (swap_request_id, user_id))
+            WHERE id = %s AND other_user_id = %s AND trimester_id = %s
+        """, (swap_request_id, user_id, trimester_id))
         flash('You have approved the room swap request. It will now be reviewed by the admin.', 'success')
     else:
         cur.execute("""
             UPDATE room_swap_requests
             SET status = 'rejected'
-            WHERE id = %s AND other_user_id = %s
-        """, (swap_request_id, user_id))
+            WHERE id = %s AND other_user_id = %s AND trimester_id = %s
+        """, (swap_request_id, user_id, trimester_id))
         flash('You have rejected the room swap request.', 'info')
     
     mysql.connection.commit()
@@ -1626,7 +1644,6 @@ def manage_students():
     return render_template('student_manage.html', students=students, genders=genders, selected_gender=selected_gender)
 
 # Admin Edit Student
-# Admin Edit Student
 @main.route('/admin/edit_student/<int:student_id>', methods=['GET', 'POST'])
 @admin_required
 def edit_student(student_id):
@@ -1789,7 +1806,7 @@ def edit_room(room_number):
 
             mysql.connection.commit()
             flash('Room and beds updated successfully!', 'success')
-            return redirect(url_for('edit_room', room_number=room_number))
+            return redirect(url_for('manage_rooms'))
         except MySQLdb.Error as err:
             mysql.connection.rollback()
             flash('An error occurred. Please try again.', 'error')
